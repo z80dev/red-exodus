@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useGame, useSim } from '../../game/store';
-import { chronicleTarget, councilBuyError } from '../../sim/roguelite';
+import { chronicleTarget, councilBuyError, doctrineSlotsUsed } from '../../sim/roguelite';
 import type { ShopItem } from '../../sim/types';
 import { Button } from '../kit';
 import { Icon } from '../icons/Icon';
@@ -17,7 +17,7 @@ import { floatAt, shake, snapshotEl } from './fx';
 import { landPurchase, runBefore } from './landing';
 import { PackOpen } from './PackOpen';
 import { Hearts, InfluencePill, Ornament, PillarStrip } from './parts';
-import { act, chapterTitle, eraTitle, fmt, haptic, nextChapter, roman, sfx, uiSettings } from './runUtil';
+import { act, chapterName, eraTitle, fmt, haptic, nextChapter, roman, sfx, uiSettings } from './runUtil';
 import './council.css';
 
 const SECTION_OF: Record<ShopItem['kind'], 'offer' | 'pack'> = { doctrine: 'offer', edict: 'offer', scroll: 'offer', pack: 'pack', reform: 'pack' };
@@ -168,7 +168,7 @@ export function Council() {
       <header className="rco-head">
         <div className="rco-titles">
           <h1 className="rco-title display">The Council</h1>
-          <div className="rco-sub">{eraTitle(run.era)} · after {chapterTitle(run.chapter)}</div>
+          <div className="rco-sub">Era {roman(run.era + 1)} · after {chapterName(run.chapter)}</div>
         </div>
         <div className="rco-head-right">
           <Hearts total={run.maxMandate} filled={run.mandate} size={16} />
@@ -199,57 +199,56 @@ export function Council() {
 
       <section className="rco-owned">
         <div className="rco-owned-docs">
-          <div className="rco-owned-label display">Doctrines <small>drag to reorder · drop on Sell</small></div>
-          <DoctrineBar compact={false} sellable cardWidth="var(--rco-doc-w)" />
+          <div className="rco-owned-label display">
+            Doctrines <span className="num">{doctrineSlotsUsed(run)}/{run.doctrineSlots}</span> <small>drag to reorder · drop on Sell</small>
+          </div>
+          <DoctrineBar compact={false} sellable slotsBadge={false} cardWidth="var(--rco-doc-w)" />
         </div>
-        <div className="rco-owned-misc">
-          <div className="rco-owned-edicts">
-            <div className="rco-owned-label display">Edicts</div>
-            <EdictTray compact={false} cardWidth="var(--rco-edict-w)" />
-          </div>
-          <div className="rco-owned-pillars">
-            <div className="rco-owned-label display">Pillars</div>
-            <PillarStrip levels={run.pillarLevels} focus={run.focus} />
-            <div className="rco-reforms" data-reforms title="Reforms enacted">
-              <Icon name="reform" size={14} /> {run.reforms.length} Reform{run.reforms.length === 1 ? '' : 's'}
-            </div>
-          </div>
+        <div className="rco-owned-edicts">
+          <div className="rco-owned-label display">Edicts</div>
+          <EdictTray compact={false} cardWidth="var(--rco-edict-w)" />
         </div>
       </section>
 
-      <aside className="rco-side">
-        <div className={`rco-info ${selCard ? 'is-on' : ''}`}>
-          {selCard && sel ? (
-            <>
-              <div className="rco-info-head">
-                <span className="rco-info-title display">{selCard.title}</span>
-                <span className="rco-info-type">{selCard.typeLabel}</span>
-              </div>
-              <RichText className="rco-info-desc" text={selCard.description} />
-              {selCard.edition && selCard.edition !== 'base' && (
-                <div className="rco-info-edition"><b>{EDITION_LABEL[selCard.edition]}</b> <RichText text={EDITION_TEXT[selCard.edition]} /></div>
-              )}
-              {selCard.footer && selCard.edition === undefined && <RichText className="rco-info-foot" text={selCard.footer} />}
-              <Button variant="gold" className="rco-info-buy" disabled={!!selError} onClick={() => selected != null && buy(selected)}>
-                {selError ? selError : <>{sel.kind === 'pack' ? 'Open' : 'Buy'} · {sel.price} <Icon name="influence" size={15} /></>}
-              </Button>
-            </>
-          ) : (
-            <div className="rco-info-hint">
-              <Ornament />
-              <p>Tap a card to inspect it · hold to zoom</p>
+      <section className="rco-pillarbox">
+        <PillarStrip levels={run.pillarLevels} focus={run.focus} />
+        <div className="rco-reforms" data-reforms title="Reforms enacted">
+          <Icon name="reform" size={14} /> {run.reforms.length}
+        </div>
+      </section>
+
+      <section className={`rco-info ${selCard ? 'is-on' : ''}`}>
+        {selCard && sel ? (
+          <>
+            <div className="rco-info-head">
+              <span className="rco-info-title display">{selCard.title}</span>
+              <span className="rco-info-type">{selCard.typeLabel}</span>
             </div>
-          )}
-        </div>
-        <div className="rco-foot">
-          <Button className="rco-reroll" onClick={reroll} disabled={!canReroll || sweeping}>
-            <Icon name="reroll" size={16} /> Reroll · {council.rerollCost} <Icon name="influence" size={13} />
-          </Button>
-          <Button variant="gold" className="rco-leave" onClick={leave}>
-            Next Chapter <Icon name="chevronRight" size={16} />
-          </Button>
-        </div>
-      </aside>
+            <RichText className="rco-info-desc" text={selCard.description} />
+            {selCard.edition && selCard.edition !== 'base' && (
+              <div className="rco-info-edition"><b>{EDITION_LABEL[selCard.edition]}</b> <RichText text={EDITION_TEXT[selCard.edition]} /></div>
+            )}
+            {selCard.footer && selCard.edition === undefined && <RichText className="rco-info-foot" text={selCard.footer} />}
+            <Button variant="gold" className="rco-info-buy" disabled={!!selError} onClick={() => selected != null && buy(selected)}>
+              {selError ? selError : <>{sel.kind === 'pack' ? 'Open' : 'Buy'} · {sel.price} <Icon name="influence" size={15} /></>}
+            </Button>
+          </>
+        ) : (
+          <div className="rco-info-hint">
+            <Ornament />
+            <p>Tap a card to inspect it · hold to zoom</p>
+          </div>
+        )}
+      </section>
+
+      <footer className="rco-foot">
+        <Button className="rco-reroll" onClick={reroll} disabled={!canReroll || sweeping}>
+          <Icon name="reroll" size={16} /> Reroll <span className="rco-cost num">{council.rerollCost}<Icon name="influence" size={12} /></span>
+        </Button>
+        <Button variant="gold" className="rco-leave" onClick={leave}>
+          Next Chapter <Icon name="chevronRight" size={16} />
+        </Button>
+      </footer>
 
       {council.pack && <PackOpen />}
       {zoomCrisis && run.crisis && <CardZoom card={crisisCard(run.crisis)} onClose={() => setZoomCrisis(false)} />}

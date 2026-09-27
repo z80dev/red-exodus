@@ -15,12 +15,14 @@ export function Panel({ className = '', children, style }: { className?: string;
   return <div className={`k-panel ${className}`} style={style}>{children}</div>;
 }
 
+/** Centered dialog over a dimmed backdrop. Portaled to <body> so ancestors' transforms/filters can't trap it. */
 export function Modal({ onClose, children, className = '' }: { onClose?: () => void; children: ReactNode; className?: string }) {
   useEscape(onClose);
-  return (
+  return createPortal(
     <div className="k-backdrop" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}>
       <div className={`k-panel k-modal ${className}`} role="dialog" aria-modal="true">{children}</div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

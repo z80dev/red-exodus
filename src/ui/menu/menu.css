@@ -26,3 +26,5 @@
 .ae-demo-game h2 { margin: 0 0 12px; font-family: var(--font-display); font-size: 22px; }
 .ae-demo-game p { font-size: 12px; color: var(--text-dim); line-height: 1.7; }
 .ae-demo-game-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Illustrated fallback stays out of the live diorama: never double-expose two worlds. */
+.ae-stage ~ .ae-main-menu .ae-menu-keyart { display: none; }

@@ -3,6 +3,7 @@ import { dirBetween, hexDistance, neighbors } from './hex';
 import { isCivilian, maxMoves, unitDef } from './units';
 import { BARBARIAN } from './types';
 import type { GameState, TileIdx, Unit } from './types';
+const MOVEMENT_EPSILON = 1e-9;
 
 interface MovementContext {
   planning: boolean;
@@ -171,7 +172,8 @@ function search(state: GameState, unit: Unit, target: TileIdx): SearchNode | nul
   while (heap.length) {
     const current = popSearch(heap)!;
     if (!current.active) continue;
-    if (current.remaining > 0 && current.remaining < movement && !context.friendlyLayer[current.tile]) {
+    if (current.tile === target) return current;
+    if (current.remaining > MOVEMENT_EPSILON && current.remaining < movement && !context.friendlyLayer[current.tile]) {
       const previous = states.get(current.tile)!;
       const turns = current.turns + 1;
       if (!previous.some((node) => node.active && node.turns <= turns && node.remaining >= movement)) {
@@ -188,14 +190,15 @@ function search(state: GameState, unit: Unit, target: TileIdx): SearchNode | nul
       if (!canEnter(context, next, target)) continue;
       let turns = current.turns;
       let remaining = current.remaining;
-      if (remaining <= 0) {
+      if (remaining <= MOVEMENT_EPSILON) {
         turns++;
         remaining = movement;
       }
-      if (remaining <= 0) continue;
+      if (remaining <= MOVEMENT_EPSILON) continue;
       const cost = movementCost(state, context, current.tile, next, remaining);
       if (!Number.isFinite(cost)) continue;
       remaining = Math.max(0, remaining - Math.min(cost, remaining));
+      if (remaining <= MOVEMENT_EPSILON) remaining = 0;
       if (context.friendlyLayer[next] && remaining <= 0) continue;
       const previous = states.get(next) ?? [];
       if (previous.some((node) => node.active && node.turns <= turns && node.remaining >= remaining)) continue;
@@ -270,7 +273,8 @@ export function reachableTiles(state: GameState, unit: Unit): { tile: TileIdx; c
       if (!canEnter(context, next, -1)) continue;
       const edge = movementCost(state, context, current.tile, next, budget - current.cost);
       if (!Number.isFinite(edge)) continue;
-      const cost = current.cost + Math.min(edge, budget - current.cost);
+      let cost = current.cost + Math.min(edge, budget - current.cost);
+      if (budget - cost <= MOVEMENT_EPSILON) cost = budget;
       if (!(cost > current.cost) || cost > budget) continue;
       if (context.friendlyLayer[next] && cost >= budget) continue;
       if (cost < (best.get(next) ?? Infinity)) {

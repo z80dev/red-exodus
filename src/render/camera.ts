@@ -380,7 +380,7 @@ export class CameraRig {
     const vfovPortrait = (2 * Math.atan(Math.tan(hfov / 2) / aspect) * 180) / Math.PI;
     this.camera.fov = aspect >= 1.2 ? 34 : Math.min(62, Math.max(34, vfovPortrait));
     this.camera.updateProjectionMatrix();
-    const k = aspect >= 1.2 ? 1 : 1 + 0.3 * Math.min(1, (1.2 - aspect) / 0.7);
+    const k = aspect >= 1.2 ? 1 : 1 + 0.15 * Math.min(1, (1.2 - aspect) / 0.7);
     const ratio = this.dist / this.minDist;
     this.aspectK = k;
     this.setZoomLimits(this.baseMinDist, this.baseMaxDist);

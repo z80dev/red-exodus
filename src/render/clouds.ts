@@ -1,9 +1,14 @@
-// Fog of war clouds: two drifting fbm layers over unexplored tiles (and beyond the map edge). Coverage is
-// sampled at the ground point along the view ray so the cloud edge lines up with the terrain's fog edge,
-// while the layer heights give parallax. Self-shading from the sun direction fakes volume.
+// Fog of war clouds: stacked "shell" layers sampling one drifting 3D-ish density field. Higher shells only
+// cover the thickest crowns and are lit brighter, lower shells fill the valleys in cool shadow — cheap
+// cumulus volume with real parallax. Coverage is taken from the ground point along the view ray so the
+// cloud edge lines up with the terrain's fog edge. Shells discard immediately over explored ground.
 import { DoubleSide, Group, Mesh, PlaneGeometry, ShaderMaterial } from 'three';
 import { GLSL_NOISE } from './noise';
 import { GLSL_TILES, U } from './shaders';
+
+export const CLOUD_SHELLS = 5;
+const BASE_Y = 0.85;
+const SHELL_STEP = 0.14;
 
 const VERT = /* glsl */ `
 varying vec3 vWorld;
@@ -13,10 +18,8 @@ void main() {
   gl_Position = projectionMatrix * viewMatrix * wp;
 }`;
 
-function frag(layer: number): string {
-  const scale = layer === 0 ? 0.2 : 0.12;
-  const speed = layer === 0 ? 0.045 : 0.07;
-  const opacity = layer === 0 ? 1.0 : 0.55;
+function frag(k: number): string {
+  const h = k / (CLOUD_SHELLS - 1);
   return /* glsl */ `
   varying vec3 vWorld;
   uniform vec3 uCloud;
@@ -24,34 +27,31 @@ function frag(layer: number): string {
   uniform vec3 uSunDir;
   ${GLSL_NOISE}
   ${GLSL_TILES}
+  const float H = ${h.toFixed(3)};
   void main() {
     vec3 V = normalize(vWorld - cameraPosition);
-    float groundY = 0.15;
-    vec2 gp = vWorld.xz + V.xz * ((groundY - vWorld.y) / min(V.y, -0.05));
-    vec2 drift = vec2(uTime * ${speed.toFixed(3)}, uTime * ${(speed * 0.6).toFixed(3)});
+    vec2 gp = vWorld.xz + V.xz * ((0.15 - vWorld.y) / min(V.y, -0.05));
+    vec2 drift = vec2(uTime * 0.05, uTime * 0.03);
     float warp = (aeNoise(gp * 1.3 + drift * 3.0) - 0.5) * 0.45;
-    float explored = aeFogAt(gp + vec2(warp, -warp) * 0.8).x;
-    float cover = 1.0 - explored;
-    // explored ground: no cloud work at all (most of the screen mid-game)
+    float cover = 1.0 - aeFogAt(gp + vec2(warp, -warp) * 0.8).x;
     if (cover < 0.03) discard;
-    vec2 p = vWorld.xz * ${scale.toFixed(3)} + drift;
+    vec2 p = vWorld.xz * 0.21 + drift;
     float n = aeFbm(p);
+    float puff = aeNoise(p * 5.5 - drift * 2.0) * 0.65 + aeNoise(p * 12.0 + drift) * 0.35;
+    float D = cover * 0.62 + (n - 0.5) * 2.3 + (puff - 0.5) * 0.3 + warp * 0.25;
+    float thr = 0.18 + H * 0.62;
+    float a = smoothstep(thr - 0.03, thr + 0.1, D);
+    ${k === 0 ? 'a = max(a, smoothstep(0.9, 1.0, cover) * 0.98);' : ''}
+    if (a < 0.01) discard;
+    // lighting: height in the stack + sun-facing slope of the density field
     vec2 sd = normalize(uSunDir.xz);
-    float n2 = aeFbm(p + sd * 0.09);
-    float puff = aeNoise(p * 6.0 - drift * 2.0) * 0.6 + aeNoise(p * 13.0 + 3.1) * 0.4;
-    float body = n + (puff - 0.5) * 0.12;
-    float a = smoothstep(0.42, 0.54, cover + (body - 0.5) * 0.8 + warp * 0.4);
-    ${layer === 0 ? 'a = max(a, smoothstep(0.93, 1.0, cover) * 0.98);' : 'a *= smoothstep(0.5, 0.62, body + cover * 0.15);'}
-    // soft volume: thick crowns bright, valleys & lee flanks cool; a crisp-ish terminator for the stylized look
-    float thick = smoothstep(0.3, 0.72, body);
-    float lee = clamp((body - n2) * 9.0, -1.0, 1.0);
-    float light = clamp(0.42 + thick * 0.45 + lee * 0.35, 0.0, 1.0);
-    light = mix(light, smoothstep(0.35, 0.6, light), 0.5);
-    vec3 shadowC = mix(uCloudShadow, uCloud, 0.3);
-    vec3 col = mix(shadowC, uCloud * 1.04, light);
-    float rim = smoothstep(0.1, 0.5, a) * (1.0 - smoothstep(0.5, 0.95, a));
-    col = mix(col, uCloud * 1.1, rim * 0.3);
-    gl_FragColor = vec4(col, a * ${opacity.toFixed(2)});
+    float n2 = aeFbm(p + sd * 0.1);
+    float lee = clamp((n - n2) * 10.0, -1.0, 1.0);
+    float edge = 1.0 - smoothstep(0.0, 0.12, D - thr);
+    float light = 0.12 + H * 0.8 + lee * 0.22 - edge * (0.2 - H * 0.35);
+    vec3 shadowC = uCloudShadow * vec3(0.78, 0.82, 0.92);
+    vec3 col = mix(shadowC, uCloud * 1.05, clamp(light, 0.0, 1.0));
+    gl_FragColor = vec4(col, a);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
   }`;
@@ -60,22 +60,29 @@ function frag(layer: number): string {
 export function createClouds(cx: number, cz: number, size: number): Group {
   const g = new Group();
   g.name = 'clouds';
-  for (let layer = 0; layer < 2; layer++) {
+  for (let k = 0; k < CLOUD_SHELLS; k++) {
     const geo = new PlaneGeometry(size, size, 1, 1);
     geo.rotateX(-Math.PI / 2);
     const mat = new ShaderMaterial({
       vertexShader: VERT,
-      fragmentShader: frag(layer),
+      fragmentShader: frag(k),
       uniforms: U as unknown as Record<string, { value: unknown }>,
       transparent: true,
       depthWrite: false,
       side: DoubleSide,
     });
     const m = new Mesh(geo, mat);
-    m.position.set(cx, layer === 0 ? 1.0 : 1.45, cz);
-    m.renderOrder = 10 + layer;
+    m.position.set(cx, BASE_Y + k * SHELL_STEP, cz);
+    m.renderOrder = 10 + k;
     m.frustumCulled = false;
     g.add(m);
   }
   return g;
+}
+
+/** battery saver: keep every other shell */
+export function setCloudDetail(g: Group, low: boolean): void {
+  g.children.forEach((m, k) => {
+    m.visible = !low || k % 2 === 0;
+  });
 }

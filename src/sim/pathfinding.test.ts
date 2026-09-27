@@ -94,6 +94,7 @@ describe('movement and visibility', () => {
     const unit = makeUnit(17);
     state.map.tiles[18].terrain = 'coast';
     expect(moveCost(state, unit, 17, 18)).toBe(Infinity);
+    expect(moveCost(state, unit, 18, 17)).toBe(Infinity);
     UNITS.test_unit.class = 'civilian';
     expect(moveCost(state, unit, 17, 18)).toBe(Infinity);
     state.players[0].techs = ['sailing'];
@@ -109,11 +110,40 @@ describe('movement and visibility', () => {
     const state = makeState(5, 1);
     const unit = makeUnit(0);
     state.map.tiles[0].elevation = 'flat';
-    expect(findPath(state, unit, 4)).toEqual([1, 2, 3, 4]);
+    expect(moveCost(state, unit, 0, 1)).toBe(1);
     expect(turnsToReach(state, unit, 4)).toBe(2);
     unit.moves = 0.5;
     expect(reachableTiles(state, unit)).toContainEqual({ tile: 1, cost: 0.5 });
     expect(turnsToReach(state, unit, 1)).toBe(1);
+  });
+  it('waits for a fresh turn before transiting a friendly unit when current movement is insufficient', () => {
+    const state = makeState(5, 1);
+    const unit = makeUnit(0, 0.5);
+    state.units[unit.id] = unit;
+    state.units[2] = { ...makeUnit(1), id: 2 };
+    expect(findPath(state, unit, 2)).toEqual([1, 2]);
+    expect(turnsToReach(state, unit, 2)).toBe(2);
+    expect(reachableTiles(state, unit)).toEqual([]);
+  });
+
+  it('prefers a longer road route over a shorter rough route when it arrives sooner', () => {
+    const state = makeState(9, 7);
+    const unit = makeUnit(28);
+    const target = 34;
+    for (let col = 2; col <= 7; col++) state.map.tiles[27 + col].terrain = 'plains';
+    for (let col = 2; col <= 6; col++) state.map.tiles[36 + col].road = true;
+    const path = findPath(state, unit, target)!;
+    expect(path).toContain(38);
+    expect(turnsToReach(state, unit, target)).toBe(2);
+  });
+  it('does not leak a road-cost rounding remainder into a seventh tile', () => {
+    const state = makeState(8, 1);
+    const unit = makeUnit(0);
+    for (const tile of state.map.tiles) tile.road = true;
+    const reachable = reachableTiles(state, unit);
+    expect(reachable).toContainEqual({ tile: 6, cost: 2 });
+    expect(reachable.some(({ tile }) => tile === 7)).toBe(false);
+    expect(turnsToReach(state, unit, 7)).toBe(2);
   });
   it('applies Civ5 zone of control unless the unit ignores it', () => {
     const state = makeState();

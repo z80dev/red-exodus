@@ -113,7 +113,8 @@ export default function RendererDemo() {
       {
         onTileTap: (idx: TileIdx) => {
           const sel = selRef.current;
-          const mine = Object.values(state.units).find((u) => u.tile === idx && u.owner === HUMAN);
+          const onTile = Object.values(state.units).filter((u) => u.tile === idx && u.owner === HUMAN);
+          const mine = onTile.find((u) => u.type !== 'settler') ?? onTile[0];
           if (sel !== null && hiRef.current.attack.includes(idx)) {
             const res = applyAction(state, { type: 'attack', unitId: sel, target: idx });
             setLog(res.ok ? `attack: ${res.events.map((e) => e.type).join(', ')}` : `attack failed: ${res.error}`);

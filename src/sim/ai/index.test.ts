@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { LEADERS } from '../../content';
+import { canFoundCity } from '../cities';
 import { applyAction, createGame } from '../engine';
 import { autoplayNextAction, aiAcceptsPeace } from './index';
 import type { Action } from '../types';
@@ -29,15 +30,21 @@ describe('rival AI and autoplay', () => {
     state.players[1].counters['war:0'] = 3;
     expect(aiAcceptsPeace(state, 1, 0)).toBe(true);
   });
-  it('never reissues a blocked move or a fortified no-op across multi-turn autoplay', () => {
+  it('plans without mutating state or repeating blocked actions over multiple turns', () => {
     const { state } = createGame({ seed: 'SMOKE-1', leaderId: Object.keys(LEADERS)[0], ascension: 0,
       mapSize: 'standard', rivals: 3, tutorial: false, daily: false });
     let prior = '';
     let priorTurn = -1;
     let repeats = 0;
     let actions = 0;
+    let plannedSettler = false;
     while (state.turn < 20 && state.run.phase !== 'defeat' && actions++ < 250) {
+      if (Object.values(state.cities).some(c => c.owner === 0) &&
+        Object.values(state.units).some(u => u.owner === 0 && u.type === 'settler' && !!canFoundCity(state, 0, u.tile)))
+        plannedSettler = true;
+      const snapshot = structuredClone(state);
       const action: Action = autoplayNextAction(state) ?? { type: 'endTurn' };
+      expect(state).toEqual(snapshot);
       const key = JSON.stringify(action);
       repeats = key === prior && state.turn === priorTurn ? repeats + 1 : 0;
       expect(repeats, `Repeated ${key} on turn ${state.turn}`).toBeLessThan(2);
@@ -47,6 +54,7 @@ describe('rival AI and autoplay', () => {
       expect(result.ok, `${key}: ${result.error ?? ''}`).toBe(true);
     }
     expect(state.turn).toBe(20);
+    expect(plannedSettler).toBe(true);
   });
 
 });

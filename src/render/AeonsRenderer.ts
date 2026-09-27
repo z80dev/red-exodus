@@ -15,7 +15,7 @@ import { HUMAN } from '../sim/types';
 import { maxMoves } from '../sim/units';
 import { ModelLibrary } from './assets/models';
 import { CameraRig, ZOOM_PRESETS } from './camera';
-import { createClouds } from './clouds';
+import { createClouds, setCloudDetail } from './clouds';
 import { Director } from './director';
 import { Fx } from './fx';
 import { WATER_TERRAIN, colX, mapBounds, rowZ, worldTile } from './hexgeo';
@@ -228,8 +228,7 @@ export class AeonsRenderer implements Renderer {
       m.defines = d;
       m.needsUpdate = true;
     }
-    const upper = this.clouds?.children[1];
-    if (upper) upper.visible = !low;
+    if (this.clouds) setCloudDetail(this.clouds, low);
   }
 
   /** profile `fastAnimations` */

@@ -102,6 +102,31 @@ describe('units', () => {
     expect(state.units[enemy.id]).toBe(enemy);
   });
 
+  it('stops after exactly six one-third-cost road tiles on two moves', () => {
+    const { state, unit, events } = fixture();
+    const from = 8 * state.map.width + 5;
+    for (const other of Object.values(state.units)) if (other.id !== unit.id) delete state.units[other.id];
+    for (let step = 0; step <= 7; step++) {
+      const tile = state.map.tiles[from + step];
+      tile.terrain = 'grassland';
+      tile.elevation = 'flat';
+      tile.feature = null;
+      tile.road = true;
+      tile.riverEdges = 0;
+      tile.camp = false;
+      tile.ruin = false;
+      tile.naturalWonder = null;
+      tile.cityId = null;
+      state.players[0].vis[tile.idx] = 2;
+    }
+    unit.tile = from;
+    unit.moves = 2;
+    expect(moveUnitTo(state, unit, from + 7, ev => events.push(ev))).toBeNull();
+    expect(unit.tile).toBe(from + 6);
+    expect(unit.moves).toBe(0);
+    expect(unit.order).toEqual({ kind: 'goto', target: from + 7 });
+  });
+
   it('releases a queued move when its route becomes impassable', () => {
     const { state, unit, target, events } = fixture();
     unit.order = { kind: 'goto', target };

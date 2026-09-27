@@ -53,7 +53,8 @@ export function GameScreen() {
         <div className="hud__doctrines"><DoctrineBar compact /></div>
       </div>
       <SideRail />
-      <div className="hud__center"><ModeBanner /><TurnBanner /></div>
+      <div className="hud__center"><ModeBanner /></div>
+      <TurnBanner />
       <div className="hud__dock">
         <div className="hud__dock-row">
           <div className="hud__edicts"><EdictTray compact /></div>

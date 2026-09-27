@@ -8,7 +8,7 @@ import {
 import type { GameMap, Tile } from '../sim/types';
 import { WATER_TERRAIN, colX, hash01, mapBounds, rowZ } from './hexgeo';
 import { fbm, snoise } from './noise';
-import { GRAVEL, ROCK, ROCK_DARK, SAND, SEABED, WET_SAND, featureColor, terrainColor } from './palette';
+import { GRAVEL, ROCK, ROCK_DARK, SAND, SEABED, SNOW_SHADE, WET_SAND, featureColor, terrainColor } from './palette';
 import { type RiverSeg, segDist } from './rivers';
 import { patchTerrainMaterial } from './shaders';
 
@@ -52,6 +52,8 @@ function tileColor(t: Tile, out: Color): Color {
     return out;
   }
   out.copy(terrainColor(t.terrain));
+  // snow reads as cloud if pure white: cool it down so relief shading carries
+  if (t.terrain === 'snow') out.lerp(SNOW_SHADE, 0.45);
   if (t.feature && t.feature !== 'ice' && t.feature !== 'reef') out.lerp(featureColor(t.feature), 0.72);
   if (t.elevation === 'hills') out.lerp(ROCK, 0.12).multiplyScalar(0.94);
   if (t.elevation === 'mountain') out.lerp(ROCK, 0.7);

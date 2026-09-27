@@ -84,8 +84,8 @@ export function LegacyMeter() {
             <b>{fmt(shown, true)}</b>
             <span className="lm__target">/ {fmt(target, true)}</span>
           </span>
-          {passed && <span className="lm__badge">{triumph ? 'Triumph' : `×${ratio.toFixed(ratio >= 10 ? 0 : 1)}`}</span>}
         </span>
+        {passed && <span className="lm__badge">{triumph ? 'Triumph' : `×${ratio.toFixed(ratio >= 10 ? 0 : 1)}`}</span>}
         {burst > 0 && <span className="lm__burst" key={`burst${burst}`} aria-hidden />}
       </button>
       {anchor && (

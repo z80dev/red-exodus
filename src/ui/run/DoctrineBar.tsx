@@ -21,6 +21,8 @@ export interface DoctrineBarProps {
   cardWidth?: number | string;
   /** show a sell zone while dragging + Sell in the detail view (Council) */
   sellable?: boolean;
+  /** "used/slots" badge next to the roomy bar (default true when not compact) */
+  slotsBadge?: boolean;
   className?: string;
   style?: CSSProperties;
 }
@@ -41,7 +43,7 @@ interface DragState {
 
 const DRAG_START_PX = 8;
 
-export function DoctrineBar({ compact = true, cardWidth, sellable = false, className = '', style }: DoctrineBarProps) {
+export function DoctrineBar({ compact = true, cardWidth, sellable = false, slotsBadge = !compact, className = '', style }: DoctrineBarProps) {
   const run = useSim((s) => s.run);
   const phase = run?.phase;
   const doctrines = run?.doctrines ?? [];
@@ -214,7 +216,7 @@ export function DoctrineBar({ compact = true, cardWidth, sellable = false, class
           </div>
         ))}
       </div>
-      {!compact && (
+      {slotsBadge && (
         <div className="rdb-meta num" aria-label="Doctrine slots">
           <Icon name="doctrine" size={13} /> {used}/{slots}
         </div>

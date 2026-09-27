@@ -68,19 +68,20 @@
 @keyframes rco-buy-in { from { transform: translate(-50%, -12px) scale(0.6); opacity: 0 } to { transform: translateX(-50%); opacity: 1 } }
 
 /* owned */
-.rco-owned { display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 8px; border-radius: var(--radius-lg); background: rgba(8,11,18,0.55); border: 1px solid rgba(234,199,102,0.14); }
-.rco-owned-label { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold-400); }
-.rco-owned-label small { font-family: var(--font-ui); letter-spacing: 0.02em; text-transform: none; color: var(--text-faint); font-size: 10.5px; margin-left: 6px; }
-.rco-owned-docs .rdb { display: flex; }
-.rco-owned-misc { display: flex; gap: 14px; align-items: flex-start; }
-.rco-owned-pillars { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.rco-owned-pillars .ro-pillar { height: 26px; padding: 0 6px; font-size: 12px; }
-.rco-reforms { display: inline-flex; gap: 5px; align-items: center; align-self: flex-start; font-size: 11.5px; font-weight: 700; color: #9de0d6; padding: 3px 9px; border-radius: 99px; border: 1px solid rgba(95,208,192,0.4); background: rgba(20,60,60,0.35); }
+.rco-owned { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 14px; padding: 6px 10px 8px; border-radius: var(--radius-lg); background: rgba(8,11,18,0.55); border: 1px solid rgba(234,199,102,0.14); }
+.rco-owned-docs { flex: 1 1 auto; min-width: 0; }
+.rco-owned-edicts { flex: none; }
+.rco-owned-label { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold-400); display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.rco-owned-label .num { font-family: var(--font-ui); letter-spacing: 0; color: var(--text); font-weight: 800; }
+.rco-owned-label small { font-family: var(--font-ui); letter-spacing: 0.02em; text-transform: none; color: var(--text-faint); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; }
+.rco-owned .rdb-row { padding-top: 4px; }
+.rco-pillarbox { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.rco-pillarbox .ro-pillar { height: 28px; padding: 0 7px; font-size: 12px; }
+.rco-reforms { display: inline-flex; gap: 4px; align-items: center; height: 28px; font-size: 12px; font-weight: 800; color: #9de0d6; padding: 0 9px; border-radius: 99px; border: 1px solid rgba(95,208,192,0.4); background: rgba(20,60,60,0.35); }
 
-/* side: info + actions */
-.rco-side { display: flex; flex-direction: column; gap: 8px; padding-bottom: calc(10px + var(--safe-bottom)); }
+/* info + actions */
 .rco-info {
-  min-height: 92px; padding: 10px 12px; border-radius: var(--radius); display: flex; flex-direction: column; gap: 5px;
+  min-height: 84px; padding: 9px 12px; border-radius: var(--radius); display: flex; flex-direction: column; gap: 4px;
   background: var(--glass); border: 1px solid var(--glass-border); box-shadow: var(--shadow-glow);
 }
 .rco-info.is-on { animation: k-rise-soft 240ms var(--ease-out) both; }
@@ -90,38 +91,48 @@
 .rco-info-desc { font-size: 13.5px; line-height: 1.35; }
 .rco-info-edition, .rco-info-foot { font-size: 12.5px; color: var(--gold-300); }
 .rco-info-edition b { color: #fff; }
-.rco-info-buy { align-self: stretch; margin-top: 2px; }
+.rco-info-buy { align-self: stretch; margin-top: 2px; min-height: 40px; }
 .rco-info-hint { margin: auto; text-align: center; color: var(--text-faint); font-size: 12.5px; }
 .rco-info-hint p { margin: 4px 0 0; }
 .rco-info-hint .ro-ornament { width: 180px; opacity: 0.6; }
-.rco-foot { display: flex; gap: 10px; }
-.rco-reroll { flex: 1; }
-.rco-leave { flex: 1.4; font-size: 16px; }
+.rco-foot { display: flex; gap: 10px; padding-bottom: calc(10px + var(--safe-bottom)); }
+.rco-reroll { flex: 1; white-space: nowrap; }
+.rco-cost { display: inline-flex; align-items: center; gap: 2px; padding: 1px 7px; border-radius: 99px; background: rgba(178,141,255,0.18); color: #e6dbff; font-family: var(--font-ui); font-weight: 800; }
+.rco-leave { flex: 1.4; font-size: 16px; white-space: nowrap; }
+
+/* portrait order: header, next, owned, pillars, shop, info, actions */
+.rco-head { order: 0; } .rco-next { order: 1; } .rco-owned { order: 2; } .rco-pillarbox { order: 3; }
+.rco-shop { order: 4; } .rco-info { order: 5; } .rco-foot { order: 6; }
+.rco { --rco-card-w: clamp(76px, min(26vw, calc((100dvh - 560px) / 2.8)), 116px); --rco-doc-w: 44px; --rco-edict-w: 38px; gap: 7px; }
+.rco-shop .rco-group-label { display: none; }
+.rco-shop .rco-group + .rco-group { border-top: 1px solid rgba(234,199,102,0.12); }
+.rco-row { padding: 8px 0 14px; }
 
 @media (max-height: 760px) and (orientation: portrait) {
-  .rco-info { min-height: 76px; padding: 8px 10px; }
+  .rco-info { min-height: 72px; padding: 7px 10px; }
   .rco-info-desc { font-size: 12.5px; }
 }
 
 /* landscape phones */
 @media (orientation: landscape) and (max-height: 560px) {
   .rco {
-    --rco-card-w: min(80px, calc((100dvh - 262px) / 1.4));
-    --rco-doc-w: 46px; --rco-edict-w: 38px;
-    display: grid; grid-template-columns: minmax(0, 1fr) 250px; grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: 'head next' 'shop side' 'owned side'; gap: 4px 14px;
+    --rco-card-w: min(80px, calc((100dvh - 250px) / 1.4));
+    --rco-doc-w: 44px; --rco-edict-w: 38px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 250px; grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'head next' 'shop info' 'shop pillars' 'owned foot'; gap: 5px 14px;
   }
   .rco-head { grid-area: head; padding-top: 6px; }
   .rco-next { grid-area: next; align-self: end; padding: 4px 10px; min-height: 30px; font-size: 12px; }
   .rco-shop { grid-area: shop; flex-direction: row; justify-content: center; gap: 18px; }
+  .rco-shop .rco-group-label { display: block; }
+  .rco-shop .rco-group + .rco-group { border-top: 0; }
   .rco-row { padding: 6px 0 12px; gap: 8px; }
-  .rco-owned { grid-area: owned; flex-direction: row; gap: 16px; padding: 4px 8px 6px; margin-bottom: calc(6px + var(--safe-bottom)); }
-  .rco-owned-misc { gap: 10px; }
-  .rco-owned-pillars .ro-pillars { flex-wrap: nowrap; }
-  .rco-owned-pillars .ro-pillar { height: 24px; padding: 0 5px; }
-  .rco-side { grid-area: side; padding-bottom: calc(6px + var(--safe-bottom)); justify-content: flex-end; }
-  .rco-info { flex: 1; min-height: 0; overflow: auto; }
-  .rco-foot { flex-direction: column; gap: 6px; }
+  .rco-owned { grid-area: owned; flex-wrap: nowrap; padding: 3px 8px 5px; margin-bottom: calc(6px + var(--safe-bottom)); }
+  .rco-pillarbox { grid-area: pillars; gap: 4px; }
+  .rco-pillarbox .ro-pillar { height: 24px; padding: 0 5px; }
+  .rco-reforms { height: 24px; }
+  .rco-info { grid-area: info; min-height: 0; overflow: auto; }
+  .rco-foot { grid-area: foot; flex-direction: column; gap: 6px; align-self: end; padding-bottom: calc(6px + var(--safe-bottom)); }
   .rco-foot .k-btn { min-height: 38px; }
   .rco-title { font-size: 22px; }
   .rco-head-right { flex-direction: row; align-items: center; gap: 10px; }
@@ -130,18 +141,20 @@
 /* desktop */
 @media (min-width: 1000px) and (min-height: 700px) {
   .rco {
-    --rco-card-w: 150px; --rco-doc-w: 88px; --rco-edict-w: 64px;
-    display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto auto minmax(0, 1fr) auto;
-    grid-template-areas: 'head head' 'next next' 'shop side' 'owned side'; gap: 12px 28px;
+    --rco-card-w: min(150px, calc((100dvh - 420px) / 2.9)); --rco-doc-w: 88px; --rco-edict-w: 64px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas: 'head head' 'next next' 'shop info' 'owned pillars' 'owned foot'; gap: 12px 28px;
     padding: 18px max(32px, calc((100vw - 1320px) / 2)) 24px;
   }
   .rco-head { grid-area: head; }
   .rco-next { grid-area: next; justify-self: start; }
   .rco-shop { grid-area: shop; }
-  .rco-owned { grid-area: owned; flex-direction: row; justify-content: space-between; }
-  .rco-side { grid-area: side; justify-content: flex-end; }
-  .rco-info { flex: 1; max-height: 340px; }
+  .rco-shop .rco-group-label { display: block; }
+  .rco-owned { grid-area: owned; }
+  .rco-pillarbox { grid-area: pillars; justify-content: flex-start; }
+  .rco-info { grid-area: info; align-self: center; min-height: 220px; }
   .rco-info-desc { font-size: 15px; }
+  .rco-foot { grid-area: foot; }
   .rco-title { font-size: 46px; }
 }
 

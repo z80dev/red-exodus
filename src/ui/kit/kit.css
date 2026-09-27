@@ -54,7 +54,7 @@
 @media (orientation: landscape) and (min-width: 640px) {
   .k-sheet-scrim { background: linear-gradient(270deg, rgba(4,6,10,0.4), rgba(4,6,10,0) 55%); }
   .k-sheet {
-    left: auto; top: calc(8px + var(--safe-top)); bottom: calc(8px + var(--safe-bottom)); right: calc(8px + var(--safe-right));
+    left: auto; top: calc(8px + var(--safe-top) + var(--sheet-top-offset, 0px)); bottom: calc(8px + var(--safe-bottom)); right: calc(8px + var(--safe-right) + var(--sheet-right-offset, 0px));
     width: min(440px, 56vw); max-height: none; border-radius: var(--radius-lg); border-bottom: 1px solid var(--glass-border);
     padding: 12px 16px 16px; animation: k-slide 300ms var(--ease-out);
   }

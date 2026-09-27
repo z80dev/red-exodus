@@ -10,6 +10,8 @@ import type { Action, AiPersonality, City, Emit, GameState, PlayerId, Production
 import { BARBARIAN, HUMAN, PILLARS } from '../types';
 import { isCivilian, militaryAt, createUnit, unitDef } from '../units';
 import { applyPlayerAction } from '../engine';
+// Planning is a read operation for the human: cache only outside serialized GameState.
+const humanSitePlans = new WeakMap<GameState, Record<string, number>>();
 
 function ownCities(state: GameState, pid: PlayerId): City[] { return Object.values(state.cities).filter(c => c.owner === pid); }
 function ownUnits(state: GameState, pid: PlayerId): Unit[] { return Object.values(state.units).filter(u => u.owner === pid); }
@@ -46,8 +48,15 @@ function siteValue(state: GameState, pid: PlayerId, tile: TileIdx): number {
 function bestSite(state: GameState, pid: PlayerId, settler: Unit): TileIdx | null {
   const player = state.players.find(p => p.id === pid)!;
   const visibility = player.vis;
-  // Strategic targets survive saves and avoid repeating A* for each tile of the same settler's turn.
-  const memory = player.ai?.memory ?? player.counters;
+  // Rival plans are written during endTurn dispatch; human autoplay must not mutate GameState.
+  let memory = player.ai?.memory;
+  if (!memory) {
+    memory = humanSitePlans.get(state);
+    if (!memory) {
+      memory = {};
+      humanSitePlans.set(state, memory);
+    }
+  }
   const key = `site:${settler.id}`;
   const prior = memory[key];
   if (memory[`${key}:turn`] === state.turn && prior !== undefined && !canFoundCity(state, pid, prior))

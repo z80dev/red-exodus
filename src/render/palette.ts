@@ -30,6 +30,7 @@ export const ROCK = new Color('#8a8177');
 export const ROCK_DARK = new Color('#6e665e');
 export const SEABED = new Color('#b9a878');
 export const GRAVEL = new Color('#a39a86');
+export const SNOW_SHADE = new Color('#b9cad8');
 
 export function terrainColor(id: TerrainId): Color {
   return new Color(TERRAINS[id]?.color ?? TERRAIN_FALLBACK[id] ?? '#888888');

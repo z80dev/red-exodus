@@ -150,6 +150,7 @@ export function moveUnitTo(state: GameState, unit: Unit, target: TileIdx, emit: 
         blocked = true; break;
       }
       remaining = Math.max(0, remaining - cost);
+      if (remaining <= 1e-9) remaining = 0;
       if (!occupied) break;
       from = next;
     }
