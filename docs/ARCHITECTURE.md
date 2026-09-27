@@ -121,6 +121,15 @@ sun moon star river wave mountain tree wheat coin scroll flask lyre laurel crown
 horse flame eye key hourglass skull compass gear bolt feather hand book temple pyramid mask chalice serpent owl lion eagle.
 `art.hue` 0–360 tints the card background.
 
+## Illustrated art (image models via Nous Portal)
+Generated raster art MUST use Nous Portal (managed FAL gateway through the local Hermes install):
+`python3 scripts/nous_image.py --out <png> --aspect square|portrait|landscape [--model <id>] [--ref <png>] "<prompt>"`
+or `--batch jobs.json --jobs 4`. Prompts/job files live in `art/gen/*.json` (committed); raw PNGs in `art/gen/out/`
+(gitignored); optimized WebP ships in `public/art/<kind>/<id>.webp` and is listed in `src/ui/art/artManifest.ts`
+(ArtGen owns). Kinds: `leaders` `doctrines` `edicts` `crises` `omens` `reforms` `eras` `key` (menu/victory/defeat).
+UI shows the illustration when the manifest has the id, otherwise the procedural SVG `CardArt`.
+Everything else visual is code (SVG/CSS/shaders) or Blender.
+
 ## Renderer contract
 `src/render/GameCanvas.tsx` mounts ONE full-screen canvas at App level (behind all screens), creates the Renderer
 (`game/bridge.ts` interface), calls `setRenderer`, subscribes `bus.onBatch` → `renderer.play(events, state)`, and
