@@ -1,0 +1,258 @@
+// THE COUNCIL (shop). Items are dealt face-down and flipped; tap to inspect, Buy flies the card to where it
+// lives; reroll sweeps and re-deals; drag doctrines to reorder or onto the sell zone; packs open in PackOpen.
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { useGame, useSim } from '../../game/store';
+import { chronicleTarget, councilBuyError } from '../../sim/roguelite';
+import type { ShopItem } from '../../sim/types';
+import { Button } from '../kit';
+import { Icon } from '../icons/Icon';
+import { RichText } from '../icons/RichText';
+import { toast } from '../hud/toast';
+import { Card, CardZoom } from './Card';
+import { crisisCard, EDITION_LABEL, EDITION_TEXT, shopItemCard, shopItemKey } from './cards';
+import { DoctrineBar } from './DoctrineBar';
+import { EdictTray } from './EdictTray';
+import { floatAt, shake, snapshotEl } from './fx';
+import { landPurchase, runBefore } from './landing';
+import { PackOpen } from './PackOpen';
+import { Hearts, InfluencePill, Ornament, PillarStrip } from './parts';
+import { act, chapterTitle, eraTitle, fmt, haptic, nextChapter, roman, sfx, uiSettings } from './runUtil';
+import './council.css';
+
+const SECTION_OF: Record<ShopItem['kind'], 'offer' | 'pack'> = { doctrine: 'offer', edict: 'offer', scroll: 'offer', pack: 'pack', reform: 'pack' };
+
+export function Council() {
+  const run = useSim((s) => s.run);
+  const state = useGame.getState().state;
+  const council = run?.council ?? null;
+  const [selected, setSelected] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(0);
+  const [sweeping, setSweeping] = useState(false);
+  const [zoomCrisis, setZoomCrisis] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const shopRef = useRef<HTMLDivElement>(null);
+  const fast = uiSettings().fastAnimations;
+  const dealKey = council ? council.rerolls : 0;
+  const itemCount = council?.items.length ?? 0;
+
+  // deal: flip items in one by one with rising card sounds
+  useEffect(() => {
+    setRevealed(0);
+    setSelected(null);
+    const step = fast ? 70 : 130;
+    const timers: number[] = [];
+    for (let i = 0; i < itemCount; i++) {
+      timers.push(window.setTimeout(() => sfx('cardDeal', { pitch: 0.95 + i * 0.05, volume: 0.8 }), 60 + i * step));
+      timers.push(window.setTimeout(() => {
+        setRevealed(i + 1);
+        sfx('cardFlip', { pitch: 1 + i * 0.04, volume: 0.6 });
+      }, 340 + i * step));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [dealKey, itemCount, fast]);
+
+  useEffect(() => { sfx('open'); }, []);
+
+  const next = run ? nextChapter(run.era, run.chapter) : null;
+  const nextTarget = useMemo(() => {
+    if (!state || !next) return 0;
+    try { return chronicleTarget(state, next.era, next.chapter); } catch { return 0; }
+  }, [state, next?.era, next?.chapter]);
+
+  if (!run || !council || !state || !next) return null;
+  const items = council.items;
+  const errors = items.map((it, i) => {
+    if (!it) return null;
+    try { return councilBuyError(state, i); } catch { return run.influence < it.price ? `Need ${it.price - run.influence} more influence` : null; }
+  });
+  const sel = selected != null ? items[selected] ?? null : null;
+  const selCard = sel ? shopItemCard(sel, state) : null;
+  const selError = selected != null ? errors[selected] : null;
+  const canReroll = run.influence >= council.rerollCost;
+  const nextIsCrisis = next.chapter === 2 && next.era === run.era && !!run.crisis;
+
+  const buy = (slot: number) => {
+    const item = items[slot];
+    if (!item) return;
+    const wrap = shopRef.current?.querySelector<HTMLElement>(`[data-slot="${slot}"]`);
+    const cardEl = wrap?.querySelector<HTMLElement>('.rc') ?? null;
+    const err = errors[slot];
+    if (err) {
+      sfx('error');
+      haptic(30);
+      shake(cardEl, 5, 300);
+      toast(err, 'bad');
+      return;
+    }
+    const snap = cardEl && item.kind !== 'pack' ? snapshotEl(cardEl) : null;
+    const before = runBefore(run);
+    const res = act({ type: 'councilBuy', slot });
+    if (!res.ok) return;
+    sfx('buy');
+    haptic([10, 25, 15]);
+    floatAt(rootRef.current?.querySelector('.rco-head .ro-influence') ?? null, `−${item.price} ◈`, { tone: 'influence', size: 18, rise: 30, dy: 30 });
+    setSelected(null);
+    const live = useGame.getState().state;
+    if (live && item.kind !== 'pack' && rootRef.current) void landPurchase(snap, item, before, live.run, res.events, rootRef.current);
+    if (item.kind === 'pack') sfx('packOpen', { volume: 0.5 });
+  };
+
+  const reroll = () => {
+    if (!canReroll) {
+      sfx('error');
+      toast(`Rerolling costs ${council.rerollCost} influence`, 'bad');
+      return;
+    }
+    setSweeping(true);
+    sfx('reroll');
+    haptic(12);
+    window.setTimeout(() => {
+      act({ type: 'councilReroll' });
+      setSweeping(false);
+    }, fast ? 120 : 260);
+  };
+
+  const leave = () => {
+    sfx('click');
+    act({ type: 'leaveCouncil' });
+  };
+
+  const renderItem = (it: ShopItem | null, i: number) => {
+    const key = it ? `${dealKey}:${i}:${shopItemKey(it)}` : `${dealKey}:${i}:sold`;
+    if (!it) {
+      return (
+        <div key={key} className="rco-slot rco-slot--sold" data-slot={i}>
+          <div className="rco-sold display">Sold</div>
+        </div>
+      );
+    }
+    const card = shopItemCard(it, state);
+    const err = errors[i];
+    const isSel = selected === i;
+    return (
+      <div key={key} className={`rco-slot ${isSel ? 'is-selected' : ''}`} data-slot={i} style={{ '--i': i } as CSSProperties}>
+        <Card
+          card={card}
+          width="var(--rco-card-w)"
+          faceDown={i >= revealed}
+          selected={isSel}
+          disabled={!!err && i < revealed}
+          onTap={() => {
+            if (i >= revealed) return;
+            setSelected(isSel ? null : i);
+            sfx(isSel ? 'tap' : 'select');
+            haptic(6);
+          }}
+          zoomActions={
+            <Button small variant="gold" disabled={!!err} onClick={() => buy(i)}>
+              {err ?? <>Buy · {it.price} <Icon name="influence" size={14} /></>}
+            </Button>
+          }
+        />
+        {isSel && (
+          <button type="button" className={`rco-buy ${err ? 'is-blocked' : ''}`} onClick={() => buy(i)}>
+            {it.kind === 'pack' ? 'Open' : 'Buy'}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const offers = items.map((it, i) => ({ it, i })).filter(({ it, i }) => (it ? SECTION_OF[it.kind] === 'offer' : i < 3));
+  const packs = items.map((it, i) => ({ it, i })).filter(({ it, i }) => (it ? SECTION_OF[it.kind] === 'pack' : i >= 3));
+
+  return (
+    <div className="ro-overlay rco" ref={rootRef} data-tutorial="council">
+      <div className="rco-backdrop" />
+      <header className="rco-head">
+        <div className="rco-titles">
+          <h1 className="rco-title display">The Council</h1>
+          <div className="rco-sub">{eraTitle(run.era)} · after {chapterTitle(run.chapter)}</div>
+        </div>
+        <div className="rco-head-right">
+          <Hearts total={run.maxMandate} filled={run.mandate} size={16} />
+          <InfluencePill value={run.influence} big />
+        </div>
+      </header>
+
+      <button type="button" className={`rco-next ${nextIsCrisis ? 'is-crisis' : ''}`} onClick={() => { if (nextIsCrisis) { sfx('open'); setZoomCrisis(true); } }}>
+        <span className="rco-next-label">Next</span>
+        <span className="rco-next-ch display">
+          {next.era !== run.era ? `${eraTitle(next.era)} · ` : ''}Chapter {roman(next.chapter + 1)}
+        </span>
+        <span className="rco-next-target num"><Icon name="trophy" size={13} /> {fmt(nextTarget)}</span>
+        {nextIsCrisis && run.crisis && <span className="rco-next-crisis"><Icon name="crisis" size={13} /> {crisisCard(run.crisis).title}</span>}
+        {next.era !== run.era && <span className="rco-next-era"><Icon name="star" size={13} /> New era</span>}
+      </button>
+
+      <section className={`rco-shop ${sweeping ? 'is-sweeping' : ''}`} ref={shopRef}>
+        <div className="rco-group">
+          <div className="rco-group-label display">Offerings</div>
+          <div className="rco-row">{offers.map(({ it, i }) => renderItem(it, i))}</div>
+        </div>
+        <div className="rco-group">
+          <div className="rco-group-label display">Packs &amp; Reforms</div>
+          <div className="rco-row">{packs.map(({ it, i }) => renderItem(it, i))}</div>
+        </div>
+      </section>
+
+      <section className="rco-owned">
+        <div className="rco-owned-docs">
+          <div className="rco-owned-label display">Doctrines <small>drag to reorder · drop on Sell</small></div>
+          <DoctrineBar compact={false} sellable cardWidth="var(--rco-doc-w)" />
+        </div>
+        <div className="rco-owned-misc">
+          <div className="rco-owned-edicts">
+            <div className="rco-owned-label display">Edicts</div>
+            <EdictTray compact={false} cardWidth="var(--rco-edict-w)" />
+          </div>
+          <div className="rco-owned-pillars">
+            <div className="rco-owned-label display">Pillars</div>
+            <PillarStrip levels={run.pillarLevels} focus={run.focus} />
+            <div className="rco-reforms" data-reforms title="Reforms enacted">
+              <Icon name="reform" size={14} /> {run.reforms.length} Reform{run.reforms.length === 1 ? '' : 's'}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside className="rco-side">
+        <div className={`rco-info ${selCard ? 'is-on' : ''}`}>
+          {selCard && sel ? (
+            <>
+              <div className="rco-info-head">
+                <span className="rco-info-title display">{selCard.title}</span>
+                <span className="rco-info-type">{selCard.typeLabel}</span>
+              </div>
+              <RichText className="rco-info-desc" text={selCard.description} />
+              {selCard.edition && selCard.edition !== 'base' && (
+                <div className="rco-info-edition"><b>{EDITION_LABEL[selCard.edition]}</b> <RichText text={EDITION_TEXT[selCard.edition]} /></div>
+              )}
+              {selCard.footer && selCard.edition === undefined && <RichText className="rco-info-foot" text={selCard.footer} />}
+              <Button variant="gold" className="rco-info-buy" disabled={!!selError} onClick={() => selected != null && buy(selected)}>
+                {selError ? selError : <>{sel.kind === 'pack' ? 'Open' : 'Buy'} · {sel.price} <Icon name="influence" size={15} /></>}
+              </Button>
+            </>
+          ) : (
+            <div className="rco-info-hint">
+              <Ornament />
+              <p>Tap a card to inspect it · hold to zoom</p>
+            </div>
+          )}
+        </div>
+        <div className="rco-foot">
+          <Button className="rco-reroll" onClick={reroll} disabled={!canReroll || sweeping}>
+            <Icon name="reroll" size={16} /> Reroll · {council.rerollCost} <Icon name="influence" size={13} />
+          </Button>
+          <Button variant="gold" className="rco-leave" onClick={leave}>
+            Next Chapter <Icon name="chevronRight" size={16} />
+          </Button>
+        </div>
+      </aside>
+
+      {council.pack && <PackOpen />}
+      {zoomCrisis && run.crisis && <CardZoom card={crisisCard(run.crisis)} onClose={() => setZoomCrisis(false)} />}
+    </div>
+  );
+}

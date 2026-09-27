@@ -1,0 +1,50 @@
+[
+ {
+  "out": "art/gen/test/doc_gpt.png",
+  "prompt": "A barefoot river farmer kneeling on the bank of a winding delta river at dawn, cupping glowing water in her hands as green rice shoots sprout luminously along the riverbanks; reed boats and a small mud-brick village in the misty background. Square card art, single iconic centred subject. Dominant palette: emerald and jade greens with teal water. painterly stylized fantasy-historical card illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "openai/gpt-image-2.5/sunburst/text-to-image"
+ },
+ {
+  "out": "art/gen/test/doc_nbp.png",
+  "prompt": "A barefoot river farmer kneeling on the bank of a winding delta river at dawn, cupping glowing water in her hands as green rice shoots sprout luminously along the riverbanks; reed boats and a small mud-brick village in the misty background. Square card art, single iconic centred subject. Dominant palette: emerald and jade greens with teal water. painterly stylized fantasy-historical card illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "fal-ai/nano-banana-pro"
+ },
+ {
+  "out": "art/gen/test/doc_krea.png",
+  "prompt": "A barefoot river farmer kneeling on the bank of a winding delta river at dawn, cupping glowing water in her hands as green rice shoots sprout luminously along the riverbanks; reed boats and a small mud-brick village in the misty background. Square card art, single iconic centred subject. Dominant palette: emerald and jade greens with teal water. painterly stylized fantasy-historical card illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "fal-ai/krea/v2/medium/text-to-image"
+ },
+ {
+  "out": "art/gen/test/doc_sd.png",
+  "prompt": "A barefoot river farmer kneeling on the bank of a winding delta river at dawn, cupping glowing water in her hands as green rice shoots sprout luminously along the riverbanks; reed boats and a small mud-brick village in the misty background. Square card art, single iconic centred subject. Dominant palette: emerald and jade greens with teal water. painterly stylized fantasy-historical card illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image"
+ },
+ {
+  "out": "art/gen/test/crisis_gpt.png",
+  "prompt": "The Long Winter: a colossal blizzard wall and frost giant-shaped storm cloud looming over a tiny huddled walled city, frozen fields, a single warm hearth light in a window resisting the dark. Square card art, ominous epic scale. Dominant palette: icy azure and pale cyan with one warm ember accent. painterly stylized fantasy-historical card illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "openai/gpt-image-2.5/sunburst/text-to-image"
+ },
+ {
+  "out": "art/gen/test/crisis_sd.png",
+  "prompt": "The Long Winter: a colossal blizzard wall and frost giant-shaped storm cloud looming over a tiny huddled walled city, frozen fields, a single warm hearth light in a window resisting the dark. Square card art, ominous epic scale. Dominant palette: icy azure and pale cyan with one warm ember accent. painterly stylized fantasy-historical card illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image"
+ },
+ {
+  "out": "art/gen/test/era_gpt.png",
+  "prompt": "Panoramic establishing shot of a fictional Bronze Age river civilisation at golden dawn: ziggurat and sun temple on the horizon, mud-brick city along a wide river, fields and palms, reed boats, huge sky with god rays, calm open sky in the centre-top. Epic landscape backdrop. painterly stylized fantasy-historical matte painting illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "landscape",
+  "model": "openai/gpt-image-2.5/sunburst/text-to-image"
+ },
+ {
+  "out": "art/gen/test/era_sd.png",
+  "prompt": "Panoramic establishing shot of a fictional Bronze Age river civilisation at golden dawn: ziggurat and sun temple on the horizon, mud-brick city along a wide river, fields and palms, reed boats, huge sky with god rays, calm open sky in the centre-top. Epic landscape backdrop. painterly stylized fantasy-historical matte painting illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette with deep ink-navy shadows and gold-leaf highlights, edges fading into a dark ink vignette, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no border, no frame, no UI, no watermark, no signature.",
+  "aspect": "landscape",
+  "model": "bytedance/seedream/v5/pro/text-to-image"
+ }
+]

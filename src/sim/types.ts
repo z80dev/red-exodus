@@ -207,7 +207,7 @@ export interface ChapterStats {
   extra: Record<string, number>;
 }
 
-export type ChronicleStepSource = 'pillar' | 'focus' | 'city' | 'doctrine' | 'edition' | 'crisis' | 'darkAge' | 'omen' | 'reform' | 'leader' | 'final';
+export type ChronicleStepSource = 'pillar' | 'focus' | 'city' | 'doctrine' | 'edition' | 'crisis' | 'darkAge' | 'omen' | 'reform' | 'leader' | 'final' | 'bonus' | 'ascension';
 
 /** One animated beat of the Chronicle ceremony. UI plays these in order. */
 export interface ChronicleStep {
@@ -282,7 +282,8 @@ export interface RunState {
   crisisActive: boolean;
   darkAge: boolean; // failed last chapter
   omenOffer: OmenId[];
-  omen: { id: OmenId; progress: number; done: boolean } | null;
+  /** goal is fixed when the omen is accepted */
+  omen: { id: OmenId; progress: number; done: boolean; goal?: number } | null;
   stats: ChapterStats; // current chapter
   totals: ChapterStats; // whole run
   council: CouncilState | null;
@@ -307,6 +308,8 @@ export interface GameConfig {
   rivals: number; // 1..3
   tutorial: boolean;
   daily: boolean;
+  /** meta-progression locked content ids (doctrines/edicts) excluded from this run's shops; from meta/profile lockedContent() */
+  locked?: string[];
 }
 
 export interface GameState {

@@ -1,0 +1,988 @@
+[
+  {
+    "key": "tree_pine",
+    "file": "/models/tree_pine.glb",
+    "tris": 56,
+    "bbox": {
+      "min": [
+        -0.121866,
+        0.0,
+        -0.125
+      ],
+      "max": [
+        0.121866,
+        0.44,
+        0.112621
+      ]
+    }
+  },
+  {
+    "key": "tree_broadleaf",
+    "file": "/models/tree_broadleaf.glb",
+    "tris": 96,
+    "bbox": {
+      "min": [
+        -0.154442,
+        0.0,
+        -0.101064
+      ],
+      "max": [
+        0.157331,
+        0.44152,
+        0.090811
+      ]
+    }
+  },
+  {
+    "key": "tree_palm",
+    "file": "/models/tree_palm.glb",
+    "tris": 100,
+    "bbox": {
+      "min": [
+        -0.135,
+        0.0,
+        -0.155885
+      ],
+      "max": [
+        0.225,
+        0.3725,
+        0.155885
+      ]
+    }
+  },
+  {
+    "key": "tree_jungle",
+    "file": "/models/tree_jungle.glb",
+    "tris": 108,
+    "bbox": {
+      "min": [
+        -0.154442,
+        0.0,
+        -0.101064
+      ],
+      "max": [
+        0.157331,
+        0.44152,
+        0.091408
+      ]
+    }
+  },
+  {
+    "key": "tree_snowpine",
+    "file": "/models/tree_snowpine.glb",
+    "tris": 92,
+    "bbox": {
+      "min": [
+        -0.121866,
+        0.0,
+        -0.125
+      ],
+      "max": [
+        0.121866,
+        0.44085,
+        0.112621
+      ]
+    }
+  },
+  {
+    "key": "bush",
+    "file": "/models/bush.glb",
+    "tris": 60,
+    "bbox": {
+      "min": [
+        -0.103138,
+        -0.0,
+        -0.096038
+      ],
+      "max": [
+        0.107082,
+        0.155,
+        0.056142
+      ]
+    }
+  },
+  {
+    "key": "reeds",
+    "file": "/models/reeds.glb",
+    "tris": 266,
+    "bbox": {
+      "min": [
+        -0.118852,
+        0.0,
+        -0.081652
+      ],
+      "max": [
+        0.102364,
+        0.214017,
+        0.075268
+      ]
+    }
+  },
+  {
+    "key": "cactus",
+    "file": "/models/cactus.glb",
+    "tris": 184,
+    "bbox": {
+      "min": [
+        -0.089919,
+        0.0,
+        -0.039
+      ],
+      "max": [
+        0.094919,
+        0.317,
+        0.035138
+      ]
+    }
+  },
+  {
+    "key": "rock_small",
+    "file": "/models/rock_small.glb",
+    "tris": 20,
+    "bbox": {
+      "min": [
+        -0.116275,
+        0.0,
+        -0.085064
+      ],
+      "max": [
+        0.116275,
+        0.16,
+        0.085064
+      ]
+    }
+  },
+  {
+    "key": "rock_large",
+    "file": "/models/rock_large.glb",
+    "tris": 40,
+    "bbox": {
+      "min": [
+        -0.217829,
+        0.0,
+        -0.153115
+      ],
+      "max": [
+        0.229443,
+        0.29,
+        0.156558
+      ]
+    }
+  },
+  {
+    "key": "mountain_a",
+    "file": "/models/mountain_a.glb",
+    "tris": 1120,
+    "bbox": {
+      "min": [
+        -0.877911,
+        0.0,
+        -0.875955
+      ],
+      "max": [
+        0.89,
+        0.99,
+        0.887496
+      ]
+    }
+  },
+  {
+    "key": "mountain_b",
+    "file": "/models/mountain_b.glb",
+    "tris": 1120,
+    "bbox": {
+      "min": [
+        -0.877911,
+        0.0,
+        -0.875955
+      ],
+      "max": [
+        0.89,
+        0.91,
+        0.887496
+      ]
+    }
+  },
+  {
+    "key": "mountain_c",
+    "file": "/models/mountain_c.glb",
+    "tris": 920,
+    "bbox": {
+      "min": [
+        -0.877911,
+        0.0,
+        -0.875955
+      ],
+      "max": [
+        0.89,
+        1.0,
+        0.887496
+      ]
+    }
+  },
+  {
+    "key": "mountain_snow",
+    "file": "/models/mountain_snow.glb",
+    "tris": 1104,
+    "bbox": {
+      "min": [
+        -0.877911,
+        0.0,
+        -0.875955
+      ],
+      "max": [
+        0.89,
+        1.0,
+        0.887496
+      ]
+    }
+  },
+  {
+    "key": "hill_rocks",
+    "file": "/models/hill_rocks.glb",
+    "tris": 678,
+    "bbox": {
+      "min": [
+        -0.60348,
+        0.0,
+        -0.437738
+      ],
+      "max": [
+        0.56,
+        0.42,
+        0.373044
+      ]
+    }
+  },
+  {
+    "key": "ice_floe",
+    "file": "/models/ice_floe.glb",
+    "tris": 64,
+    "bbox": {
+      "min": [
+        -0.302228,
+        0.0,
+        -0.31
+      ],
+      "max": [
+        0.375106,
+        0.0875,
+        0.2793
+      ]
+    }
+  },
+  {
+    "key": "reef_coral",
+    "file": "/models/reef_coral.glb",
+    "tris": 260,
+    "bbox": {
+      "min": [
+        -0.160996,
+        0.0,
+        -0.102077
+      ],
+      "max": [
+        0.160996,
+        0.198,
+        0.102077
+      ]
+    }
+  },
+  {
+    "key": "flowers",
+    "file": "/models/flowers.glb",
+    "tris": 560,
+    "bbox": {
+      "min": [
+        -0.114933,
+        0.0,
+        -0.089104
+      ],
+      "max": [
+        0.116311,
+        0.102,
+        0.105303
+      ]
+    }
+  },
+  {
+    "key": "res_wheat",
+    "file": "/models/res_wheat.glb",
+    "tris": 494,
+    "bbox": {
+      "min": [
+        -0.06219,
+        0.0,
+        -0.043749
+      ],
+      "max": [
+        0.075,
+        0.20774,
+        0.043749
+      ]
+    }
+  },
+  {
+    "key": "res_rice",
+    "file": "/models/res_rice.glb",
+    "tris": 442,
+    "bbox": {
+      "min": [
+        -0.1,
+        0.0,
+        -0.1
+      ],
+      "max": [
+        0.1,
+        0.20774,
+        0.1
+      ]
+    }
+  },
+  {
+    "key": "res_cattle",
+    "file": "/models/res_cattle.glb",
+    "tris": 340,
+    "bbox": {
+      "min": [
+        -0.073044,
+        0.0,
+        -0.174
+      ],
+      "max": [
+        0.074677,
+        0.286876,
+        0.199519
+      ]
+    }
+  },
+  {
+    "key": "res_sheep",
+    "file": "/models/res_sheep.glb",
+    "tris": 348,
+    "bbox": {
+      "min": [
+        -0.073044,
+        0.0,
+        -0.174
+      ],
+      "max": [
+        0.073044,
+        0.253,
+        0.199519
+      ]
+    }
+  },
+  {
+    "key": "res_deer",
+    "file": "/models/res_deer.glb",
+    "tris": 384,
+    "bbox": {
+      "min": [
+        -0.073044,
+        0.0,
+        -0.174
+      ],
+      "max": [
+        0.073044,
+        0.330503,
+        0.199519
+      ]
+    }
+  },
+  {
+    "key": "res_fish",
+    "file": "/models/res_fish.glb",
+    "tris": 103,
+    "bbox": {
+      "min": [
+        -0.18,
+        0.0,
+        -0.040208
+      ],
+      "max": [
+        0.136994,
+        0.19,
+        0.090208
+      ]
+    }
+  },
+  {
+    "key": "res_stone",
+    "file": "/models/res_stone.glb",
+    "tris": 88,
+    "bbox": {
+      "min": [
+        -0.11,
+        0.0,
+        -0.07
+      ],
+      "max": [
+        0.08,
+        0.15,
+        0.05
+      ]
+    }
+  },
+  {
+    "key": "res_bananas",
+    "file": "/models/res_bananas.glb",
+    "tris": 224,
+    "bbox": {
+      "min": [
+        -0.135,
+        0.0,
+        -0.155885
+      ],
+      "max": [
+        0.225,
+        0.3725,
+        0.155885
+      ]
+    }
+  },
+  {
+    "key": "res_gold",
+    "file": "/models/res_gold.glb",
+    "tris": 80,
+    "bbox": {
+      "min": [
+        -0.125219,
+        0.0,
+        -0.089317
+      ],
+      "max": [
+        0.125219,
+        0.171,
+        0.089317
+      ]
+    }
+  },
+  {
+    "key": "res_gems",
+    "file": "/models/res_gems.glb",
+    "tris": 98,
+    "bbox": {
+      "min": [
+        -0.125219,
+        0.0,
+        -0.089317
+      ],
+      "max": [
+        0.125219,
+        0.215,
+        0.089317
+      ]
+    }
+  },
+  {
+    "key": "res_silk",
+    "file": "/models/res_silk.glb",
+    "tris": 74,
+    "bbox": {
+      "min": [
+        -0.077727,
+        0.0,
+        -0.103923
+      ],
+      "max": [
+        0.12,
+        0.198,
+        0.103923
+      ]
+    }
+  },
+  {
+    "key": "res_spices",
+    "file": "/models/res_spices.glb",
+    "tris": 284,
+    "bbox": {
+      "min": [
+        -0.108563,
+        0.0,
+        -0.08337
+      ],
+      "max": [
+        0.12,
+        0.109,
+        0.06337
+      ]
+    }
+  },
+  {
+    "key": "res_wine",
+    "file": "/models/res_wine.glb",
+    "tris": 350,
+    "bbox": {
+      "min": [
+        -0.091283,
+        0.0,
+        -0.1125
+      ],
+      "max": [
+        0.1425,
+        0.183,
+        0.080363
+      ]
+    }
+  },
+  {
+    "key": "res_incense",
+    "file": "/models/res_incense.glb",
+    "tris": 196,
+    "bbox": {
+      "min": [
+        -0.073,
+        0.0,
+        -0.073
+      ],
+      "max": [
+        0.073,
+        0.199,
+        0.073
+      ]
+    }
+  },
+  {
+    "key": "res_furs",
+    "file": "/models/res_furs.glb",
+    "tris": 72,
+    "bbox": {
+      "min": [
+        -0.1,
+        0.0,
+        -0.011413
+      ],
+      "max": [
+        0.1,
+        0.202,
+        0.030805
+      ]
+    }
+  },
+  {
+    "key": "res_pearls",
+    "file": "/models/res_pearls.glb",
+    "tris": 100,
+    "bbox": {
+      "min": [
+        -0.102859,
+        0.0,
+        -0.087044
+      ],
+      "max": [
+        0.102859,
+        0.15815,
+        0.072304
+      ]
+    }
+  },
+  {
+    "key": "res_marble",
+    "file": "/models/res_marble.glb",
+    "tris": 112,
+    "bbox": {
+      "min": [
+        -0.11,
+        0.0,
+        -0.07
+      ],
+      "max": [
+        0.08,
+        0.15,
+        0.051
+      ]
+    }
+  },
+  {
+    "key": "res_ivory",
+    "file": "/models/res_ivory.glb",
+    "tris": 112,
+    "bbox": {
+      "min": [
+        -0.091,
+        0.0,
+        -0.024249
+      ],
+      "max": [
+        0.091,
+        0.2,
+        0.024249
+      ]
+    }
+  },
+  {
+    "key": "res_dyes",
+    "file": "/models/res_dyes.glb",
+    "tris": 396,
+    "bbox": {
+      "min": [
+        -0.1115,
+        0.0,
+        -0.0715
+      ],
+      "max": [
+        0.1065,
+        0.0945,
+        0.1115
+      ]
+    }
+  },
+  {
+    "key": "res_cotton",
+    "file": "/models/res_cotton.glb",
+    "tris": 246,
+    "bbox": {
+      "min": [
+        -0.084044,
+        0.0,
+        -0.054406
+      ],
+      "max": [
+        0.09,
+        0.218,
+        0.079406
+      ]
+    }
+  },
+  {
+    "key": "res_sugar",
+    "file": "/models/res_sugar.glb",
+    "tris": 258,
+    "bbox": {
+      "min": [
+        -0.052124,
+        0.0,
+        -0.055
+      ],
+      "max": [
+        0.1,
+        0.318,
+        0.05
+      ]
+    }
+  },
+  {
+    "key": "res_whales",
+    "file": "/models/res_whales.glb",
+    "tris": 29,
+    "bbox": {
+      "min": [
+        -0.15,
+        0.0,
+        -0.083798
+      ],
+      "max": [
+        0.15,
+        0.21,
+        0.043798
+      ]
+    }
+  },
+  {
+    "key": "res_horses",
+    "file": "/models/res_horses.glb",
+    "tris": 300,
+    "bbox": {
+      "min": [
+        -0.073044,
+        0.0,
+        -0.174
+      ],
+      "max": [
+        0.073044,
+        0.253,
+        0.199519
+      ]
+    }
+  },
+  {
+    "key": "res_iron",
+    "file": "/models/res_iron.glb",
+    "tris": 80,
+    "bbox": {
+      "min": [
+        -0.125219,
+        0.0,
+        -0.089317
+      ],
+      "max": [
+        0.125219,
+        0.171,
+        0.089317
+      ]
+    }
+  },
+  {
+    "key": "res_niter",
+    "file": "/models/res_niter.glb",
+    "tris": 98,
+    "bbox": {
+      "min": [
+        -0.125219,
+        0.0,
+        -0.089317
+      ],
+      "max": [
+        0.125219,
+        0.215,
+        0.089317
+      ]
+    }
+  },
+  {
+    "key": "res_coal",
+    "file": "/models/res_coal.glb",
+    "tris": 80,
+    "bbox": {
+      "min": [
+        -0.125219,
+        0.0,
+        -0.089317
+      ],
+      "max": [
+        0.125219,
+        0.171,
+        0.089317
+      ]
+    }
+  },
+  {
+    "key": "res_oil",
+    "file": "/models/res_oil.glb",
+    "tris": 312,
+    "bbox": {
+      "min": [
+        -0.088801,
+        0.0,
+        -0.098042
+      ],
+      "max": [
+        0.17,
+        0.373693,
+        0.088222
+      ]
+    }
+  },
+  {
+    "key": "imp_farm",
+    "file": "/models/imp_farm.glb",
+    "tris": 848,
+    "bbox": {
+      "min": [
+        -0.443315,
+        0.0,
+        -0.394
+      ],
+      "max": [
+        0.443315,
+        0.18,
+        0.32
+      ]
+    }
+  },
+  {
+    "key": "imp_mine",
+    "file": "/models/imp_mine.glb",
+    "tris": 276,
+    "bbox": {
+      "min": [
+        -0.286216,
+        -0.0,
+        -0.265647
+      ],
+      "max": [
+        0.286216,
+        0.37,
+        0.4
+      ]
+    }
+  },
+  {
+    "key": "imp_pasture",
+    "file": "/models/imp_pasture.glb",
+    "tris": 676,
+    "bbox": {
+      "min": [
+        -0.413315,
+        0.0,
+        -0.394
+      ],
+      "max": [
+        0.413315,
+        0.286876,
+        0.291326
+      ]
+    }
+  },
+  {
+    "key": "imp_plantation",
+    "file": "/models/imp_plantation.glb",
+    "tris": 468,
+    "bbox": {
+      "min": [
+        -0.369442,
+        0.0,
+        -0.275064
+      ],
+      "max": [
+        0.369442,
+        0.29,
+        0.275064
+      ]
+    }
+  },
+  {
+    "key": "imp_lumbermill",
+    "file": "/models/imp_lumbermill.glb",
+    "tris": 266,
+    "bbox": {
+      "min": [
+        -0.31,
+        0.0,
+        -0.38
+      ],
+      "max": [
+        0.29,
+        0.31,
+        0.165
+      ]
+    }
+  },
+  {
+    "key": "imp_quarry",
+    "file": "/models/imp_quarry.glb",
+    "tris": 292,
+    "bbox": {
+      "min": [
+        -0.3,
+        0.0,
+        -0.245
+      ],
+      "max": [
+        0.34,
+        0.3,
+        0.34
+      ]
+    }
+  },
+  {
+    "key": "imp_fishing_boats",
+    "file": "/models/imp_fishing_boats.glb",
+    "tris": 170,
+    "bbox": {
+      "min": [
+        -0.25,
+        0.0,
+        -0.245574
+      ],
+      "max": [
+        0.34,
+        0.329854,
+        0.125706
+      ]
+    }
+  },
+  {
+    "key": "imp_camp",
+    "file": "/models/imp_camp.glb",
+    "tris": 178,
+    "bbox": {
+      "min": [
+        -0.22,
+        0.0,
+        -0.22
+      ],
+      "max": [
+        0.298559,
+        0.247,
+        0.140415
+      ]
+    }
+  },
+  {
+    "key": "imp_trading_post",
+    "file": "/models/imp_trading_post.glb",
+    "tris": 438,
+    "bbox": {
+      "min": [
+        -0.185,
+        0.0,
+        -0.23
+      ],
+      "max": [
+        0.185,
+        0.31,
+        0.305
+      ]
+    }
+  },
+  {
+    "key": "imp_oil_well",
+    "file": "/models/imp_oil_well.glb",
+    "tris": 404,
+    "bbox": {
+      "min": [
+        -0.265,
+        0.0,
+        -0.23
+      ],
+      "max": [
+        0.175,
+        0.503002,
+        0.16
+      ]
+    }
+  },
+  {
+    "key": "camp_barbarian",
+    "file": "/models/camp_barbarian.glb",
+    "tris": 182,
+    "bbox": {
+      "min": [
+        -0.303776,
+        0.0,
+        -0.273
+      ],
+      "max": [
+        0.4,
+        0.35,
+        0.358714
+      ]
+    }
+  },
+  {
+    "key": "ruin_ancient",
+    "file": "/models/ruin_ancient.glb",
+    "tris": 320,
+    "bbox": {
+      "min": [
+        -0.25261,
+        0.0,
+        -0.175
+      ],
+      "max": [
+        0.301554,
+        0.447568,
+        0.175
+      ]
+    }
+  },
+  {
+    "key": "road_marker",
+    "file": "/models/road_marker.glb",
+    "tris": 76,
+    "bbox": {
+      "min": [
+        -0.0325,
+        0.0,
+        -0.052026
+      ],
+      "max": [
+        0.086305,
+        0.15,
+        0.0335
+      ]
+    }
+  }
+]

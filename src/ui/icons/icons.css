@@ -1,0 +1,42 @@
+.aeons-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  overflow: visible;
+  vertical-align: -0.24em;
+}
+
+.aeons-rt {
+  font-variant-numeric: tabular-nums;
+}
+.aeons-rt .aeons-icon {
+  margin: 0 0.08em;
+}
+.aeons-rt b {
+  font-weight: 700;
+  color: inherit;
+}
+/* on parchment / light surfaces: deepen tinted numbers so they keep contrast */
+.aeons-rt--light .rt-num {
+  filter: brightness(0.62) saturate(1.4);
+}
+.aeons-rt .rt-num {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.aeons-rt .rt-up { color: var(--good); }
+.aeons-rt .rt-down { color: var(--bad); }
+.aeons-rt .rt-mul { color: var(--splendor); }
+.aeons-rt .rt-y-food { color: var(--y-food); }
+.aeons-rt .rt-y-prod { color: var(--y-prod); }
+.aeons-rt .rt-y-gold { color: var(--y-gold); }
+.aeons-rt .rt-y-sci { color: var(--y-sci); }
+.aeons-rt .rt-y-cul { color: var(--y-cul); }
+.aeons-rt .rt-y-happy { color: var(--happy); }
+.aeons-rt .rt-y-unhappy { color: var(--unhappy); }
+.aeons-rt .rt-y-influence { color: var(--influence); }
+.aeons-rt .rt-y-renown { color: var(--renown); }
+.aeons-rt .rt-y-splendor { color: var(--splendor); }
+.aeons-rt .rt-y-mandate { color: var(--mandate); }
+.aeons-rt .rt-glue {
+  white-space: nowrap;
+}

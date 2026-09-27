@@ -106,12 +106,32 @@ export function runHook<K extends keyof EffectHooks>(
   }
 }
 
+/**
+ * Per-state cache of effect lists for broadcastEvent (it runs for every event of every dispatch, and AI turns emit
+ * hundreds). Invalidated when an event changes which effects exist, and by the engine at the start of each dispatch
+ * (`invalidateEffectCache`) so non-event mutations (doctrine reorder, reform purchase) are always picked up.
+ * Counters are shared references, so cached entries never hold stale counter values.
+ */
+const effectCache = new WeakMap<GameState, Map<PlayerId, ActiveEffect[]>>();
+const STRUCTURAL_EVENTS: Partial<Record<SimEvent['type'], true>> = {
+  cityFounded: true, cityCaptured: true, cityRazed: true, buildingBuilt: true, wonderBuilt: true, naturalWonderFound: true,
+  playerEliminated: true, doctrineGained: true, doctrineLost: true, crisisBegan: true, crisisEnded: true, eraStarted: true,
+  influenceChanged: true, chronicle: true,
+};
+
+export function invalidateEffectCache(state: GameState): void {
+  effectCache.delete(state);
+}
+
 /** Broadcast a sim event to every living player's onEvent hooks. Called by the engine's emit pipeline. */
 export function broadcastEvent(state: GameState, ev: SimEvent, emit: (ev: SimEvent) => void): void {
+  if (STRUCTURAL_EVENTS[ev.type]) effectCache.delete(state);
+  let byPlayer = effectCache.get(state);
+  if (!byPlayer) effectCache.set(state, (byPlayer = new Map()));
   for (const p of state.players) {
     if (!p.alive) continue;
-    for (const fx of collectEffects(state, p.id)) {
-      if (fx.hooks.onEvent) fx.hooks.onEvent(makeCtx(state, p.id, fx, emit), ev);
-    }
+    let list = byPlayer.get(p.id);
+    if (!list) byPlayer.set(p.id, (list = collectEffects(state, p.id).filter((fx) => fx.hooks.onEvent)));
+    for (const fx of list) fx.hooks.onEvent!(makeCtx(state, p.id, fx, emit), ev);
   }
 }

@@ -157,3 +157,21 @@ levelUp select move attack found build research`.
 ## Testing
 vitest for sim determinism, mapgen validity, combat math, chronicle math, save roundtrip. Headless balance
 runs via `bun scripts/sim.ts --runs 20` (CombatAI builds; Roguelite tunes targets from its output).
+
+## Menu integration and gallery
+- `src/ui/menu/{MainMenu,NewRun,Codex,Settings,Summary}.tsx` use the existing app screen store.
+  `openNewRun(daily?)` from `ui/menu/shared.tsx` selects a normal or Daily setup; NewRun passes
+  `lockedContent(profile)` and the tutorial preference into `newGame`. Daily seeds use the UTC
+  `YYYY-MM-DD` date; a successful launch persists the attempt before the player returns to the menu.
+- Summary uses `runEndUnlocks(state)` from `ui/run/RunEnd.tsx`, sharing its idempotent progression
+  record with the victory/defeat UI. Settings persist through `meta/profile`, preserve audio/display
+  preferences on progress reset, and return to the live game when one exists.
+- Mount `<Tutorial />` from `ui/menu/tutorial/Tutorial.tsx` in GameScreen. It watches simulation
+  transitions and `profile.tutorialProgress`; its veil never blocks map input. Spotlight targets use
+  `data-tutorial="found-city|production|research|end-turn|legacy|combat-preview"` (one value per
+  element), plus `crisis-reveal`, `chapter-start`, `chronicle`, and `council` on run overlays.
+- `?dev=MenuDemo` opens the interactive menu gallery. Optional `&screen=newRun|codex|settings|summary`
+  opens that screen; `&fixture=collection` seeds a sample profile **on the current origin**.
+  `&live` additionally mounts the real renderer. The default gallery remains renderer-independent.
+  Its tutorial controls dispatch real simulation actions, and its Summary uses a six-era fixture.
+

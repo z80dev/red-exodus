@@ -1,0 +1,410 @@
+[
+  {
+    "key": "w_angkor_wat",
+    "file": "/models/w_angkor_wat.glb",
+    "tris": 3671,
+    "bbox": {
+      "min": [
+        -0.699964,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.735529,
+        0.759,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "w_big_ben",
+    "file": "/models/w_big_ben.glb",
+    "tris": 3906,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.69282,
+        0.945,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "w_colossus",
+    "file": "/models/w_colossus.glb",
+    "tris": 3426,
+    "bbox": {
+      "min": [
+        -0.710141,
+        0.0,
+        -0.817
+      ],
+      "max": [
+        0.710141,
+        0.941,
+        0.817
+      ]
+    }
+  },
+  {
+    "key": "w_cristo",
+    "file": "/models/w_cristo.glb",
+    "tris": 3560,
+    "bbox": {
+      "min": [
+        -0.718801,
+        -0.004,
+        -0.83
+      ],
+      "max": [
+        0.754378,
+        0.93692,
+        0.83
+      ]
+    }
+  },
+  {
+    "key": "w_eiffel",
+    "file": "/models/w_eiffel.glb",
+    "tris": 3600,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.69282,
+        0.934,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "w_great_library",
+    "file": "/models/w_great_library.glb",
+    "tris": 3933,
+    "bbox": {
+      "min": [
+        -0.710141,
+        0.0,
+        -0.816
+      ],
+      "max": [
+        0.772086,
+        0.608,
+        0.816
+      ]
+    }
+  },
+  {
+    "key": "w_great_wall",
+    "file": "/models/w_great_wall.glb",
+    "tris": 3694,
+    "bbox": {
+      "min": [
+        -0.778255,
+        -0.000817,
+        -0.82
+      ],
+      "max": [
+        0.745478,
+        0.617674,
+        0.82
+      ]
+    }
+  },
+  {
+    "key": "w_hagia_sophia",
+    "file": "/models/w_hagia_sophia.glb",
+    "tris": 3229,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.69282,
+        0.8056,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "w_hanging_gardens",
+    "file": "/models/w_hanging_gardens.glb",
+    "tris": 3939,
+    "bbox": {
+      "min": [
+        -0.760678,
+        0.0,
+        -0.816
+      ],
+      "max": [
+        0.710141,
+        0.677,
+        0.816
+      ]
+    }
+  },
+  {
+    "key": "w_himeji",
+    "file": "/models/w_himeji.glb",
+    "tris": 3710,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.69282,
+        0.719343,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "w_launch_pad",
+    "file": "/models/w_launch_pad.glb",
+    "tris": 3972,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.693343,
+        0.942,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "w_leaning_tower",
+    "file": "/models/w_leaning_tower.glb",
+    "tris": 3836,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.69282,
+        0.863784,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "w_liberty",
+    "file": "/models/w_liberty.glb",
+    "tris": 2404,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.797
+      ],
+      "max": [
+        0.69282,
+        0.8982,
+        0.797
+      ]
+    }
+  },
+  {
+    "key": "w_opera_house",
+    "file": "/models/w_opera_house.glb",
+    "tris": 3500,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.797
+      ],
+      "max": [
+        0.69282,
+        0.61,
+        0.797
+      ]
+    }
+  },
+  {
+    "key": "w_oracle",
+    "file": "/models/w_oracle.glb",
+    "tris": 3070,
+    "bbox": {
+      "min": [
+        -0.715204,
+        -0.004,
+        -0.816
+      ],
+      "max": [
+        0.710141,
+        0.664,
+        0.816
+      ]
+    }
+  },
+  {
+    "key": "w_pyramids",
+    "file": "/models/w_pyramids.glb",
+    "tris": 2384,
+    "bbox": {
+      "min": [
+        -0.830989,
+        -0.004,
+        -0.816
+      ],
+      "max": [
+        0.710141,
+        0.66,
+        0.816
+      ]
+    }
+  },
+  {
+    "key": "w_stonehenge",
+    "file": "/models/w_stonehenge.glb",
+    "tris": 3874,
+    "bbox": {
+      "min": [
+        -0.776106,
+        0.0,
+        -0.816
+      ],
+      "max": [
+        0.761776,
+        0.432,
+        0.83
+      ]
+    }
+  },
+  {
+    "key": "w_taj_mahal",
+    "file": "/models/w_taj_mahal.glb",
+    "tris": 3739,
+    "bbox": {
+      "min": [
+        -0.69282,
+        0.0,
+        -0.796
+      ],
+      "max": [
+        0.69282,
+        0.701,
+        0.796
+      ]
+    }
+  },
+  {
+    "key": "nw_crystal_falls",
+    "file": "/models/nw_crystal_falls.glb",
+    "tris": 3344,
+    "bbox": {
+      "min": [
+        -0.774755,
+        -0.004,
+        -0.769475
+      ],
+      "max": [
+        0.767091,
+        0.895,
+        0.769005
+      ]
+    }
+  },
+  {
+    "key": "nw_elder_tree",
+    "file": "/models/nw_elder_tree.glb",
+    "tris": 3954,
+    "bbox": {
+      "min": [
+        -0.754623,
+        -0.004,
+        -0.787059
+      ],
+      "max": [
+        0.77341,
+        0.926523,
+        0.763791
+      ]
+    }
+  },
+  {
+    "key": "nw_ember_peak",
+    "file": "/models/nw_ember_peak.glb",
+    "tris": 3770,
+    "bbox": {
+      "min": [
+        -0.792848,
+        -0.002169,
+        -0.783662
+      ],
+      "max": [
+        0.785133,
+        0.906712,
+        0.782111
+      ]
+    }
+  },
+  {
+    "key": "nw_mirror_lake",
+    "file": "/models/nw_mirror_lake.glb",
+    "tris": 3986,
+    "bbox": {
+      "min": [
+        -0.786179,
+        -0.004,
+        -0.771402
+      ],
+      "max": [
+        0.784628,
+        0.484619,
+        0.78107
+      ]
+    }
+  },
+  {
+    "key": "nw_sky_arch",
+    "file": "/models/nw_sky_arch.glb",
+    "tris": 3078,
+    "bbox": {
+      "min": [
+        -0.782863,
+        -0.004,
+        -0.791378
+      ],
+      "max": [
+        0.771763,
+        0.944638,
+        0.780208
+      ]
+    }
+  },
+  {
+    "key": "nw_titan_bones",
+    "file": "/models/nw_titan_bones.glb",
+    "tris": 3854,
+    "bbox": {
+      "min": [
+        -0.763267,
+        -0.004,
+        -0.77403
+      ],
+      "max": [
+        0.778362,
+        0.66849,
+        0.76188
+      ]
+    }
+  }
+]

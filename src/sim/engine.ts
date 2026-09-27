@@ -1,9 +1,573 @@
-// OWNER: SimCore. STUB. The only entry point the game layer uses.
-import type { Action, ActionResult, Emit, GameConfig, GameState, PlayerId, SimEvent } from './types';
+// OWNER: SimCore. The only entry point the game layer uses: createGame / applyAction (+ applyPlayerAction for AIs).
+import type {
+  Action, ActionResult, Emit, GameConfig, GameState, LogEntry, Player, PlayerId, RunState, SimEvent,
+} from './types';
+import { BARBARIAN, HUMAN, PILLARS } from './types';
+import { BUILDINGS, LEADERS, NATURAL_WONDERS, TECHS, UNITS, WONDERS } from '../content';
+import { broadcastEvent, collectEffects, invalidateEffectCache, runHook } from './effects';
+import { seedRng, shuffle } from './rng';
+import { generateMap } from './mapgen';
+import { recomputeVisibility } from './visibility';
+import {
+  applyPromotion, createUnit, moveUnitTo, pillage, removeUnit, unitsTurnStart, upgradeUnit,
+} from './units';
+import { resolveAttack, resolveCityStrike } from './combat';
+import {
+  MAX_QUEUE, buildImprovement, buyCost, canFoundCity, canProduce, citiesOf, completeItem, foundCity, processCity,
+  productionItemName, refreshAllCities, refreshCity, sameItem,
+} from './cities';
+import {
+  addGold, availableTechs, culturePerTurn, getPlayer, goldPerTurn, processResearch, sciencePerTurn, updateHappiness,
+} from './economy';
+import { aiAcceptsPeace, runAiTurn, runBarbarians } from './ai';
+import {
+  addStat, changeMandate, emptyStats, handleRunAction, initRun, isRunAction, mapActionsAllowed, onTurnEnd, trackEvent,
+} from './roguelite';
 
-/** Build a brand-new game (map, players, starting units, run state). Returns events for the opening. */
-export function createGame(config: GameConfig): { state: GameState; events: SimEvent[] } { void config; throw new Error('not implemented'); }
-/** Human action. Mutates state in place. endTurn runs AIs, barbarians, turn processing, roguelite clock. */
-export function applyAction(state: GameState, action: Action): ActionResult { void state; void action; throw new Error('not implemented'); }
-/** Any player's action (AI uses this). Returns error or null. */
-export function applyPlayerAction(state: GameState, pid: PlayerId, action: Action, emit: Emit): string | null { void state; void pid; void action; void emit; throw new Error('not implemented'); }
+// ───────────────────────────── tunables ─────────────────────────────
+export const STARTING_GOLD = 15;
+export const STARTING_UNITS = ['settler', 'warrior', 'scout'] as const;
+/** safety valve: max events processed per dispatch */
+export const MAX_EVENTS_PER_DISPATCH = 2000;
+/** journal length */
+export const MAX_LOG = 200;
+/** turns of peace before war can be declared again on the same civ */
+export const PEACE_TREATY_TURNS = 5;
+export const BARBARIAN_COLORS = { primary: '#7a1414', secondary: '#141414' };
+const FALLBACK_COLORS = [
+  { primary: '#2f6fb3', secondary: '#e8d9a8' },
+  { primary: '#b33a2f', secondary: '#f1e2b8' },
+  { primary: '#3d8c4a', secondary: '#f0e6c8' },
+  { primary: '#8a4fb3', secondary: '#f3e3c0' },
+];
+
+// ───────────────────────────── event pipeline ─────────────────────────────
+
+interface Pipeline { emit: Emit; events: SimEvent[] }
+
+/**
+ * One pipeline per dispatch: emit → queue; drain: record → trackEvent (roguelite) → broadcastEvent (onEvent hooks).
+ * Events emitted while draining are appended to the queue (never recursive). Hard cap per dispatch.
+ */
+function createPipeline(state: GameState): Pipeline {
+  invalidateEffectCache(state);
+  const events: SimEvent[] = [];
+  const queue: SimEvent[] = [];
+  let draining = false;
+  let processed = 0;
+  const emit: Emit = (ev) => {
+    if (processed + queue.length >= MAX_EVENTS_PER_DISPATCH) return;
+    queue.push(ev);
+    if (draining) return;
+    draining = true;
+    try {
+      let ev2: SimEvent | undefined;
+      while ((ev2 = queue.shift())) {
+        processed++;
+        events.push(ev2);
+        logEvent(state, ev2);
+        trackEvent(state, ev2, emit);
+        broadcastEvent(state, ev2, emit);
+      }
+    } finally {
+      draining = false;
+    }
+  };
+  return { emit, events };
+}
+
+function civ(state: GameState, pid: PlayerId): string {
+  return getPlayer(state, pid)?.civName ?? 'Unknown';
+}
+
+/** append notable events to the journal (human-relevant) */
+function logEvent(state: GameState, ev: SimEvent): void {
+  let entry: Omit<LogEntry, 'turn'> | null = null;
+  switch (ev.type) {
+    case 'cityFounded':
+      if (ev.player === HUMAN) entry = { text: `${state.cities[ev.cityId]?.name ?? 'A city'} was founded`, icon: 'found', tile: ev.tile, player: ev.player };
+      break;
+    case 'cityCaptured':
+      if (ev.from === HUMAN || ev.to === HUMAN) {
+        entry = { text: `${civ(state, ev.to)} captured ${state.cities[ev.cityId]?.name ?? 'a city'} from ${civ(state, ev.from)}`, icon: 'sword', tile: ev.tile, player: ev.to };
+      }
+      break;
+    case 'cityRazed':
+      entry = { text: 'A city was razed to the ground', icon: 'skull', tile: ev.tile };
+      break;
+    case 'wonderBuilt':
+      entry = { text: `${civ(state, ev.player)} completed ${WONDERS[ev.wonder]?.name ?? ev.wonder}`, icon: ev.wonder, tile: state.cities[ev.cityId]?.tile, player: ev.player };
+      break;
+    case 'techResearched':
+      if (ev.player === HUMAN) entry = { text: `Discovered ${TECHS[ev.tech]?.name ?? ev.tech}`, icon: ev.tech, player: ev.player };
+      break;
+    case 'warDeclared':
+      entry = { text: `${civ(state, ev.by)} declared war on ${civ(state, ev.target)}`, icon: 'war', player: ev.by };
+      break;
+    case 'peaceMade':
+      entry = { text: `${civ(state, ev.a)} and ${civ(state, ev.b)} made peace`, icon: 'peace', player: ev.a };
+      break;
+    case 'playerEliminated':
+      entry = { text: `${civ(state, ev.player)} has fallen`, icon: 'skull', player: ev.player };
+      break;
+    case 'naturalWonderFound':
+      if (ev.player === HUMAN) entry = { text: `Discovered ${NATURAL_WONDERS[ev.id]?.name ?? 'a natural wonder'}`, icon: 'star', tile: ev.tile, player: ev.player };
+      break;
+    case 'campCleared':
+      if (ev.player === HUMAN) entry = { text: `Barbarian camp cleared (+${ev.gold} gold)`, icon: 'skull', tile: ev.tile, player: ev.player };
+      break;
+    case 'ruinExplored':
+      if (ev.player === HUMAN) entry = { text: `Ancient ruins: ${ev.reward}`, icon: 'scroll', tile: ev.tile, player: ev.player };
+      break;
+    case 'buildingBuilt':
+      if (ev.player === HUMAN && ev.building !== 'palace') {
+        entry = { text: `${state.cities[ev.cityId]?.name ?? 'City'} built ${BUILDINGS[ev.building]?.name ?? ev.building}`, icon: ev.building, tile: state.cities[ev.cityId]?.tile, player: ev.player };
+      }
+      break;
+    case 'notify':
+      entry = { text: ev.text, icon: ev.icon, tile: ev.tile };
+      break;
+    default:
+      break;
+  }
+  if (!entry) return;
+  state.log.push({ turn: state.turn, ...entry });
+  if (state.log.length > MAX_LOG) state.log.splice(0, state.log.length - MAX_LOG);
+}
+
+// ───────────────────────────── creation ─────────────────────────────
+
+/** placeholder until roguelite initRun fills it (needed because effects read state.run) */
+function blankRun(config: GameConfig): RunState {
+  const pillarLevels = {} as RunState['pillarLevels'];
+  for (const p of PILLARS) pillarLevels[p] = 1;
+  return {
+    phase: 'crisisReveal', era: 0, chapter: 0, chapterTurn: 0, chapterLength: 6, mandate: 3, maxMandate: 3,
+    influence: 0, focus: 'prosperity', pillarLevels, doctrines: [], doctrineSlots: 5, edicts: [], edictSlots: 2,
+    reforms: [], crisis: null, crisisActive: false, darkAge: false, omenOffer: [], omen: null, stats: emptyStats(),
+    totals: emptyStats(), council: null, lastChronicle: null, history: [], ascension: config.ascension, nextUid: 1,
+    seen: [], bestScore: 0, defeatReason: null,
+  };
+}
+
+function makePlayer(id: PlayerId, leaderId: string, isHuman: boolean, tiles: number, idx: number): Player {
+  const leader = LEADERS[leaderId];
+  return {
+    id,
+    name: leader?.name ?? `Leader ${id + 1}`,
+    civName: leader?.civName ?? `Civilization ${id + 1}`,
+    leaderId,
+    colors: leader ? { ...leader.colors } : { ...FALLBACK_COLORS[idx % FALLBACK_COLORS.length] },
+    isHuman,
+    alive: true,
+    gold: STARTING_GOLD,
+    techs: [],
+    researching: null,
+    researchProgress: {},
+    vis: new Array<number>(tiles).fill(0),
+    relations: {},
+    happiness: 0,
+    ai: isHuman ? null : { personality: leader?.aiPersonality ?? 'builder', memory: {} },
+    capitalId: null,
+    citiesFounded: 0,
+    counters: {},
+    effectCounters: {},
+  };
+}
+
+export function createGame(config: GameConfig): { state: GameState; events: SimEvent[] } {
+  const rng = seedRng(config.seed);
+  const rivals = Math.max(1, Math.min(3, Math.floor(config.rivals)));
+  const map = generateMap(config.seed, config.mapSize, 1 + rivals);
+  const rivalLeaders = shuffle(rng, Object.keys(LEADERS).filter((id) => id !== config.leaderId).sort());
+
+  const n = map.tiles.length;
+  const players: Player[] = [makePlayer(HUMAN, config.leaderId, true, n, 0)];
+  for (let i = 1; i <= rivals; i++) players.push(makePlayer(i, rivalLeaders[i - 1] ?? `rival${i}`, false, n, i));
+  const barb = makePlayer(BARBARIAN, 'barbarian', false, n, 0);
+  barb.name = 'Barbarians';
+  barb.civName = 'Barbarians';
+  barb.colors = { ...BARBARIAN_COLORS };
+  barb.ai = { personality: 'warmonger', memory: {} };
+  barb.gold = 0;
+  players.push(barb);
+  for (const p of players) {
+    for (const o of players) {
+      if (o.id === p.id) continue;
+      p.relations[o.id] = p.id === BARBARIAN || o.id === BARBARIAN ? 'war' : 'peace';
+    }
+  }
+
+  const state: GameState = {
+    schema: 1,
+    config: { ...config, rivals },
+    rng,
+    turn: 1,
+    map,
+    players,
+    cities: {},
+    units: {},
+    nextId: 1,
+    run: blankRun(config),
+    wonderOwners: {},
+    naturalWondersSeen: {},
+    log: [],
+    gameOver: false,
+  };
+  for (const p of players) state.naturalWondersSeen[p.id] = [];
+
+  const pipe = createPipeline(state);
+  for (let i = 0; i <= rivals; i++) {
+    const start = map.starts[i];
+    if (start == null || start < 0) continue;
+    for (const type of STARTING_UNITS) if (UNITS[type]) createUnit(state, i, type, start, pipe.emit);
+  }
+  initRun(state, pipe.emit);
+  for (const p of players) if (p.id !== BARBARIAN) updateHappiness(state, p.id, pipe.emit);
+  for (const p of players) recomputeVisibility(state, p.id, pipe.emit);
+  pipe.emit({ type: 'turnStart', turn: state.turn, player: HUMAN });
+  unitsTurnStart(state, HUMAN, pipe.emit);
+  runHook(state, HUMAN, 'turnStart', pipe.emit, null);
+  return { state, events: pipe.events };
+}
+
+// ───────────────────────────── dispatch ─────────────────────────────
+
+export function applyAction(state: GameState, action: Action): ActionResult {
+  const pipe = createPipeline(state);
+  let error: string | null;
+  if (isRunAction(action)) {
+    error = handleRunAction(state, action, pipe.emit);
+  } else if (!mapActionsAllowed(state)) {
+    error = state.gameOver ? 'The run is over' : 'Finish the current chapter step first';
+  } else if (action.type === 'endTurn') {
+    endTurn(state, pipe.emit);
+    error = null;
+  } else {
+    error = applyPlayerAction(state, HUMAN, action, pipe.emit);
+    if (!error) checkFalls(state, pipe.emit);
+  }
+  return error ? { ok: false, error, events: pipe.events } : { ok: true, events: pipe.events };
+}
+
+function unitOf(state: GameState, pid: PlayerId, id: number) {
+  const u = state.units[id];
+  return u && u.owner === pid ? u : null;
+}
+
+function cityOf(state: GameState, pid: PlayerId, id: number) {
+  const c = state.cities[id];
+  return c && c.owner === pid ? c : null;
+}
+
+export function applyPlayerAction(state: GameState, pid: PlayerId, action: Action, emit: Emit): string | null {
+  const player = getPlayer(state, pid);
+  if (!player || !player.alive) return 'Player is not in the game';
+  if (state.gameOver) return 'The run is over';
+  switch (action.type) {
+    case 'moveUnit': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      if (!state.map.tiles[action.to]) return 'Invalid tile';
+      if (action.to === u.tile) return 'Already there';
+      if (u.order?.kind === 'fortify' || u.order?.kind === 'sleep' || u.order?.kind === 'heal') u.fortifyTurns = 0;
+      return moveUnitTo(state, u, action.to, emit);
+    }
+    case 'attack': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      if (!state.map.tiles[action.target]) return 'Invalid tile';
+      const err = resolveAttack(state, u, action.target, emit);
+      if (!err) checkEliminations(state, emit);
+      return err;
+    }
+    case 'foundCity': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      if (!UNITS[u.type]?.abilities?.includes('foundCity')) return 'This unit cannot found cities';
+      if (u.moves <= 0) return 'No moves left';
+      const err = canFoundCity(state, pid, u.tile);
+      if (err) return err;
+      const tile = u.tile;
+      delete state.units[u.id]; // the settlers become the city
+      foundCity(state, pid, tile, emit);
+      return null;
+    }
+    case 'unitOrder': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      const order = action.order;
+      if (!order) { u.order = null; u.fortifyTurns = 0; return null; }
+      const civilian = UNITS[u.type]?.class === 'civilian';
+      if (order.kind === 'fortify' && civilian) return 'Civilians cannot fortify';
+      if (order.kind === 'heal' && u.hp >= 100) return 'Already at full health';
+      if (order.kind === 'goto') {
+        if (!state.map.tiles[order.target]) return 'Invalid tile';
+        if (order.target === u.tile) return 'Already there';
+        return moveUnitTo(state, u, order.target, emit);
+      }
+      if (u.order?.kind !== order.kind) u.fortifyTurns = 0;
+      u.order = { ...order };
+      return null;
+    }
+    case 'skipUnit': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      u.moves = 0;
+      return null;
+    }
+    case 'disband': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      removeUnit(state, u.id, emit);
+      if (pid === HUMAN) checkEliminations(state, emit);
+      return null;
+    }
+    case 'pillage': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      const tile = state.map.tiles[u.tile];
+      const victim = tile.owner;
+      const err = pillage(state, u, emit);
+      if (!err && victim != null && victim !== BARBARIAN) {
+        refreshAllCities(state, victim);
+        updateHappiness(state, victim, emit);
+      }
+      return err;
+    }
+    case 'upgradeUnit': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      return upgradeUnit(state, u, emit);
+    }
+    case 'promote': {
+      const u = unitOf(state, pid, action.unitId);
+      if (!u) return 'No such unit';
+      return applyPromotion(state, u, action.promotion, emit);
+    }
+    case 'setProduction': {
+      const c = cityOf(state, pid, action.cityId);
+      if (!c) return 'No such city';
+      const err = canProduce(state, c, action.item);
+      if (err) return err;
+      if (sameItem(c.queue[0], action.item)) return null;
+      if (action.item.kind !== 'unit' && action.item.kind !== 'project') {
+        const at = c.queue.findIndex((q) => sameItem(q, action.item));
+        if (at > 0) c.queue.splice(at, 1);
+      }
+      if (c.queue.length) c.queue[0] = { ...action.item };
+      else c.queue.push({ ...action.item });
+      return null;
+    }
+    case 'enqueue': {
+      const c = cityOf(state, pid, action.cityId);
+      if (!c) return 'No such city';
+      const err = canProduce(state, c, action.item);
+      if (err) return err;
+      if (c.queue.length >= MAX_QUEUE) return 'Queue is full';
+      if (action.item.kind !== 'unit' && c.queue.some((q) => sameItem(q, action.item))) return 'Already queued';
+      c.queue.push({ ...action.item });
+      return null;
+    }
+    case 'dequeue': {
+      const c = cityOf(state, pid, action.cityId);
+      if (!c) return 'No such city';
+      if (!Number.isInteger(action.index) || action.index < 0 || action.index >= c.queue.length) return 'Invalid queue slot';
+      c.queue.splice(action.index, 1);
+      return null;
+    }
+    case 'buyItem': {
+      const c = cityOf(state, pid, action.cityId);
+      if (!c) return 'No such city';
+      const err = canProduce(state, c, action.item);
+      if (err) return err;
+      const cost = buyCost(state, c, action.item);
+      if (cost == null) return `${productionItemName(action.item)} cannot be bought`;
+      if (player.gold < cost) return `Need ${cost} gold`;
+      addGold(state, pid, -cost, `Bought ${productionItemName(action.item)}`, emit);
+      if (sameItem(c.queue[0], action.item)) {
+        c.queue.shift();
+        c.prodStored = 0;
+      } else if (action.item.kind === 'building') {
+        const at = c.queue.findIndex((q) => sameItem(q, action.item));
+        if (at >= 0) c.queue.splice(at, 1);
+      }
+      completeItem(state, c, action.item, emit);
+      return null;
+    }
+    case 'buildImprovement':
+      return buildImprovement(state, pid, action.tile, action.improvement, emit);
+    case 'setFocus': {
+      const c = cityOf(state, pid, action.cityId);
+      if (!c) return 'No such city';
+      c.focus = action.focus;
+      refreshCity(state, c);
+      return null;
+    }
+    case 'cityStrike': {
+      const c = cityOf(state, pid, action.cityId);
+      if (!c) return 'No such city';
+      const err = resolveCityStrike(state, c, action.target, emit);
+      if (!err) checkEliminations(state, emit);
+      return err;
+    }
+    case 'setResearch': {
+      if (!TECHS[action.tech]) return 'Unknown technology';
+      if (player.techs.includes(action.tech)) return 'Already researched';
+      if (!availableTechs(state, pid).includes(action.tech)) return 'Prerequisites not met';
+      player.researching = action.tech;
+      return null;
+    }
+    case 'declareWar': {
+      const t = action.target;
+      if (t === pid) return 'Cannot declare war on yourself';
+      if (t === BARBARIAN) return 'Already at war with the barbarians';
+      const other = state.players.find((p) => p.id === t);
+      if (!other || !other.alive) return 'No such civilization';
+      if (player.relations[t] === 'war') return 'Already at war';
+      const since = player.counters[`peace:${t}`];
+      if (since != null && state.turn - since < PEACE_TREATY_TURNS) return `Peace treaty holds for ${PEACE_TREATY_TURNS - (state.turn - since)} more turns`;
+      player.relations[t] = 'war';
+      other.relations[pid] = 'war';
+      player.counters[`war:${t}`] = state.turn;
+      other.counters[`war:${pid}`] = state.turn;
+      emit({ type: 'warDeclared', by: pid, target: t });
+      refreshAllCities(state, pid);
+      refreshAllCities(state, t);
+      return null;
+    }
+    case 'offerPeace': {
+      const t = action.target;
+      if (t === BARBARIAN) return 'Barbarians do not negotiate';
+      const other = state.players.find((p) => p.id === t);
+      if (!other || !other.alive || t === pid) return 'No such civilization';
+      if (player.relations[t] !== 'war') return 'Not at war';
+      if (other.isHuman) return 'Only the player can propose peace to themselves';
+      if (!aiAcceptsPeace(state, t, pid)) return `${other.civName} refuses peace`;
+      player.relations[t] = 'peace';
+      other.relations[pid] = 'peace';
+      player.counters[`peace:${t}`] = state.turn;
+      other.counters[`peace:${pid}`] = state.turn;
+      emit({ type: 'peaceMade', a: pid, b: t });
+      refreshAllCities(state, pid);
+      refreshAllCities(state, t);
+      return null;
+    }
+    case 'endTurn':
+      return 'End turn is dispatched through applyAction';
+    default:
+      return 'Not a map action';
+  }
+}
+
+// ───────────────────────────── turn processing ─────────────────────────────
+
+/** end-of-turn for one civ: cities (growth/production/borders), gold, research, happiness, bankruptcy */
+function endPhase(state: GameState, pid: PlayerId, emit: Emit): void {
+  const player = getPlayer(state, pid);
+  if (!player.alive || pid === BARBARIAN) return;
+  const fx = collectEffects(state, pid);
+  updateHappiness(state, pid, emit, fx);
+  const cities = citiesOf(state, pid);
+  // yields snapshot before production changes anything this turn
+  refreshAllCities(state, pid);
+  const science = sciencePerTurn(state, pid);
+  const culture = culturePerTurn(state, pid);
+  const gold = goldPerTurn(state, pid);
+  for (const c of cities) if (state.cities[c.id]?.owner === pid) processCity(state, c, emit, fx);
+  addGold(state, pid, gold.net, 'Income', emit);
+  processResearch(state, pid, science, emit);
+  if (pid === HUMAN) {
+    if (culture > 0) addStat(state, 'culture', culture);
+    if (science > 0) addStat(state, 'science', science);
+    if (gold.income > 0) addStat(state, 'gold', gold.income);
+  }
+  if (player.gold < 0) bankrupt(state, pid, emit);
+  updateHappiness(state, pid, emit);
+  refreshAllCities(state, pid);
+}
+
+/** negative treasury: disband the least valuable military unit (one per turn) */
+function bankrupt(state: GameState, pid: PlayerId, emit: Emit): void {
+  let pick: { id: number; cost: number } | null = null;
+  for (const id in state.units) {
+    const u = state.units[id];
+    if (u.owner !== pid) continue;
+    const d = UNITS[u.type];
+    if (!d || d.class === 'civilian') continue;
+    if (!pick || d.cost < pick.cost || (d.cost === pick.cost && u.id < pick.id)) pick = { id: u.id, cost: d.cost };
+  }
+  if (!pick) return;
+  const u = state.units[pick.id];
+  if (pid === HUMAN) emit({ type: 'notify', text: `The treasury is empty — your ${UNITS[u.type]?.name ?? 'unit'} deserted.`, icon: 'gold', tile: u.tile, tone: 'bad' });
+  removeUnit(state, pick.id, emit);
+}
+
+/** civs with no cities and no settlers are eliminated */
+function checkEliminations(state: GameState, emit: Emit): void {
+  for (const p of state.players) {
+    if (!p.alive || p.id === BARBARIAN) continue;
+    if (citiesOf(state, p.id).length) continue;
+    let settler = false;
+    for (const id in state.units) {
+      const u = state.units[id];
+      if (u.owner === p.id && UNITS[u.type]?.abilities?.includes('foundCity')) { settler = true; break; }
+    }
+    if (settler) continue;
+    const by = p.counters.lastCapturedBy;
+    for (const id of Object.keys(state.units)) if (state.units[+id]?.owner === p.id) removeUnit(state, +id, emit);
+    p.alive = false;
+    p.researching = null;
+    emit({ type: 'playerEliminated', player: p.id, by: by != null ? by : undefined });
+    if (p.id === HUMAN && state.run.phase !== 'defeat') changeMandate(state, -Math.max(1, state.run.mandate), 'Your civilization has fallen', emit);
+  }
+}
+
+/** human capital captured → the run collapses */
+function checkFalls(state: GameState, emit: Emit): void {
+  const human = getPlayer(state, HUMAN);
+  if (human.counters.capitalLost) {
+    human.counters.capitalLost = 0;
+    if (state.run.phase !== 'defeat') changeMandate(state, -Math.max(1, state.run.mandate), 'Your capital has fallen', emit);
+  }
+}
+
+function endTurn(state: GameState, emit: Emit): void {
+  const turn = state.turn;
+  emit({ type: 'turnEnd', turn, player: HUMAN });
+  endPhase(state, HUMAN, emit);
+
+  for (const p of state.players) {
+    if (p.id === HUMAN || p.id === BARBARIAN || !p.alive) continue;
+    if (state.gameOver) return;
+    emit({ type: 'turnStart', turn, player: p.id });
+    unitsTurnStart(state, p.id, emit);
+    runHook(state, p.id, 'turnStart', emit, null);
+    runAiTurn(state, p.id, emit);
+    if (p.alive) endPhase(state, p.id, emit);
+    emit({ type: 'turnEnd', turn, player: p.id });
+    checkEliminations(state, emit);
+    checkFalls(state, emit);
+  }
+  if (state.gameOver) return;
+
+  emit({ type: 'turnStart', turn, player: BARBARIAN });
+  unitsTurnStart(state, BARBARIAN, emit);
+  runBarbarians(state, emit);
+  emit({ type: 'turnEnd', turn, player: BARBARIAN });
+  checkEliminations(state, emit);
+  checkFalls(state, emit);
+  if (state.gameOver) return;
+
+  state.turn++;
+  onTurnEnd(state, emit);
+  if (state.gameOver) return;
+
+  emit({ type: 'turnStart', turn: state.turn, player: HUMAN });
+  unitsTurnStart(state, HUMAN, emit);
+  runHook(state, HUMAN, 'turnStart', emit, null);
+  for (const p of state.players) if (p.alive) recomputeVisibility(state, p.id, emit);
+  for (const p of state.players) if (p.alive && p.id !== BARBARIAN) refreshAllCities(state, p.id);
+  checkEliminations(state, emit);
+  checkFalls(state, emit);
+}

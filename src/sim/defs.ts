@@ -11,7 +11,7 @@ import type {
 } from './types';
 
 // ───────────────────────────── hook plumbing ─────────────────────────────
-export type EffectKind = 'leader' | 'doctrine' | 'crisis' | 'reform' | 'wonder' | 'building' | 'ascension' | 'darkAge' | 'naturalWonder';
+export type EffectKind = 'leader' | 'doctrine' | 'crisis' | 'reform' | 'wonder' | 'building' | 'ascension' | 'darkAge' | 'naturalWonder' | 'edict';
 
 export interface HookCtx {
   state: GameState;
@@ -197,6 +197,8 @@ export interface PromotionDef {
   /** combat modifier for the promoted unit; push into the side matching a.side */
   combat?(a: CombatArgs, unit: Unit): void;
   moves?: number; vision?: number; range?: number; heal?: number; // flat bonuses
+  /** rewards when this unit destroys an enemy unit (applied by sim/combat.ts): gold to owner, hp healed, bonus xp */
+  onKill?: { gold?: number; heal?: number; xp?: number };
 }
 
 export interface NaturalWonderDef {
@@ -225,7 +227,8 @@ export interface DoctrineDef {
   icon: string; // icon name or emoji-free glyph key
   art: { hue: number; motif: string }; // procedural card art params
   /** meta-unlock requirement; absent = unlocked from the start */
-  unlock?: { text: string };
+  /** `rule` = key of UNLOCK_RULES in src/meta/profile.ts (missing/unknown → 'win') */
+  unlock?: { text: string; rule?: string };
   /** exclude from shops (e.g. leader starting doctrines) */
   noShop?: boolean;
   effects: EffectHooks;
@@ -239,11 +242,17 @@ export interface EdictDef {
   /** return error string if not usable */
   canUse?(ctx: HookCtx, t: { tile?: TileIdx; cityId?: CityId; unitId?: UnitId }): string | null;
   use(ctx: HookCtx, t: { tile?: TileIdx; cityId?: CityId; unitId?: UnitId }): void;
-  unlock?: { text: string };
+  unlock?: { text: string; rule?: string };
 }
 
 export interface ScrollDef {
   id: ScrollId; name: string; pillar: PillarId; cost: number; description: string; icon: string;
+  /** pillar levels granted to each targeted pillar (default 1) */
+  levels?: number;
+  /** which pillars are raised: `pillar` (default) = `pillar`; `focus` = run.focus at use time; `all` = every pillar */
+  scope?: 'pillar' | 'focus' | 'all';
+  /** relative roll weight in shops/Archive packs (default 1; rare variants < 1) */
+  weight?: number;
 }
 
 export interface CrisisDef {
@@ -251,6 +260,8 @@ export interface CrisisDef {
   art: { hue: number; motif: string };
   /** multiplier on this chapter's target (default 1) */
   targetMul?: number;
+  /** relative roll weight among eligible crises (default 1) */
+  weight?: number;
   /** extra influence for surviving */
   reward: number;
   /** active only during the crisis chapter, applied to the HUMAN player (and to AIs if affectsAll) */
@@ -277,7 +288,7 @@ export interface LeaderDef {
   aiPersonality: AiPersonality;
   cityNames: string[];
   portrait: { hue: number; motif: string; crest: string };
-  unlock?: { text: string };
+  unlock?: { text: string; rule?: string };
   effects: EffectHooks;
 }
 

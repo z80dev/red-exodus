@@ -1,0 +1,52 @@
+[
+ {
+  "out": "art/gen/out/reforms/_sheet_00.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: A round council table of dark wood with carved chairs, one new chair being added and glowing with golden light, a hanging lamp above. Palette: amber and gold. Top-right: A grand marble council rotunda with a crown resting on a round table surrounded by many high-backed chairs, golden light pouring from the dome. Palette: amber and gold. Bottom-left: A royal archive vault with shelves of rolled decrees tied with red ribbons and wax seals, a new empty shelf glowing with light. Palette: burnt orange and copper. Bottom-right: A towering imperial library with spiral shelves of bound books climbing into darkness, a single great tome glowing on a lectern. Palette: violet and amethyst. Each cell: Square card vignette: a civic institution or symbol presented as a monument on a dark ground, calm and dignified, gold rim light, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "expanded_council",
+   "grand_council",
+   "royal_archives",
+   "imperial_archives"
+  ]
+ },
+ {
+  "out": "art/gen/out/reforms/_sheet_01.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: The arched gates of a market hall swinging open to reveal lantern-lit stalls stacked with wares and bundled parcels. Palette: burnt orange and copper. Top-right: A vast domed bazaar interior glowing with hanging lanterns, gold coins, silks and treasure chests stacked around a central fountain. Palette: burnt orange and copper. Bottom-left: A courier's winged boot and message satchel floating mid-stride in a rush of wind streaks, a road winding into the distance. Palette: azure and cerulean blue. Bottom-right: An imperial post rider on a galloping horse passing a stone relay station at dusk, dust trailing, a glowing lantern on the station. Palette: azure and cerulean blue. Each cell: Square card vignette: a civic institution or symbol presented as a monument on a dark ground, calm and dignified, gold rim light, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "open_markets",
+   "grand_bazaar",
+   "swift_couriers",
+   "imperial_post"
+  ]
+ },
+ {
+  "out": "art/gen/out/reforms/_sheet_02.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: A royal treasury vault door with a violet crystal lock, piles of glowing violet influence gems and gold behind it. Palette: violet and amethyst. Top-right: A monumental golden treasury building with columns, coins stacked like pillars on its steps, sunlight gleaming off gold. Palette: amber and gold. Bottom-left: A golden imperial seal hovering in a beam of divine light descending from parted clouds, a laurel wreath around it. Palette: amber and gold. Bottom-right: A radiant sun disc crowning a marble throne atop endless steps, rays of eternal golden light pouring down over the land. Palette: amber and gold. Each cell: Square card vignette: a civic institution or symbol presented as a monument on a dark ground, calm and dignified, gold rim light, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "royal_treasury",
+   "sovereign_wealth",
+   "heavenly_mandate",
+   "eternal_mandate"
+  ]
+ },
+ {
+  "out": "art/gen/out/reforms/_sheet_03.png",
+  "prompt": "Two separate square card vignette paintings arranged in a precise side-by-side pair that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Left: A single scroll case on a marble pedestal opening with a burst of blue light, a feather quill and ink pot beside it. Palette: sapphire and royal blue. Right: Six great bound tomes standing like pillars in a circle on a dark ground, each glowing a different colour, a golden light rising from the centre. Palette: sapphire and royal blue. Each cell: Square card vignette: a civic institution or symbol presented as a monument on a dark ground, calm and dignified, gold rim light, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "landscape",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "1x2",
+  "cells": [
+   "scholarly_canon",
+   "codified_canon"
+  ]
+ }
+]

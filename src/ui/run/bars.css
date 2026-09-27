@@ -1,0 +1,66 @@
+/* Doctrine bar + edict tray. OWNER: UI-Rogue. Inline components: the host positions them. */
+.rdb {
+  --rdb-mini-w: 44px;
+  --rdb-card-w: clamp(58px, 15vw, 96px);
+  position: relative; display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+}
+.rdb--compact { --rdb-gap: 5px; }
+.rdb--full { --rdb-gap: clamp(6px, 1.6vw, 12px); }
+.rdb-row { display: flex; align-items: flex-end; gap: var(--rdb-gap); padding: 6px 2px 2px; }
+.rdb-slot {
+  position: relative; touch-action: none; cursor: grab; border-radius: 8px;
+  transition: filter 200ms;
+}
+.rdb.is-dragging .rdb-slot { cursor: grabbing; }
+.rdb-slot.is-dragged { z-index: 5; filter: drop-shadow(0 14px 18px rgba(0,0,0,0.55)); }
+.rdb-slot.is-triggered .rc-front { animation: rdb-trigger 700ms var(--ease-out); }
+@keyframes rdb-trigger {
+  0% { box-shadow: 0 0 0 0 rgba(246,221,143,0.0); }
+  25% { box-shadow: 0 0 0 2px var(--gold-300), 0 0 22px 6px rgba(246,221,143,0.85); }
+  100% { box-shadow: 0 0 0 0 rgba(246,221,143,0); }
+}
+.rdb-slot.is-disabled::after {
+  content: ''; position: absolute; inset: 0; border-radius: 6px; pointer-events: none;
+  background: repeating-linear-gradient(135deg, rgba(0,0,0,0.45) 0 6px, rgba(60,60,70,0.35) 6px 12px);
+}
+.rdb-chain {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2;
+  width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--ink-900); border: 1px solid var(--bad); color: var(--bad);
+}
+.rdb-index {
+  position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
+  min-width: 18px; height: 18px; padding: 0 4px; border-radius: 99px; font-size: 11px; font-weight: 800;
+  display: grid; place-items: center; background: var(--ink-800); border: 1px solid var(--glass-border); color: var(--gold-300);
+}
+.rdb-socket {
+  aspect-ratio: 5 / 7; border-radius: 7px; display: grid; place-items: center; flex: none;
+  border: 1.5px dashed rgba(234,199,102,0.28); color: rgba(234,199,102,0.35);
+  background: radial-gradient(circle at 50% 40%, rgba(234,199,102,0.07), rgba(0,0,0,0.25));
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+}
+.rdb-socket--edict { border-color: rgba(178,141,255,0.3); color: rgba(178,141,255,0.45); }
+.rdb-meta {
+  align-self: flex-end; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700;
+  color: var(--text-dim); padding: 3px 8px; border-radius: 99px; background: rgba(0,0,0,0.35); border: 1px solid var(--glass-border);
+}
+.rdb-sell {
+  position: absolute; left: 50%; top: calc(100% + 8px); transform: translate(-50%, -6px) scale(0.9); opacity: 0; pointer-events: none;
+  min-width: 150px; height: 52px; padding: 0 18px; border-radius: 14px; z-index: 4;
+  display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; color: var(--text);
+  background: linear-gradient(180deg, rgba(120,32,40,0.92), rgba(70,16,22,0.92)); border: 1.5px dashed #ff8b8b;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  transition: opacity 180ms, transform 220ms var(--ease-spring), background 160ms, box-shadow 160ms;
+}
+.rdb-sell.is-visible { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.rdb-sell.is-over { transform: translate(-50%, 0) scale(1.1); background: linear-gradient(180deg, #c0394a, #7a1b27); box-shadow: 0 0 0 2px #ffb3b3, 0 0 26px rgba(255,90,90,0.7); border-style: solid; }
+.rdb-sell .num { color: var(--influence); }
+
+.ret .rdb-slot { cursor: pointer; }
+.ret .rdb-slot.is-targeting { animation: ret-aim 1.1s ease-in-out infinite; }
+@keyframes ret-aim { 0%, 100% { filter: drop-shadow(0 0 4px var(--influence)); } 50% { filter: drop-shadow(0 0 14px var(--influence)); } }
+.ret-aim {
+  position: absolute; right: -6px; top: -6px; width: 20px; height: 20px; border-radius: 50%; z-index: 3;
+  display: grid; place-items: center; background: var(--influence); color: #1a1030; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.ret-note { width: 100%; text-align: center; font-size: 12px; color: var(--text-faint); }

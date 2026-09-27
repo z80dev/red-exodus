@@ -1,0 +1,74 @@
+/* Victory / Defeat. OWNER: UI-Rogue. */
+.rre { --rre-card-w: min(26vw, 118px); background: #04060a; }
+.rre-bg {
+  position: absolute; inset: -3%; background-size: cover; background-position: center;
+  background-image: radial-gradient(80% 60% at 50% 35%, #6b4c14, #1a1206 70%, #07090f);
+  animation: rcr-kenburns 18s ease-out both;
+}
+.rre--defeat .rre-bg { filter: grayscale(0.85) brightness(0.55) contrast(1.1); background-image: radial-gradient(80% 60% at 50% 35%, #3a3438, #0d0b0e 70%, #050608); animation-name: rre-sink; }
+@keyframes rre-sink { from { transform: scale(1.02); filter: grayscale(0) brightness(0.9) } to { transform: scale(1.1); filter: grayscale(0.85) brightness(0.55) contrast(1.1) } }
+.rre-vignette { position: absolute; inset: 0; background: radial-gradient(100% 75% at 50% 35%, transparent 25%, rgba(3,4,8,0.9) 100%), linear-gradient(180deg, rgba(3,4,8,0.2), rgba(3,4,8,0.85) 75%); }
+.rre--victory .rre-vignette { background: radial-gradient(100% 70% at 50% 30%, rgba(246,221,143,0.12), rgba(3,4,8,0.85) 100%), linear-gradient(180deg, rgba(3,4,8,0.1), rgba(3,4,8,0.85) 72%); }
+.rre-stage {
+  position: relative; z-index: 10; height: 100%; overflow-y: auto; touch-action: pan-y;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 20px 16px;
+  width: min(100%, 900px); margin: 0 auto;
+}
+.rre-head { text-align: center; }
+.rre-kicker { font-size: 13px; letter-spacing: 0.4em; text-indent: 0.4em; text-transform: uppercase; color: var(--gold-400); animation: k-fade 1s 0.2s both; }
+.rre--defeat .rre-kicker { color: var(--text-dim); }
+.rre-title {
+  margin: 2px 0 6px; font-weight: 900; font-size: clamp(54px, 17vw, 120px); line-height: 1; letter-spacing: 0.06em;
+  animation: rre-title 1.2s var(--ease-out) both;
+}
+.rre--victory .rre-title {
+  background: linear-gradient(180deg, #fffbe8, var(--gold-300) 40%, var(--gold-600)); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.5)) drop-shadow(0 0 40px rgba(246,221,143,0.55));
+}
+.rre--defeat .rre-title { color: #b9b3a3; text-shadow: 0 4px 0 rgba(0,0,0,0.6), 0 0 30px rgba(0,0,0,0.9); letter-spacing: 0.1em; }
+@keyframes rre-title { from { opacity: 0; transform: scale(1.35); filter: blur(10px) } to { opacity: 1; transform: none } }
+.rre--defeat .rre-title { animation-name: rre-fall; }
+@keyframes rre-fall { from { opacity: 0; transform: translateY(-30px) } 70% { opacity: 1; transform: translateY(4px) } to { transform: none } }
+.rre-line { margin: 10px auto 0; max-width: 40ch; color: var(--parchment); font-style: italic; font-size: 15px; animation: k-fade 1s 0.8s both; }
+.rre-reached { margin: 6px 0 0; color: var(--text-dim); font-size: 13px; }
+.rre-reached b { color: var(--text); }
+
+.rre-legacy { text-align: center; animation: k-rise-soft 600ms 0.9s var(--ease-out) both; }
+.rre-legacy-label { font-size: 11px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--text-faint); }
+.rre-legacy-num { font-weight: 900; font-size: clamp(40px, 11vw, 68px); line-height: 1.05; color: var(--gold-300); text-shadow: 0 0 26px rgba(246,221,143,0.5), 0 3px 0 rgba(0,0,0,0.5); }
+.rre--defeat .rre-legacy-num { color: var(--parchment-dim); text-shadow: 0 3px 0 rgba(0,0,0,0.5); }
+.rre-best { font-size: 12.5px; color: var(--text-dim); }
+.rre-best b { color: var(--text); }
+
+.rre-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: min(100%, 520px); animation: k-rise-soft 600ms 1.1s var(--ease-out) both; }
+.rre-stat {
+  display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 8px 4px; border-radius: 12px;
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--gold-400);
+}
+.rre-stat-v { font-size: 20px; font-weight: 900; color: var(--text); }
+.rre-stat-l { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); text-align: center; }
+
+.rre-unlocks { display: flex; flex-direction: column; align-items: center; gap: 10px; animation: k-rise-soft 600ms 1.3s var(--ease-out) both; }
+.rre-unlocks-title { display: inline-flex; gap: 6px; align-items: center; color: var(--gold-300); letter-spacing: 0.14em; text-transform: uppercase; font-size: 13px; }
+.rre-unlock-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.rre-unlock-badge {
+  display: inline-flex; gap: 6px; align-items: center; padding: 8px 12px; border-radius: 99px; background: var(--glass); border: 1px solid var(--gold-500);
+  opacity: 0; transform: scale(0.7); transition: opacity 300ms, transform 400ms var(--ease-spring);
+}
+.rre-unlock-badge.is-in { opacity: 1; transform: none; }
+
+.rre-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; animation: k-rise-soft 600ms 1.5s var(--ease-out) both; padding-bottom: var(--safe-bottom); }
+.rre-actions .k-btn { min-width: 170px; }
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .rre { --rre-card-w: 72px; }
+  .rre-stage { display: grid; grid-template-columns: 1fr 1fr; align-content: center; gap: 10px 24px; padding: 12px 20px; }
+  .rre-head { grid-column: 1; grid-row: 1 / span 2; }
+  .rre-title { font-size: 64px; }
+  .rre-legacy { grid-column: 2; grid-row: 1; }
+  .rre-stats { grid-column: 2; grid-row: 2; }
+  .rre-unlocks { grid-column: 1 / -1; }
+  .rre-actions { grid-column: 1 / -1; }
+  .rre-stat { padding: 4px; }
+  .rre-stat-v { font-size: 16px; }
+}

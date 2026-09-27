@@ -1,0 +1,91 @@
+[
+ {
+  "out": "art/gen/out/omens/_sheet_00.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: A blood-red harvest moon hanging over a dark field where a single sword stands planted in the earth like a scarecrow, crimson light pooling around it. Palette: crimson and ember red. Top-right: A horned barbarian skull helmet lying cracked on a stone, a shaft of golden light striking it from a parting sky, embers floating. Palette: burnt orange and copper. Bottom-left: A single tall pillar of fire and smoke rising from a burning war camp far below, the smoke curling into the shape of a fleeing horse in the night sky. Palette: burnt orange and copper. Bottom-right: A golden crown tumbling through the dark air, trailing sparks and falling gems, a faint silhouette of a city gate below. Palette: amber and gold. Each cell: Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "red_harvest",
+   "bane_of_barbarians",
+   "ashes_of_the_horde",
+   "fallen_crown"
+  ]
+ },
+ {
+  "out": "art/gen/out/omens/_sheet_01.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: A single battered round shield glowing with a protective blue aura, arrows frozen in the air around it, a dark storm behind. Palette: azure and cerulean blue. Top-right: A lone torch floating above blackened fields, burning embers drifting like fireflies over charred crop rows under a smoky red sky. Palette: burnt orange and copper. Bottom-left: Two crossed old swords hung with golden medals and laurel ribbons, floating in a soft beam of light on a dark ground. Palette: amber and gold. Bottom-right: An old notched bronze sword transforming into gleaming steel along its length in a flare of blue-white sparks, floating over an anvil. Palette: azure and cerulean blue. Each cell: Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "hold_the_line",
+   "scorched_earth",
+   "veterans_of_the_line",
+   "steel_for_old_swords"
+  ]
+ },
+ {
+  "out": "art/gen/out/omens/_sheet_02.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: A great wave made of countless spear tips and helmets cresting in the dark like a sea, an iron standard rising from its crest. Palette: sapphire and royal blue. Top-right: A war horn wreathed in crimson lightning floating in a thunderstorm, blood-red clouds swirling around it. Palette: crimson and ember red. Bottom-left: A black crown on a toppled throne beneath a violet comet, the comet's tail splitting the sky above, dust and embers drifting. Palette: violet and amethyst. Bottom-right: A white dove carrying an olive sprig flying out of dark storm clouds into a single ray of soft dawn light. Palette: azure and cerulean blue. Each cell: Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "iron_tide",
+   "blood_and_thunder",
+   "doom_of_kings",
+   "doves_return"
+  ]
+ },
+ {
+  "out": "art/gen/out/omens/_sheet_03.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: Two glowing seeds sprouting in cupped earth, each sprout forming a tiny luminous city of towers, green light rising. Palette: emerald and jade green. Top-right: A great glowing wheat sheaf whose grains shine like hundreds of tiny lanterns, each a family, floating in a warm dusk sky. Palette: olive and chartreuse. Bottom-left: A radiant capital city on a hill glowing like a lantern in the night, its towers shining gold, light beams rising to the stars. Palette: amber and gold. Bottom-right: Two earthy hands pressing seeds into dark soil that glows with green and golden light, a plough and a hoe resting beside them. Palette: olive and chartreuse. Each cell: Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "seeds_of_empire",
+   "teeming_masses",
+   "shining_city",
+   "hands_to_the_soil"
+  ]
+ },
+ {
+  "out": "art/gen/out/omens/_sheet_04.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: Glowing golden border lines spreading outward like ripples across a dark painted landscape seen from above, a small banner at the centre. Palette: teal and verdigris. Top-right: A single enormous gold coin spinning in the air trailing golden light, its face showing only a sun emblem, smaller coins orbiting it. Palette: amber and gold. Bottom-left: Carved stone blocks floating and stacking themselves into the first course of a tower, glowing mortar lines, a mason's trowel hovering. Palette: burnt orange and copper. Bottom-right: A distant golden pyramid glowing on the horizon at night with a beam of light shooting from its tip to a constellation above. Palette: amber and gold. Each cell: Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "widening_realm",
+   "coin_of_the_realm",
+   "stone_upon_stone",
+   "wonder_for_the_ages"
+  ]
+ },
+ {
+  "out": "art/gen/out/omens/_sheet_05.png",
+  "prompt": "Four separate square card vignette paintings arranged in a precise 2×2 grid that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Top-left: Two golden sun discs slowly aligning in a luminous sky above two monuments, rays of light joining between them. Palette: amber and gold. Top-right: A glowing crystal fountain in the dark pouring streams of blue light that turn into floating open books and orbiting stars. Palette: sapphire and royal blue. Bottom-left: A brass compass floating over the dark edge of the world where the ocean pours off into a starry abyss, its needle glowing. Palette: teal and verdigris. Bottom-right: An ornate ancient bronze key and a cracked stone idol half-buried in sand, lit by a single ray of light from above in a dark ruin. Palette: burnt orange and copper. Each cell: Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "square",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "2x2",
+  "cells": [
+   "heavenly_accord",
+   "font_of_knowledge",
+   "beyond_the_edge",
+   "relics_of_the_ancients"
+  ]
+ },
+ {
+  "out": "art/gen/out/omens/_sheet_06.png",
+  "prompt": "Two separate square card vignette paintings arranged in a precise side-by-side pair that exactly fills the canvas; each painting fills exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one identical style. Left: A rolled decree bound with a ribbon and a heavy wax seal floating in the air, a beam of magenta light radiating from the seal, no writing visible. Palette: magenta and plum. Right: A jewelled festival mask floating above a night of fireworks, confetti and lantern light swirling around it in magenta and gold. Palette: rose and wine red. Each cell: Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, strongly centred with generous negative space. Style: painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene itself falls into deep shadow toward the corners, limited rich palette with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI and Slay the Spire. No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, no vignette mask, no UI, no watermark, no signature.",
+  "aspect": "landscape",
+  "model": "bytedance/seedream/v5/pro/text-to-image",
+  "layout": "1x2",
+  "cells": [
+   "word_of_law",
+   "days_of_revelry"
+  ]
+ }
+]

@@ -1,0 +1,85 @@
+.aeons-cardart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink-900);
+  contain: paint;
+}
+.aeons-cardart__svg,
+.aeons-cardart__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.aeons-cardart__img {
+  object-fit: cover;
+  -webkit-user-drag: none;
+}
+.aeons-cardart__rim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px var(--rim), inset 0 0 18px -4px var(--rim);
+  opacity: 0.8;
+}
+.aeons-cardart__spin {
+  animation: aeons-art-spin 90s linear infinite;
+}
+.aeons-cardart__sheen {
+  animation: aeons-art-sheen 4.5s var(--ease-out) infinite;
+}
+@keyframes aeons-art-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes aeons-art-sheen {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(120%); }
+}
+
+/* leader portrait */
+.aeons-portrait {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink-900);
+  flex-shrink: 0;
+}
+.aeons-portrait--round { border-radius: 50%; }
+.aeons-portrait--square { border-radius: var(--radius-sm); }
+.aeons-portrait--card { border-radius: var(--radius-sm); }
+.aeons-portrait > svg,
+.aeons-portrait > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.aeons-portrait__frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1.5px rgba(234, 199, 102, 0.75), inset 0 0 0 3px rgba(7, 9, 15, 0.6), inset 0 -30px 40px -20px rgba(0, 0, 0, 0.6);
+}
+
+/* logo */
+.aeons-logo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0;
+}
+.aeons-logo svg { display: block; overflow: visible; }
+.aeons-logo__sheen {
+  animation: aeons-logo-sheen 6s var(--ease-out) infinite;
+}
+@keyframes aeons-logo-sheen {
+  0% { transform: translateX(-160px); }
+  45%, 100% { transform: translateX(560px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aeons-cardart__spin,
+  .aeons-cardart__sheen,
+  .aeons-logo__sheen { animation: none; }
+}

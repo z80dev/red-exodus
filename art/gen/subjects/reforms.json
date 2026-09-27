@@ -1,0 +1,16 @@
+{
+ "expanded_council": { "hue": 40, "subject": "A round council table of dark wood with carved chairs, one new chair being added and glowing with golden light, a hanging lamp above." },
+ "grand_council": { "hue": 45, "subject": "A grand marble council rotunda with a crown resting on a round table surrounded by many high-backed chairs, golden light pouring from the dome." },
+ "royal_archives": { "hue": 30, "subject": "A royal archive vault with shelves of rolled decrees tied with red ribbons and wax seals, a new empty shelf glowing with light." },
+ "imperial_archives": { "hue": 255, "subject": "A towering imperial library with spiral shelves of bound books climbing into darkness, a single great tome glowing on a lectern." },
+ "open_markets": { "hue": 25, "subject": "The arched gates of a market hall swinging open to reveal lantern-lit stalls stacked with wares and bundled parcels." },
+ "grand_bazaar": { "hue": 38, "subject": "A vast domed bazaar interior glowing with hanging lanterns, gold coins, silks and treasure chests stacked around a central fountain." },
+ "swift_couriers": { "hue": 190, "subject": "A courier's winged boot and message satchel floating mid-stride in a rush of wind streaks, a road winding into the distance." },
+ "imperial_post": { "hue": 200, "subject": "An imperial post rider on a galloping horse passing a stone relay station at dusk, dust trailing, a glowing lantern on the station." },
+ "royal_treasury": { "hue": 280, "subject": "A royal treasury vault door with a violet crystal lock, piles of glowing violet influence gems and gold behind it." },
+ "sovereign_wealth": { "hue": 50, "subject": "A monumental golden treasury building with columns, coins stacked like pillars on its steps, sunlight gleaming off gold." },
+ "heavenly_mandate": { "hue": 45, "subject": "A golden imperial seal hovering in a beam of divine light descending from parted clouds, a laurel wreath around it." },
+ "eternal_mandate": { "hue": 42, "subject": "A radiant sun disc crowning a marble throne atop endless steps, rays of eternal golden light pouring down over the land." },
+ "scholarly_canon": { "hue": 220, "subject": "A single scroll case on a marble pedestal opening with a burst of blue light, a feather quill and ink pot beside it." },
+ "codified_canon": { "hue": 235, "subject": "Six great bound tomes standing like pillars in a circle on a dark ground, each glowing a different colour, a golden light rising from the centre." }
+}

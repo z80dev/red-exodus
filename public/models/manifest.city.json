@@ -1,0 +1,716 @@
+[
+ {
+  "key": "bld_amphitheater",
+  "file": "/models/bld_amphitheater.glb",
+  "tris": 1124,
+  "bbox": {
+   "min": [
+    -0.2354,
+    0.0,
+    -0.199
+   ],
+   "max": [
+    0.2354,
+    0.22,
+    0.209
+   ]
+  }
+ },
+ {
+  "key": "bld_aqueduct",
+  "file": "/models/bld_aqueduct.glb",
+  "tris": 794,
+  "bbox": {
+   "min": [
+    -0.25,
+    0.0,
+    -0.035
+   ],
+   "max": [
+    0.256,
+    0.334,
+    0.12
+   ]
+  }
+ },
+ {
+  "key": "bld_bank",
+  "file": "/models/bld_bank.glb",
+  "tris": 742,
+  "bbox": {
+   "min": [
+    -0.23,
+    0.0,
+    -0.21
+   ],
+   "max": [
+    0.23,
+    0.3792,
+    0.205
+   ]
+  }
+ },
+ {
+  "key": "bld_barracks",
+  "file": "/models/bld_barracks.glb",
+  "tris": 768,
+  "bbox": {
+   "min": [
+    -0.266,
+    0.0,
+    -0.2
+   ],
+   "max": [
+    0.266,
+    0.2512,
+    0.2
+   ]
+  }
+ },
+ {
+  "key": "bld_castle",
+  "file": "/models/bld_castle.glb",
+  "tris": 1128,
+  "bbox": {
+   "min": [
+    -0.2573,
+    0.0,
+    -0.2573
+   ],
+   "max": [
+    0.2573,
+    0.4592,
+    0.275
+   ]
+  }
+ },
+ {
+  "key": "bld_cathedral",
+  "file": "/models/bld_cathedral.glb",
+  "tris": 958,
+  "bbox": {
+   "min": [
+    -0.18,
+    0.0,
+    -0.261
+   ],
+   "max": [
+    0.18,
+    0.476,
+    0.24
+   ]
+  }
+ },
+ {
+  "key": "bld_factory",
+  "file": "/models/bld_factory.glb",
+  "tris": 894,
+  "bbox": {
+   "min": [
+    -0.24,
+    0.0,
+    -0.21
+   ],
+   "max": [
+    0.2548,
+    0.497,
+    0.21
+   ]
+  }
+ },
+ {
+  "key": "bld_granary",
+  "file": "/models/bld_granary.glb",
+  "tris": 1038,
+  "bbox": {
+   "min": [
+    -0.2415,
+    0.0,
+    -0.2415
+   ],
+   "max": [
+    0.2415,
+    0.278,
+    0.2415
+   ]
+  }
+ },
+ {
+  "key": "bld_harbor",
+  "file": "/models/bld_harbor.glb",
+  "tris": 600,
+  "bbox": {
+   "min": [
+    -0.24,
+    0.0,
+    -0.24
+   ],
+   "max": [
+    0.24,
+    0.242,
+    0.2565
+   ]
+  }
+ },
+ {
+  "key": "bld_library",
+  "file": "/models/bld_library.glb",
+  "tris": 1076,
+  "bbox": {
+   "min": [
+    -0.23,
+    0.0,
+    -0.19
+   ],
+   "max": [
+    0.23,
+    0.41,
+    0.2
+   ]
+  }
+ },
+ {
+  "key": "bld_lighthouse",
+  "file": "/models/bld_lighthouse.glb",
+  "tris": 750,
+  "bbox": {
+   "min": [
+    -0.26,
+    0.0,
+    -0.2083
+   ],
+   "max": [
+    0.2193,
+    0.51,
+    0.217
+   ]
+  }
+ },
+ {
+  "key": "bld_market",
+  "file": "/models/bld_market.glb",
+  "tris": 1330,
+  "bbox": {
+   "min": [
+    -0.2415,
+    0.0,
+    -0.2415
+   ],
+   "max": [
+    0.2415,
+    0.2312,
+    0.2415
+   ]
+  }
+ },
+ {
+  "key": "bld_observatory",
+  "file": "/models/bld_observatory.glb",
+  "tris": 750,
+  "bbox": {
+   "min": [
+    -0.2318,
+    0.0,
+    -0.2318
+   ],
+   "max": [
+    0.2318,
+    0.3552,
+    0.2318
+   ]
+  }
+ },
+ {
+  "key": "bld_powerplant",
+  "file": "/models/bld_powerplant.glb",
+  "tris": 1016,
+  "bbox": {
+   "min": [
+    -0.24,
+    0.0,
+    -0.22
+   ],
+   "max": [
+    0.24,
+    0.364,
+    0.22
+   ]
+  }
+ },
+ {
+  "key": "bld_stadium",
+  "file": "/models/bld_stadium.glb",
+  "tris": 1294,
+  "bbox": {
+   "min": [
+    -0.2528,
+    0.0,
+    -0.1936
+   ],
+   "max": [
+    0.2528,
+    0.3502,
+    0.196
+   ]
+  }
+ },
+ {
+  "key": "bld_temple",
+  "file": "/models/bld_temple.glb",
+  "tris": 1130,
+  "bbox": {
+   "min": [
+    -0.2291,
+    0.0,
+    -0.2125
+   ],
+   "max": [
+    0.2191,
+    0.388,
+    0.25
+   ]
+  }
+ },
+ {
+  "key": "bld_university",
+  "file": "/models/bld_university.glb",
+  "tris": 902,
+  "bbox": {
+   "min": [
+    -0.24,
+    0.0,
+    -0.21
+   ],
+   "max": [
+    0.24,
+    0.4832,
+    0.21
+   ]
+  }
+ },
+ {
+  "key": "bld_workshop",
+  "file": "/models/bld_workshop.glb",
+  "tris": 612,
+  "bbox": {
+   "min": [
+    -0.23,
+    0.0,
+    -0.2
+   ],
+   "max": [
+    0.246,
+    0.316,
+    0.2
+   ]
+  }
+ },
+ {
+  "key": "city_center_0",
+  "file": "/models/city_center_0.glb",
+  "tris": 1260,
+  "bbox": {
+   "min": [
+    -0.3007,
+    0.0,
+    -0.2698
+   ],
+   "max": [
+    0.294,
+    0.4512,
+    0.2604
+   ]
+  }
+ },
+ {
+  "key": "city_center_1",
+  "file": "/models/city_center_1.glb",
+  "tris": 1384,
+  "bbox": {
+   "min": [
+    -0.279,
+    0.0,
+    -0.222
+   ],
+   "max": [
+    0.245,
+    0.4732,
+    0.23
+   ]
+  }
+ },
+ {
+  "key": "city_center_2",
+  "file": "/models/city_center_2.glb",
+  "tris": 1156,
+  "bbox": {
+   "min": [
+    -0.2494,
+    0.0,
+    -0.2594
+   ],
+   "max": [
+    0.2494,
+    0.5472,
+    0.2394
+   ]
+  }
+ },
+ {
+  "key": "city_center_3",
+  "file": "/models/city_center_3.glb",
+  "tris": 1494,
+  "bbox": {
+   "min": [
+    -0.25,
+    0.0,
+    -0.21
+   ],
+   "max": [
+    0.25,
+    0.49,
+    0.2162
+   ]
+  }
+ },
+ {
+  "key": "city_center_4",
+  "file": "/models/city_center_4.glb",
+  "tris": 1490,
+  "bbox": {
+   "min": [
+    -0.25,
+    0.0,
+    -0.22
+   ],
+   "max": [
+    0.25,
+    0.5422,
+    0.2
+   ]
+  }
+ },
+ {
+  "key": "city_center_5",
+  "file": "/models/city_center_5.glb",
+  "tris": 838,
+  "bbox": {
+   "min": [
+    -0.25,
+    0.0,
+    -0.23
+   ],
+   "max": [
+    0.25,
+    0.549,
+    0.1992
+   ]
+  }
+ },
+ {
+  "key": "house_0_a",
+  "file": "/models/house_0_a.glb",
+  "tris": 258,
+  "bbox": {
+   "min": [
+    -0.0966,
+    0.0,
+    -0.085
+   ],
+   "max": [
+    0.0873,
+    0.17,
+    0.085
+   ]
+  }
+ },
+ {
+  "key": "house_0_b",
+  "file": "/models/house_0_b.glb",
+  "tris": 240,
+  "bbox": {
+   "min": [
+    -0.084,
+    0.0,
+    -0.069
+   ],
+   "max": [
+    0.084,
+    0.141,
+    0.1083
+   ]
+  }
+ },
+ {
+  "key": "house_1_a",
+  "file": "/models/house_1_a.glb",
+  "tris": 148,
+  "bbox": {
+   "min": [
+    -0.0958,
+    0.0,
+    -0.079
+   ],
+   "max": [
+    0.092,
+    0.13,
+    0.117
+   ]
+  }
+ },
+ {
+  "key": "house_1_b",
+  "file": "/models/house_1_b.glb",
+  "tris": 136,
+  "bbox": {
+   "min": [
+    -0.086,
+    0.0,
+    -0.076
+   ],
+   "max": [
+    0.086,
+    0.16,
+    0.097
+   ]
+  }
+ },
+ {
+  "key": "house_2_a",
+  "file": "/models/house_2_a.glb",
+  "tris": 160,
+  "bbox": {
+   "min": [
+    -0.088,
+    0.0,
+    -0.068
+   ],
+   "max": [
+    0.088,
+    0.168,
+    0.068
+   ]
+  }
+ },
+ {
+  "key": "house_2_b",
+  "file": "/models/house_2_b.glb",
+  "tris": 184,
+  "bbox": {
+   "min": [
+    -0.075,
+    0.0,
+    -0.072
+   ],
+   "max": [
+    0.075,
+    0.23,
+    0.08
+   ]
+  }
+ },
+ {
+  "key": "house_3_a",
+  "file": "/models/house_3_a.glb",
+  "tris": 304,
+  "bbox": {
+   "min": [
+    -0.083,
+    0.0,
+    -0.068
+   ],
+   "max": [
+    0.083,
+    0.178,
+    0.0815
+   ]
+  }
+ },
+ {
+  "key": "house_3_b",
+  "file": "/models/house_3_b.glb",
+  "tris": 256,
+  "bbox": {
+   "min": [
+    -0.069,
+    0.0,
+    -0.065
+   ],
+   "max": [
+    0.069,
+    0.22,
+    0.076
+   ]
+  }
+ },
+ {
+  "key": "house_4_a",
+  "file": "/models/house_4_a.glb",
+  "tris": 240,
+  "bbox": {
+   "min": [
+    -0.085,
+    0.0,
+    -0.065
+   ],
+   "max": [
+    0.085,
+    0.21,
+    0.085
+   ]
+  }
+ },
+ {
+  "key": "house_4_b",
+  "file": "/models/house_4_b.glb",
+  "tris": 224,
+  "bbox": {
+   "min": [
+    -0.075,
+    0.0,
+    -0.07
+   ],
+   "max": [
+    0.075,
+    0.166,
+    0.105
+   ]
+  }
+ },
+ {
+  "key": "house_5_a",
+  "file": "/models/house_5_a.glb",
+  "tris": 180,
+  "bbox": {
+   "min": [
+    -0.072,
+    0.0,
+    -0.065
+   ],
+   "max": [
+    0.072,
+    0.228,
+    0.078
+   ]
+  }
+ },
+ {
+  "key": "house_5_b",
+  "file": "/models/house_5_b.glb",
+  "tris": 142,
+  "bbox": {
+   "min": [
+    -0.0858,
+    0.0,
+    -0.06
+   ],
+   "max": [
+    0.085,
+    0.1263,
+    0.094
+   ]
+  }
+ },
+ {
+  "key": "wall_seg_0",
+  "file": "/models/wall_seg_0.glb",
+  "tris": 592,
+  "bbox": {
+   "min": [
+    -0.5179,
+    -0.0026,
+    -0.102
+   ],
+   "max": [
+    0.5179,
+    0.1807,
+    0.042
+   ]
+  }
+ },
+ {
+  "key": "wall_seg_1",
+  "file": "/models/wall_seg_1.glb",
+  "tris": 500,
+  "bbox": {
+   "min": [
+    -0.5289,
+    0.0,
+    -0.05
+   ],
+   "max": [
+    0.5289,
+    0.192,
+    0.05
+   ]
+  }
+ },
+ {
+  "key": "wall_seg_2",
+  "file": "/models/wall_seg_2.glb",
+  "tris": 188,
+  "bbox": {
+   "min": [
+    -0.5543,
+    0.0,
+    -0.098
+   ],
+   "max": [
+    0.5543,
+    0.2272,
+    0.094
+   ]
+  }
+ },
+ {
+  "key": "wall_tower_0",
+  "file": "/models/wall_tower_0.glb",
+  "tris": 546,
+  "bbox": {
+   "min": [
+    -0.094,
+    -0.0015,
+    -0.094
+   ],
+   "max": [
+    0.094,
+    0.4142,
+    0.094
+   ]
+  }
+ },
+ {
+  "key": "wall_tower_1",
+  "file": "/models/wall_tower_1.glb",
+  "tris": 474,
+  "bbox": {
+   "min": [
+    -0.1187,
+    0.0,
+    -0.119
+   ],
+   "max": [
+    0.1187,
+    0.4292,
+    0.119
+   ]
+  }
+ },
+ {
+  "key": "wall_tower_2",
+  "file": "/models/wall_tower_2.glb",
+  "tris": 426,
+  "bbox": {
+   "min": [
+    -0.17,
+    0.0,
+    -0.08
+   ],
+   "max": [
+    0.17,
+    0.3372,
+    0.26
+   ]
+  }
+ }
+]
