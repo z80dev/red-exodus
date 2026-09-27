@@ -171,6 +171,8 @@ export interface BuildingDef {
   requires?: BuildingId; coastal?: boolean; river?: boolean;
   uniqueTo?: LeaderId; replaces?: BuildingId;
   effects?: EffectHooks;
+  /** landmark model key (bld_<x>) shown in the city when built; omit for no landmark */
+  model?: string;
   description: string; icon: string; pillar?: PillarId; // pillar it thematically feeds (UI tint)
 }
 

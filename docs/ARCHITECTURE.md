@@ -60,7 +60,8 @@ at module-evaluation time (only inside functions).
 ### Required content ids (sim code references these literally)
 Units: `settler`, `scout`, `warrior`. Buildings: `palace` (auto in capital; free), `walls` (city defense).
 Projects: `wealth`, `research`, `festival` (festival converts production → Renown live; see Roguelite).
-Techs: exactly 36 (6 per era 0..5). Starting techs: none; `pottery`/`agriculture`-like roots have no prereqs.
+Techs: exactly 36 (6 per era 0..5). Starting techs: none; era-0 roots have no prereqs. `sailing` (era 0/1) enables embarking on coast/lake; `cartography` (era 2) enables ocean.
+Leader-unique units/buildings live in `content/uniques.ts` (ContentRogue owns; exports `UNIQUE_UNITS`, `UNIQUE_BUILDINGS`), spread into `UNITS`/`BUILDINGS` by ContentCiv (`...UNIQUE_UNITS` at the end of the record).
 Wonder ids (18, 3 per era; model key = `w_<id>`):
 era0 `pyramids` `stonehenge` `hanging_gardens` · era1 `colossus` `great_library` `oracle` ·
 era2 `great_wall` `hagia_sophia` `angkor_wat` · era3 `taj_mahal` `leaning_tower` `himeji` ·
@@ -79,8 +80,10 @@ strategic `horses` `iron` `niter` `coal` `oil`.
 Improvements (model `imp_<id>`): `farm` `mine` `pasture` `plantation` `lumbermill` `quarry` `fishing_boats` `camp` `trading_post` `oil_well`.
 
 ## 3D asset contract (Blender → Renderer)
-- One GLB per model: `public/models/<key>.glb`. Manifest: `src/render/assets/manifest.ts` (Renderer owns; Blender
-  agents also write `public/models/manifest.json` listing produced keys with bounding boxes).
+- One GLB per model: `public/models/<key>.glb`. Manifest: `src/render/assets/manifest.ts` (Renderer owns). Each Blender
+  agent writes `public/models/manifest.<group>.json` (`[{key, file, tris, bbox:{min:[x,y,z],max:[x,y,z]}}]`); groups: nature, city, wonders, units.
+- Blender is Z-up, -Y forward; the glTF exporter (export_yup) maps Blender -Y front → glTF +Z front. Model units face Blender -Y.
+- Blender binary: `/Applications/Blender.app/Contents/MacOS/Blender -b --python <script>` (Blender 5.2).
 - Units: Y-up, glTF default. Origin = ground center of footprint. **Front faces +Z**. Hex circumradius = 1.0
   (hex width 1.732). Sizes: unit figure height ≈ 0.32 (renderer scales per quality); trees 0.2–0.45; houses
   0.12–0.25; city center landmark ≤ 0.55; wonders fit within radius 0.85, height 0.4–0.95; mountains fill a hex
@@ -111,6 +114,12 @@ arrowUp arrowDown chevronRight chevronLeft hourglass calendar` · content icons:
 building id, wonder id, tech id fall back to a category glyph if missing (`building`, `wonder`, `tech`, `resource`,
 `improvement`). RichText tokens: `{food} {prod} {gold} {sci} {cul} {happy} {influence} {renown} {splendor} {mandate}`
 plus `{icon:name}`; `**bold**` supported.
+
+## Card art motifs (procedural SVG, `ui/art`)
+`art.motif` / `portrait.motif` / `portrait.crest` values MUST be one of:
+sun moon star river wave mountain tree wheat coin scroll flask lyre laurel crown sword shield tower castle anchor ship
+horse flame eye key hourglass skull compass gear bolt feather hand book temple pyramid mask chalice serpent owl lion eagle.
+`art.hue` 0–360 tints the card background.
 
 ## Renderer contract
 `src/render/GameCanvas.tsx` mounts ONE full-screen canvas at App level (behind all screens), creates the Renderer
