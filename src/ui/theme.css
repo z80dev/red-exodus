@@ -1,0 +1,91 @@
+/* AEONS design tokens. All UI MUST use these variables (no ad-hoc colors/fonts). Additive edits only. */
+:root {
+  /* surfaces: deep ink glass */
+  --ink-950: #07090f;
+  --ink-900: #0c111b;
+  --ink-800: #131a28;
+  --ink-700: #1c2536;
+  --ink-600: #283347;
+  --ink-500: #3a4760;
+  --glass: rgba(12, 17, 27, 0.78);
+  --glass-strong: rgba(9, 13, 21, 0.92);
+  --glass-border: rgba(224, 184, 74, 0.28);
+
+  /* parchment & gold leaf */
+  --parchment: #efe3c4;
+  --parchment-dim: #cbbd99;
+  --gold-300: #f6dd8f;
+  --gold-400: #eac766;
+  --gold-500: #d9ab3f;
+  --gold-600: #b3862a;
+  --gold-700: #7d5c1b;
+
+  /* text */
+  --text: #f1ead8;
+  --text-dim: #b9b3a3;
+  --text-faint: #7f7a6e;
+
+  /* yields */
+  --y-food: #7fc75a;
+  --y-prod: #e2894b;
+  --y-gold: #f2c94c;
+  --y-sci: #5fb4f0;
+  --y-cul: #c77dff;
+  --happy: #ffd166;
+  --unhappy: #ef476f;
+
+  /* roguelite */
+  --renown: #4fb3ff;      /* chips-blue */
+  --splendor: #ff5a4f;    /* mult-red */
+  --influence: #b28dff;
+  --mandate: #ff6b8a;
+
+  /* pillars */
+  --p-arts: #c77dff;
+  --p-discovery: #5fb4f0;
+  --p-commerce: #f2c94c;
+  --p-conquest: #ef5b4c;
+  --p-prosperity: #7fc75a;
+  --p-glory: #ffb347;
+
+  /* rarity */
+  --r-common: #9aa7b8;
+  --r-uncommon: #4cc9a0;
+  --r-rare: #e0527e;
+  --r-legendary: #f5c542;
+
+  --good: #7fd67a;
+  --bad: #ff6060;
+  --info: #7fb8ff;
+
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-deco: 'Cinzel Decorative', 'Cinzel', serif;
+  --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 1px var(--glass-border), 0 0 24px rgba(234, 199, 102, 0.12);
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --tap: 44px; /* minimum touch target */
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root {
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+  background: var(--ink-950); color: var(--text);
+  font-family: var(--font-ui); font-size: 15px; line-height: 1.35;
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; }
+.display { font-family: var(--font-display); letter-spacing: 0.04em; }
+.num { font-variant-numeric: tabular-nums; }
