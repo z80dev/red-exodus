@@ -1,6 +1,6 @@
 # RED EXODUS — Illustration Style Guide
 
-Painted RED EXODUS art for Crew cards, Salvage, Crises, Directives, Ark Modules, fictional commanders, era backdrops, and key art. Generated through Nous Portal from the live content registry and job files in this folder, then post-processed into `public/art/<kind>/<id>.webp` and listed in `src/ui/art/artManifest.ts`.
+Painted RED EXODUS art for Crew cards, Salvage, Crises, Directives, Ark Modules, fictional commanders, era backdrops, and key art. Generated through the Bankr LLM Gateway (GPT Image 2.5 Flare) from the live content registry and job files in this folder, then post-processed into `public/art/<kind>/<id>.webp` and listed in `src/ui/art/artManifest.ts`.
 
 ## Art direction — “The Last Dawn”
 
@@ -53,20 +53,18 @@ NEGATIVE = no text, letters, numbers, labels, flags, logos, border, frame, UI, w
 
 ## Model choice and pipeline
 
-- **Crew / card art** — `bytedance/seedream/v5/pro/text-to-image` for readable graphic scenes and faces.
-- **Commanders** — `openai/gpt-image-2.5/sunburst/text-to-image` for expressive, characterful faces.
-- **Era backdrops and key art** — `bytedance/seedream/v5/pro/text-to-image` for native widescreen and portrait compositions.
+All kinds render on **`gpt-image-2.5-flare`** through the Bankr LLM Gateway (`scripts/bankr_image.py`, key in
+`BANKR_LLM_GATEWAY_API_TOKEN`, ≈$0.006 per 1024² image). The gateway is generation-only, so no reference-image edits;
+consistency comes from the shared prompt recipe. Landscape/portrait jobs render at 1536×1024 / 1024×1536 and
+`art_post.py` crops them to 16:9 / 9:16. Commander portraits, eras and key art shipped earlier were made on Nous Portal
+(Seedream / GPT Image 2.5 Sunburst); regenerate them here only if the set needs to match.
 
 ```sh
 bun scripts/art_subjects.ts
 bun scripts/art_jobs.ts doctrines edicts crises omens reforms
-python3 scripts/art_batch.py art/gen/doctrines.json --jobs 4 --tries 6
-python3 scripts/art_batch.py art/gen/edicts.json --jobs 4 --tries 6
-python3 scripts/art_batch.py art/gen/crises.json --jobs 4 --tries 6
-python3 scripts/art_batch.py art/gen/omens.json --jobs 4 --tries 6
-python3 scripts/art_batch.py art/gen/reforms.json --jobs 4 --tries 6
+python3 scripts/bankr_image.py --batch art/gen/doctrines.json art/gen/edicts.json art/gen/crises.json art/gen/omens.json art/gen/reforms.json --jobs 6
 ~/.hermes/hermes-agent/venv/bin/python scripts/art_post.py doctrines edicts crises omens reforms
 bun scripts/art_manifest.ts
 ```
 
-Run one image queue at a time to avoid competing for the model rate limit. `art_batch.py` retries bounded transient gateway failures; it calls the same Nous client as `nous_image.py`. Review each kind's contact sheet for legibility, Mars context, text/flag artifacts, and anatomy; regenerate any failures before shipping.
+The batch skips existing outputs, retries 429/5xx with backoff and aborts on 402 (credit exhausted). Review each kind's contact sheet for legibility, Mars context, text/flag artifacts, and anatomy; delete bad raws and rerun the batch to regenerate them.

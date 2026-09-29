@@ -25,6 +25,58 @@ function colorName(hex: string): string {
   return light > 0.65 ? `pale ${family}` : light < 0.32 ? `deep ${family}` : family;
 }
 
+// Crew art variety: one generator + one template paints 174 near-identical crouching astronauts, so each card draws a
+// deterministic shot / setting / look / action from its id. Names that read as groups get a small crew.
+const SHOTS = [
+  'tight head-and-shoulders portrait, face filling the upper half',
+  'waist-up portrait, three-quarter view, leaning toward the viewer',
+  'full-body action shot, dynamic diagonal pose, low camera angle',
+  'over-the-shoulder shot of them at work, face turned back to the viewer',
+  'seated portrait with their gear spread around them, eye-level camera',
+  'dramatic low-angle hero shot against the sky',
+  'mid-shot caught mid-gesture, arms animated, telling a story',
+  'close-up of hands and face as they work on the prop',
+];
+const SETTINGS = [
+  'inside a cramped pressurized hab module with warm lamp light and hanging cables (helmet off)',
+  'in a humid hydroponic greenhouse dome full of green leaves (helmet off)',
+  'in a rover cockpit, dashboard glow on the face (helmet off)',
+  'outside in a howling rust dust storm, visor lit from within',
+  'in a lava-tube cavern lit by work lamps and glowing fungus (visor up)',
+  'in a mission control room with flickering amber screens (helmet off)',
+  'in an airlock mid-cycle, frost venting around them',
+  'at a scrappy colony market stall stacked with salvage (helmet off)',
+  'on a polar ice field under a pale sun, breath fogging the visor',
+  'on a ridge at blue Martian sunset, colony lights below',
+  'in a machine workshop with sparks and half-built robots (helmet off)',
+  'in a mess hall with a long table and mismatched mugs (helmet off)',
+];
+const LOOKS = [
+  'weathered woman in her sixties with cropped silver hair', 'wiry young man with a shaved head and a scar',
+  'broad-shouldered woman with braids and laugh lines', 'lanky teenager in an oversized hand-me-down suit',
+  'stocky middle-aged man with a thick beard and reading glasses', 'elegant older man with slicked-back grey hair',
+  'freckled woman with wild red curls tied up', 'soft-spoken man with round glasses and ink-stained fingers',
+  'tall woman with a buzz cut and tattooed forearms', 'tired-eyed woman in her forties with a messy bun',
+  'grinning man with a gap-toothed smile and a bandana', 'serene woman with a headscarf under her comms cap',
+];
+const MOODS = ['smug', 'exhausted but determined', 'gleefully scheming', 'deadpan', 'wide-eyed and delighted', 'grim', 'serenely calm', 'mid-laugh'];
+
+function pick<T>(list: readonly T[], id: string, salt: number): T {
+  let h = 2166136261 ^ salt;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return list[(h >>> 0) % list.length];
+}
+
+// Card motif ids are shared with the procedural SVG art and are Earth-flavored (horse, crown, temple…); prompts use
+// the Mars reading of each so a crisis never grows a cavalry charge.
+const MARS_MOTIF: Record<string, string> = {
+  horse: 'dune-buggy', crown: 'commander-helmet', temple: 'memorial-dome', pyramid: 'sintered-bunker', castle: 'shielded-dome',
+  sword: 'rail-rifle', shield: 'riot-shield', lyre: 'radio', laurel: 'mission-patch', scroll: 'data-tablet', book: 'field-manual',
+  chalice: 'water-canister', feather: 'solar-sail', owl: 'drone', lion: 'mission-emblem', eagle: 'mission-emblem',
+  serpent: 'coiled-hose', key: 'keycard', mask: 'gas-mask', tree: 'greenhouse-sapling', ship: 'rocket', anchor: 'tether-anchor',
+  wheat: 'hydroponic-sprout', tower: 'antenna-mast', coin: 'credit-chip',
+};
+
 function sceneText(kind: ContentKind, entry: ContentEntry): { subject: string; hue?: number } {
   const safeName = entry.name.replace(/\bflags?\b/gi, 'crew patch').replace(/\bbanners?\b/gi, 'mission emblem');
   const context = [safeName, entry.description, entry.flavor].filter(Boolean).join('. ')
@@ -33,14 +85,18 @@ function sceneText(kind: ContentKind, entry: ContentEntry): { subject: string; h
     .replace(/\bflags?\b/gi, 'emblem').replace(/\bbanners?\b/gi, 'mission marker')
     .replace(/[“”"‘’]/g, '').replace(/[+×]/g, ' ')
     .replace(/\.{2,}/g, '.').replace(/\s+/g, ' ').trim();
-  const motif = entry.motif ? `Use a subtle ${entry.motif.replace(/_/g, ' ')}-shaped prop or silhouette.` : '';
+  const motif = entry.motif ? `Use a subtle ${(MARS_MOTIF[entry.motif] ?? entry.motif).replace(/_/g, ' ')}-shaped prop or silhouette.` : '';
   if (kind === 'doctrines') {
     const colors = entry.nationColors?.map(colorName);
     const insignia = colors?.length
       ? `Apply this nation's palette (${[...new Set(colors)].join(', ')}) only as separated tiny stitch marks and asymmetrical suit trim; do not make a rectangular badge or flag-like layout.`
       : 'Use restrained rust, habitat-white and cryo-cyan mission trim.';
+    const group = /\b(crew|team|pair|two|rangers|guys|squad|club|union|council|survivors|brothers|sisters|mycologists|drummers|watch|singers|traders|keepers|masons|scribes|riders|heralds)\b/i.test(entry.name);
+    const who = group
+      ? `a small crew of two or three distinct colonists (varied ages, builds and skin tones), led by a ${pick(LOOKS, entry.id, 3)}`
+      : `a single ${pick(LOOKS, entry.id, 3)}`;
     return {
-      subject: `A single fictional person in a functional Mars EVA crew suit, inspired by Crew card ${entry.name}. Make their occupation clear from the title through a distinctive job prop and a small wry survival detail. Live content context (visual inspiration only, never visible writing): ${context}. ${insignia} Square joker-card illustration with mischievous character, one clear expressive face and bold silhouette, crisp hand-painted gouache. No text, name, words, letters, numbers, flags, stars, stripes, banners, or logo.`,
+      subject: `Crew card portrait of ${who}, ${pick(MOODS, entry.id, 4)}, inspired by the Mars colony character ${entry.name}. ${pick(SHOTS, entry.id, 1)}, ${pick(SETTINGS, entry.id, 2)}. Their job must read instantly from one oversized, distinctive prop or tool they are actively using, plus one small wry survival detail. Character context (visual inspiration only, never visible writing): ${context}. Suits and clothing are practical, patched Mars colony workwear — vary the silhouette, not always a white spacesuit. ${insignia} Joker-card energy: characterful face, bold readable silhouette, crisp hand-painted gouache. No text, name, words, letters, numbers, flags, stars, stripes, banners, or logo.`,
       hue: entry.hue,
     };
   }
@@ -69,7 +125,8 @@ function sceneText(kind: ContentKind, entry: ContentEntry): { subject: string; h
 }
 
 mkdirSync(SUBJECTS, { recursive: true });
-for (const kind of KINDS) {
+const only = process.argv.slice(2);
+for (const kind of KINDS.filter((k) => !only.length || only.includes(k))) {
   const { entries, source } = await readContent(kind);
   const subjects = Object.fromEntries(entries.map((entry) => [entry.id, sceneText(kind, entry)]));
   writeFileSync(join(SUBJECTS, `${kind}.json`), `${JSON.stringify(subjects, null, 1)}\n`);

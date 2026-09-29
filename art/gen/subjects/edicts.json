@@ -40,11 +40,11 @@
   "hue": 28
  },
  "levy": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Muster: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Muster. Deploy of your strongest combat units beside the Ark Hab.. Use a subtle shield-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Muster: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Muster. Deploy of your strongest combat units beside the Ark Hab.. Use a subtle riot-shield-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 10
  },
  "conscription": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crew Draft: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crew Draft. Every colony with population assigns colonist to the strongest available infantry unit.. Use a subtle sword-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crew Draft: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crew Draft. Every colony with population assigns colonist to the strongest available infantry unit.. Use a subtle rail-rifle-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 355
  },
  "sanctuary": {
@@ -64,7 +64,7 @@
   "hue": 50
  },
  "olive_branch": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Ceasefire Packet: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Ceasefire Packet. Make peace with every rival nation currently at war with you.. Use a subtle key-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Ceasefire Packet: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Ceasefire Packet. Make peace with every rival nation currently at war with you.. Use a subtle keycard-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 110
  },
  "revelation": {
@@ -88,7 +88,7 @@
   "hue": 280
  },
  "windfall": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Credit Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Credit Cache. Gain per era (Landfall → New Earth).. Use a subtle coin-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Credit Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Credit Cache. Gain per era (Landfall → New Earth).. Use a subtle credit-chip-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 48
  },
  "tribute": {
@@ -96,7 +96,7 @@
   "hue": 40
  },
  "hermits_tithe": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Reserve Scrip Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Reserve Scrip Cache. Double your (max ).. Use a subtle coin-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Reserve Scrip Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Reserve Scrip Cache. Double your (max ).. Use a subtle credit-chip-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 260
  },
  "royal_audit": {
@@ -156,7 +156,7 @@
   "hue": 190
  },
  "emergency_shelter": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Shelter: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Shelter. Protect your units and colonies from dust-storm damage for this round.. Use a subtle tower-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Shelter: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Shelter. Protect your units and colonies from dust-storm damage for this round.. Use a subtle antenna-mast-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 28
  },
  "supply_pod": {
@@ -164,7 +164,7 @@
   "hue": 24
  },
  "seed_vault_key": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Seed Vault Key: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Seed Vault Key. A city gains population from the last viable seed bank. Hope nobody asks what happened to the rest.. Use a subtle key-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Seed Vault Key: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Seed Vault Key. A city gains population from the last viable seed bank. Hope nobody asks what happened to the rest.. Use a subtle keycard-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 92
  }
 }

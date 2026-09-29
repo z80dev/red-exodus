@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// Builds Nous Portal batch job files art/gen/<kind>.json from the hand-written scene subjects in
+// Builds Bankr LLM Gateway batch job files art/gen/<kind>.json (run with scripts/bankr_image.py) from the scene subjects in
 // art/gen/subjects/<kind>.json and, where relevant, the content registries (ids, art hue). Recipe: art/gen/STYLE.md.
 //   bun scripts/art_jobs.ts [kind ...]      (default: every kind)
 // Subjects file shape: { "<id>": "scene text" } or { "<id>": { "subject": "...", "hue": 210 } }.
@@ -19,10 +19,8 @@ interface Job {
   cells?: string[]; layout?: '2x2' | '1x2';
 }
 
-// Style exploration (art/previews/gen_styletest.png): Seedream holds the bold-silhouette card look best and
-// outputs native 16:9 / 9:16 backdrops; GPT Image 2.5 paints the strongest faces for portraits.
-const SEEDREAM = 'bytedance/seedream/v5/pro/text-to-image';
-const PORTRAIT_MODEL = 'openai/gpt-image-2.5/sunburst/text-to-image';
+// Every kind renders through the Bankr LLM Gateway on GPT Image 2.5 Flare (generation only; no reference edits).
+const IMAGE_MODEL = 'gpt-image-2.5-flare';
 
 // art_post.py applies one consistent vignette so generated art remains full-bleed.
 const STYLE =
@@ -126,7 +124,7 @@ for (const kind of kinds.length ? kinds : ALL) {
           `identical style. ${cells.join(' ')} ` +
           `Each cell: ${FRAMING[kind]} ${style}`,
         aspect: layout === '2x2' ? 'square' : 'landscape',
-        model: SEEDREAM,
+        model: IMAGE_MODEL,
         layout,
         cells: group.map((s) => s.id),
       });
@@ -142,7 +140,7 @@ for (const kind of kinds.length ? kinds : ALL) {
         out: `art/gen/out/${kind}/${file}.png`,
         prompt: `${subject} ${FRAMING[kind]}${extra ? ' ' + extra : ''}${palette} ${style}`,
         aspect,
-        model: kind === 'leaders' ? PORTRAIT_MODEL : SEEDREAM,
+        model: IMAGE_MODEL,
       });
     }
   }

@@ -155,7 +155,7 @@ export const UNCOMMON: DoctrineDef[] = [
   },
   {
     id: 'patron_of_the_arts', name: 'Ark Hab Arts Restorer', rarity: 'uncommon', cost: 6,
-    description: '**+1** {splendor} per Arts building you own.',
+    description: '**+1** {splendor} per Heritage building you own.',
     flavor: 'They make beauty from air filters and packing foam.',
     tags: ['culture', 'splendor'], icon: 'arts', art: { hue: 305, motif: 'mask' }, nation: 'france',
     effects: {

@@ -4,7 +4,7 @@
   "hue": 205
  },
  "steppe_horde": {
-  "subject": "A cinematic Martian colony hazard named Feral Uprising: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Feral Uprising. Feral raiders gather beyond your borders at the start and every other turn. They came early, landed badly, and decided that was your fault.. Use a subtle horse-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "subject": "A cinematic Martian colony hazard named Feral Uprising: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Feral Uprising. Feral raiders gather beyond your borders at the start and every other turn. They came early, landed badly, and decided that was your fault.. Use a subtle dune-buggy-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
   "hue": 22
  },
  "great_flood": {
@@ -32,11 +32,11 @@
   "hue": 88
  },
  "iconoclasm": {
-  "subject": "A cinematic Martian colony hazard named Perchlorate Bloom: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Perchlorate Bloom. Food output is − in every colony. The soil is fertile in the same way a battery is a beverage.. Use a subtle serpent-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "subject": "A cinematic Martian colony hazard named Perchlorate Bloom: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Perchlorate Bloom. Food output is − in every colony. The soil is fertile in the same way a battery is a beverage.. Use a subtle coiled-hose-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
   "hue": 35
  },
  "famine": {
-  "subject": "A cinematic Martian colony hazard named Greenhouse Blight: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Greenhouse Blight. Food is − in every colony; seed stock is failing across Mars. The first tomatoes were delicious. The last ones were mostly paperwork.. Use a subtle tree-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "subject": "A cinematic Martian colony hazard named Greenhouse Blight: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Greenhouse Blight. Food is − in every colony; seed stock is failing across Mars. The first tomatoes were delicious. The last ones were mostly paperwork.. Use a subtle greenhouse-sapling-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
   "hue": 40
  },
  "peasant_revolt": {
@@ -64,7 +64,7 @@
   "hue": 140
  },
  "world_war": {
-  "subject": "A cinematic Martian colony hazard named Feral Armory Seizure: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Feral Armory Seizure. Military units cost Industry to produce. The ferals have discovered the armory. The armory was not locked.. Use a subtle sword-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "subject": "A cinematic Martian colony hazard named Feral Armory Seizure: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Feral Armory Seizure. Military units cost Industry to produce. The ferals have discovered the armory. The armory was not locked.. Use a subtle rail-rifle-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
   "hue": 355
  },
  "nuclear_standoff": {
