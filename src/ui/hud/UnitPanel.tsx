@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { audio } from '../../audio';
 import { PROMOTIONS, UNITS } from '../../content';
-import { act, deselect, focusNext } from '../../game/interaction';
+import { act, cityOnTile, deselect, focusNext, selectCity } from '../../game/interaction';
 import { useGame, useSim } from '../../game/store';
 import { canFoundCity } from '../../sim/cities';
 import { XP_LEVELS, isCivilian, maxMoves, upgradeInfo } from '../../sim/units';
@@ -50,7 +50,13 @@ function buildActions(s: GameState, u: Unit, confirmDisband: () => void, openPro
     out.push({
       id: 'found', icon: 'found', label: 'Found City', tone: 'gold', tutorial: 'found-city',
       blocked: err ?? noMoves,
-      run: () => { act({ type: 'foundCity', unitId: u.id }, 'found'); },
+      run: () => {
+        const tile = u.tile;
+        if (!act({ type: 'foundCity', unitId: u.id }, 'found').ok) return;
+        // straight into the new city's sheet: the first build order is the next decision
+        const city = cityOnTile(s, tile);
+        if (city) selectCity(city.id);
+      },
     });
   }
   if (u.order && u.order.kind !== 'goto') {

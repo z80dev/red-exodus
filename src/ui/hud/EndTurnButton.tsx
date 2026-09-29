@@ -40,11 +40,13 @@ export function EndTurnButton() {
   return (
     <div className="et-wrap" data-tutorial="end-turn">
       {next && (
-        <IconButton icon="endturn" label="End turn now" size="md" className="et-skip" disabled={busy}
-          onClick={() => { audio.sfx('open'); setConfirm(true); }} />
+        <IconButton icon="endturn" label="End turn now" size="md" className="et-skip"
+          onClick={() => { if (busy) return; audio.sfx('open'); setConfirm(true); }} />
       )}
-      <button type="button" className={`et ${next ? 'et--next' : 'et--end'}`} disabled={busy}
+      <button type="button" className={`et ${next ? 'et--next' : 'et--end'}`}
         onClick={() => {
+          // input is ignored (not visually disabled) while the renderer plays back a batch, to avoid flicker
+          if (busy) return;
           if (next) { audio.sfx('click'); focusNext(); }
           else void requestEndTurn();
         }}>

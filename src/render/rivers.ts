@@ -1,11 +1,12 @@
 // Rivers run along hex edges (tile.riverEdges). We build an oriented edge network flowing toward the
 // nearest water (BFS over hex corners), carve it into the terrain, and render animated ribbons.
 import {
-  BufferAttribute, BufferGeometry, Color, Mesh, MeshStandardMaterial,
+  BufferAttribute, BufferGeometry, Color, DoubleSide, Mesh, MeshStandardMaterial,
 } from 'three';
 import type { WebGLProgramParametersWithUniforms } from 'three';
 import type { GameMap } from '../sim/types';
-import { CORNER_VEC, WATER_TERRAIN, colX, neighborOf, rowZ } from './hexgeo';
+import { neighbor } from '../sim/hex';
+import { CORNER_VEC, WATER_TERRAIN, colX, rowZ } from './hexgeo';
 import { GLSL_NOISE } from './noise';
 import { GLSL_TILES, U } from './shaders';
 
@@ -40,7 +41,7 @@ export function buildRiverNetwork(map: GameMap): RiverSeg[] {
     const cz = rowZ(t.row);
     for (let d = 0; d < 6; d++) {
       if (!(t.riverEdges & (1 << d))) continue;
-      const n = neighborOf(map, t.idx, d);
+      const n = neighbor(map, t.idx, d);
       const key = n < 0 ? `${t.idx}:${d}` : `${Math.min(t.idx, n)}-${Math.max(t.idx, n)}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -134,15 +135,20 @@ export function buildRiverMesh(segs: RiverSeg[], ground: (x: number, z: number) 
     for (let i = 0; i <= STEPS; i++) {
       const t = i / STEPS;
       const along = -ext + (len + 2 * ext) * t;
-      const cx = s.ax + fx * along;
-      const cz = s.az + fz * along;
-      const width = 0.1 + 0.05 * (1 - Math.min(s.ua, 8) / 8);
+      // gentle meander, pinned at the hex corners so segments still join
+      const tt = Math.min(1, Math.max(0, along / len));
+      const wig = Math.sin(tt * Math.PI) * 0.07 * Math.sin((s.ax * 3.1 + s.az * 1.7) * 7.0 + tt * Math.PI * 2);
+      const cx = s.ax + fx * along + nx * wig;
+      const cz = s.az + fz * along + nz * wig;
+      const width = 0.075 + 0.05 * (1 - Math.min(s.ua, 8) / 8);
       const u = s.ua - (s.ua - s.ub) * (along / len);
+      // the terrain lattice is coarser than the channel: float above the highest sample across the ribbon
+      const yc = Math.max(ground(cx, cz), ground(cx + nx * width, cz + nz * width), ground(cx - nx * width, cz - nz * width));
       for (let side = 0; side < 2; side++) {
         const sg = side ? 1 : -1;
         const x = cx + nx * width * sg;
         const z = cz + nz * width * sg;
-        const y = Math.max(ground(cx, cz) + 0.035, -0.03);
+        const y = Math.max(yc + 0.018, -0.03);
         pos[v * 3] = x;
         pos[v * 3 + 1] = y;
         pos[v * 3 + 2] = z;
@@ -163,7 +169,7 @@ export function buildRiverMesh(segs: RiverSeg[], ground: (x: number, z: number) 
   geo.setAttribute('uv', new BufferAttribute(uv, 2));
   geo.setIndex(idx);
   geo.computeBoundingSphere();
-  const mat = new MeshStandardMaterial({ color: new Color('#4fc3d4'), roughness: 0.18, metalness: 0 });
+  const mat = new MeshStandardMaterial({ color: new Color('#4fc3d4'), roughness: 0.18, metalness: 0, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   mat.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     Object.assign(shader.uniforms, U);
     shader.vertexShader = shader.vertexShader
@@ -187,10 +193,10 @@ export function buildRiverMesh(segs: RiverSeg[], ground: (x: number, z: number) 
         float across = abs(vRUv.y - 0.5) * 2.0;
         float flow = vRUv.x * 1.6 - uTime * 0.55;
         float streak = aeNoise(vec2(flow * 3.0, vRUv.y * 4.0)) * 0.6 + aeNoise(vec2(flow * 7.0, vRUv.y * 9.0 + 3.0)) * 0.4;
-        vec3 rc = mix(uShallow * 1.05, mix(uShallow, uDeep, 0.45), 1.0 - across);
+        vec3 rc = mix(uShallow * 0.95, mix(uShallow, uDeep, 0.6), 1.0 - across);
         diffuseColor.rgb = rc + vec3(0.12) * smoothstep(0.62, 0.85, streak);
         float bank = smoothstep(0.65, 1.0, across);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.97, 1.0), bank * 0.55);`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.85, 0.93, 0.95), bank * 0.3);`,
       )
       .replace(
         '#include <normal_fragment_maps>',

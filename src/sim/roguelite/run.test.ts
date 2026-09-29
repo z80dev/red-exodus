@@ -78,7 +78,8 @@ describe('run phases', () => {
   it('initRun sets defaults and reveals an era-0 crisis', () => {
     const { state, events } = fresh();
     const r = state.run;
-    expect(r).toMatchObject({ phase: 'crisisReveal', era: 0, chapter: 0, mandate: 3, influence: 4, focus: 'prosperity', doctrineSlots: 5, edictSlots: 2 });
+    expect(r).toMatchObject({ phase: 'crisisReveal', era: 0, chapter: 0, influence: 4, focus: 'prosperity', doctrineSlots: 5, edictSlots: 2 });
+    expect(r.mandate).toBe(r.maxMandate);
     expect(Object.values(r.pillarLevels).every((l) => l === 1)).toBe(true);
     expect(CRISES[r.crisis!].eras).toContain(0);
     expect(events).toContainEqual({ type: 'crisisRevealed', era: 0, crisis: r.crisis });
@@ -114,7 +115,8 @@ describe('run phases', () => {
       expect(hasReform).toBe(ch === 0);
       act(state, emit, { type: 'leaveCouncil' });
     }
-    expect(state.run).toMatchObject({ era: 1, chapter: 0, phase: 'crisisReveal', mandate: 3 });
+    expect(state.run).toMatchObject({ era: 1, chapter: 0, phase: 'crisisReveal' });
+    expect(state.run.mandate).toBe(state.run.maxMandate);
     expect(events).toContainEqual({ type: 'eraStarted', era: 1 });
     expect(CRISES[state.run.crisis!].eras).toContain(1);
     expect(state.run.history).toHaveLength(3);
@@ -124,7 +126,7 @@ describe('run phases', () => {
     const { state, events, emit } = fresh();
     act(state, emit, { type: 'ackCrisis' });
     playChapter(state, emit, false);
-    expect(state.run.mandate).toBe(2);
+    expect(state.run.mandate).toBe(state.run.maxMandate - 1);
     expect(state.run.darkAge).toBe(true);
     expect(state.run.phase).toBe('chronicle'); // defeat is deferred to ack
     act(state, emit, { type: 'ackChronicle' });
@@ -133,6 +135,7 @@ describe('run phases', () => {
     expect(state.run.darkAge).toBe(false);
     act(state, emit, { type: 'ackChronicle' });
     act(state, emit, { type: 'leaveCouncil' });
+    state.run.mandate = 2; // start the Crisis with prior damage to exercise depletion at the Chronicle.
     playChapter(state, emit, false);
     expect(state.run.lastChronicle!.mandateLost).toBe(2);
     expect(state.run.mandate).toBe(0);
@@ -148,7 +151,7 @@ describe('run phases', () => {
     const { state, emit } = fresh();
     act(state, emit, { type: 'ackCrisis' });
     act(state, emit, { type: 'chooseChapterStart', focus: 'glory', omen: null });
-    changeMandate(state, -3, 'Capital razed', emit);
+    changeMandate(state, -state.run.mandate, 'Capital razed', emit);
     expect(state.run).toMatchObject({ phase: 'defeat', defeatReason: 'Capital razed' });
   });
 
@@ -168,6 +171,20 @@ describe('run phases', () => {
     act(state, emit, { type: 'leaveCouncil' });
     expect(state.run).toMatchObject({ era: 6, chapter: 0, phase: 'crisisReveal' });
     expect(state.run.crisis).not.toBeNull();
+  });
+
+  it('ends a failed final Chronicle instead of entering an unwinnable endless era', () => {
+    const { state, events, emit } = fresh();
+    state.run.era = 5;
+    state.run.chapter = 2;
+    state.run.phase = 'chapterStart';
+    state.run.chapterLength = 8;
+    playChapter(state, emit, false);
+    expect(state.run.mandate).toBeGreaterThan(0);
+    act(state, emit, { type: 'ackChronicle' });
+    expect(state.run).toMatchObject({ phase: 'defeat', defeatReason: 'The final Chronicle fell short. Your empire leaves no lasting Legacy.' });
+    expect(state.gameOver).toBe(true);
+    expect(events).toContainEqual({ type: 'runLost', reason: state.run.defeatReason! });
   });
 
   it('rejects map-phase run actions out of phase', () => {

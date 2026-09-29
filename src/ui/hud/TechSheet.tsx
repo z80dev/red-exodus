@@ -51,7 +51,7 @@ export function TechSheet() {
   const y = useSim((s) => empireYields(s));
   const era = useSim((s) => s.run.era) ?? 0;
   const geo = useGeo();
-  const scroller = useRef<HTMLDivElement>(null);
+  const scrolled = useRef(false);
   const [focus, setFocus] = useState<string | null>(null);
   const close = () => { audio.sfx('close'); useGame.getState().setPanel('none'); };
   useEscape(close);
@@ -63,15 +63,6 @@ export function TechSheet() {
   });
   const width = geo.padX * 2 + 6 * 3 * geo.colW + 5 * geo.eraGap;
   const height = geo.padTop + 6 * geo.rowH + 8;
-
-  // open scrolled to the current research (or the current era)
-  useEffect(() => {
-    const el = scroller.current;
-    if (!el || !nodes) return;
-    const cur = nodes.find((n) => n.status === 'current');
-    const x = cur ? pos(cur).x : geo.padX + Math.min(era, 5) * (3 * geo.colW + geo.eraGap);
-    el.scrollLeft = Math.max(0, x - el.clientWidth / 2 + geo.nodeW / 2);
-  }, [!!nodes]); // only when the tree first becomes available
 
   if (!nodes || !y) return null;
   const selected = focus ? byId.get(focus) ?? null : nodes.find((n) => n.status === 'current') ?? null;
@@ -119,7 +110,14 @@ export function TechSheet() {
           ) : <div className="tt__cur tt__cur--none">Choose a technology to research</div>}
           <IconButton icon="close" label="Close" onClick={close} size="sm" />
         </header>
-        <div className="tt__scroll" ref={scroller}>
+        <div className="tt__scroll" ref={(el) => {
+          // open scrolled to the current research (or the current era), once
+          if (!el || scrolled.current) return;
+          scrolled.current = true;
+          const cur = nodes.find((n) => n.status === 'current');
+          const x = cur ? pos(cur).x : geo.padX + Math.min(era, 5) * (3 * geo.colW + geo.eraGap);
+          el.scrollLeft = Math.max(0, x - el.clientWidth / 2 + geo.nodeW / 2);
+        }}>
           <div className="tt__canvas" style={{ width, height }}>
             {ERA_NAMES.map((name, e) => (
               <div key={name} className={`tt__era ${e === era ? 'is-now' : ''} ${e < era ? 'is-past' : ''}`}

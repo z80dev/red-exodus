@@ -26,8 +26,7 @@ const recorded = new Map<string, RunEndUnlocks>();
  * (run, outcome) — victory and a later endless-mode collapse are separate outcomes. Summary uses this too.
  */
 export function runEndUnlocks(state: GameState): RunEndUnlocks {
-  const outcome = state.run.phase === 'victory' ? 'victory' : 'end';
-  const key = `${state.config.seed}|${state.config.leaderId}|${state.config.ascension}|${state.config.daily ? 'd' : ''}|${outcome}`;
+  const key = runEndKey(state);
   const hit = recorded.get(key);
   if (hit) return hit;
   let res: RunEndUnlocks;
@@ -39,6 +38,18 @@ export function runEndUnlocks(state: GameState): RunEndUnlocks {
   recorded.set(key, res);
   return res;
 }
+
+/** Seed the memo so `runEndUnlocks` never calls `recordRunEnd` for this run end (fixtures/galleries). */
+export function primeRunEndUnlocks(state: GameState, result: RunEndUnlocks): void {
+  recorded.set(runEndKey(state), result);
+}
+
+function runEndKey(state: GameState): string {
+  const outcome = state.run.phase === 'victory' ? 'victory' : 'end';
+  return `${state.config.seed}|${state.config.leaderId}|${state.config.ascension}|${state.config.daily ? 'd' : ''}|${outcome}`;
+}
+
+const MAX_UNLOCK_CARDS = 6;
 
 function unlockCard(u: RunEndUnlock): CardModel | null {
   if (u.kind === 'leader' || u.kind === 'leaders') return leaderCard(u.id);
@@ -55,7 +66,11 @@ export function RunEnd() {
   const [setHost, particles] = useParticles();
   const [revealed, setRevealed] = useState(0);
   const titleRef = useRef<HTMLHeadingElement>(null);
-  const unlocks = useMemo(() => (state ? runEndUnlocks(state).unlocks : []), [state]);
+  // card-backed unlocks first, text badges after (keeps the row tidy)
+  const unlocks = useMemo(() => {
+    const all = state ? runEndUnlocks(state).unlocks : [];
+    return [...all.filter((u) => unlockCard(u)), ...all.filter((u) => !unlockCard(u))];
+  }, [state]);
 
   const stats = useMemo(() => {
     if (!state) return null;
@@ -95,7 +110,7 @@ export function RunEnd() {
       i += 1;
       setRevealed(i);
       sfx('cardFlip', { pitch: 1 + i * 0.05 });
-      if (i >= unlocks.length) clearInterval(iv);
+      if (i >= Math.min(unlocks.length, MAX_UNLOCK_CARDS)) clearInterval(iv);
     }, 520);
     return () => clearInterval(iv);
   }, [unlocks]);
@@ -160,7 +175,7 @@ export function RunEnd() {
           <section className="rre-unlocks">
             <div className="rre-unlocks-title display"><Icon name="unlock" size={16} /> Unlocked</div>
             <div className="rre-unlock-row">
-              {unlocks.map((u, i) => {
+              {unlocks.slice(0, MAX_UNLOCK_CARDS).map((u, i) => {
                 const card = unlockCard(u);
                 return card ? (
                   <Card key={`${u.kind}:${u.id}`} card={card} width="var(--rre-card-w)" faceDown={i >= revealed} tilt />
@@ -170,6 +185,11 @@ export function RunEnd() {
                   </div>
                 );
               })}
+              {unlocks.length > MAX_UNLOCK_CARDS && (
+                <div className={`rre-unlock-badge rre-unlock-more ${revealed >= MAX_UNLOCK_CARDS ? 'is-in' : ''}`}>
+                  +{unlocks.length - MAX_UNLOCK_CARDS} more in the Codex
+                </div>
+              )}
             </div>
           </section>
         )}

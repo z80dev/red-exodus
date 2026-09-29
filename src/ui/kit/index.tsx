@@ -273,7 +273,7 @@ export function hasEscapeLayer(): boolean {
 /** Register `fn` as the Escape handler while mounted (top-most registration wins). */
 export function useEscape(fn: (() => void) | undefined) {
   const cb = useRef(fn);
-  cb.current = fn;
+  useLayoutEffect(() => { cb.current = fn; });
   useEffect(() => {
     if (!escBound) { window.addEventListener('keydown', onEscKey); escBound = true; }
     const entry = cb;

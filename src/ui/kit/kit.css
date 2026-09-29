@@ -130,6 +130,7 @@
   font: 700 11.5px var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; position: relative;
   transition: background 180ms, color 180ms;
 }
+.k-tab::after { content: ''; position: absolute; inset: -3px 0; }
 .k-tab.is-active { background: linear-gradient(180deg, var(--ink-500), var(--ink-700)); color: var(--gold-300); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px var(--glass-border); }
 @media (max-width: 420px) {
   .k-tab { padding: 0 4px; gap: 4px; text-transform: none; letter-spacing: 0; font-size: 12px; }

@@ -1,6 +1,6 @@
 // In-game HUD root: top bar, doctrine bar, side rail, bottom dock (edicts, next/end turn, unit panel, map cards),
 // sheets (city, tech, empire, journal), pause menu, floaters, toasts, run overlays and tutorial.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { audio } from '../../audio';
 import { bindInteraction, cancelMode, deselect, focusNext, requestEndTurn, useInteraction } from '../../game/interaction';
 import { useGame, useSim } from '../../game/store';
@@ -17,7 +17,7 @@ import { EmpireSheet } from './EmpireSheet';
 import { EndTurnButton } from './EndTurnButton';
 import { Floaters } from './Floaters';
 import { useHudEvents } from './hudEvents';
-import { JournalSheet } from './JournalSheet';
+import { JournalSheet, useJournalSeen } from './JournalSheet';
 import { MapCards, ModeBanner } from './MapCards';
 import { PauseMenu } from './PauseMenu';
 import { TechSheet } from './TechSheet';
@@ -83,15 +83,13 @@ export function GameScreen() {
 function SideRail() {
   const panel = useGame((g) => g.panel);
   const info = useSim((s) => ({ research: !s.players[HUMAN].researching, logLen: s.log.length, turn: s.turn, war: s.players[HUMAN] ? Object.values(s.players[HUMAN].relations).some((r) => r === 'war') : false }));
-  const logLen = info?.logLen ?? 0;
-  const [seenLog, setSeenLog] = useState(() => useGame.getState().state?.log.length ?? 0);
-  useEffect(() => { if (panel === 'journal') setSeenLog(logLen); }, [panel, logLen]);
+  const seenLog = useJournalSeen();
   if (!info) return null;
   const toggle = (p: Panel) => () => {
     audio.sfx(panel === p ? 'close' : 'open');
     useGame.getState().setPanel(panel === p ? 'none' : p);
   };
-  const unread = Math.max(0, info.logLen - seenLog);
+  const unread = panel === 'journal' ? 0 : Math.max(0, info.logLen - seenLog);
   return (
     <nav className="hud__rail" aria-label="Empire">
       <IconButton icon="tech" label="Technology" onClick={toggle('tech')} active={panel === 'tech'} badge={info.research ? '!' : undefined} />

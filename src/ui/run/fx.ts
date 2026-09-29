@@ -21,7 +21,8 @@ export function tween(from: number, to: number, duration: number, onUpdate: (v: 
   const t0 = performance.now();
   let raf = 0;
   const frame = (now: number) => {
-    const t = Math.min(1, (now - t0) / duration);
+    // rAF timestamps can precede the performance.now() taken at start: clamp to [0, 1]
+    const t = Math.max(0, Math.min(1, (now - t0) / duration));
     onUpdate(from + (to - from) * ease(t));
     if (t < 1) raf = requestAnimationFrame(frame);
     else onDone?.();
@@ -270,7 +271,7 @@ export class ParticleField {
     this.raf = requestAnimationFrame(this.frame);
   }
   private frame = (now: number) => {
-    const dt = Math.min(48, now - this.last);
+    const dt = Math.max(0, Math.min(48, now - this.last));
     this.last = now;
     const k = dt / 16.67;
     for (const e of this.emitters) {

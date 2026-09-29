@@ -144,36 +144,40 @@
 }
 .rc-foil { position: absolute; inset: 0; pointer-events: none; }
 
-/* legendary: slow sweeping shine across the metal frame */
-.rc--r-legendary .rc-front::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(110deg, transparent 35%, rgba(255,250,220,0.55) 48%, transparent 60%);
-  background-size: 300% 100%; animation: rc-sheen 4.2s linear infinite; mix-blend-mode: overlay;
+/* legendary: slow sweeping shine across the metal frame (transform-only animation: composited, no repaint) */
+.rc--r-legendary .rc-front::before, .rc--e-gilded .rc-foil::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -100%; width: 300%; pointer-events: none;
+  background: linear-gradient(110deg, transparent 40%, rgba(255,250,220,0.55) 48%, transparent 56%);
+  mix-blend-mode: overlay; animation: rc-sweep 4.2s linear infinite; will-change: transform;
 }
 
 /* ───── editions ───── */
 .rc--e-gilded { --rc-metal-lo: #6b4c14; --rc-metal: #e0b84a; --rc-metal-hi: #fff2b8; }
-.rc--e-gilded .rc-foil {
-  background:
-    linear-gradient(115deg, transparent 28%, rgba(255,226,140,0.5) 42%, rgba(255,255,240,0.85) 50%, rgba(255,226,140,0.5) 58%, transparent 72%);
-  background-size: 260% 100%; mix-blend-mode: overlay; animation: rc-sheen 2.8s var(--ease-out) infinite;
+.rc--e-gilded .rc-foil { overflow: hidden; }
+.rc--e-gilded .rc-foil::before {
+  background: linear-gradient(115deg, transparent 38%, rgba(255,226,140,0.5) 45%, rgba(255,255,240,0.9) 50%, rgba(255,226,140,0.5) 55%, transparent 62%);
+  animation-duration: 2.8s; animation-timing-function: var(--ease-out);
 }
 .rc--e-gilded .rc-inner { box-shadow: inset 0 0 0 0.6cqw rgba(0,0,0,0.6), inset 0 0 0 1.4cqw rgba(246,221,143,0.55), inset 0 0 8cqw rgba(224,184,74,0.35); }
 
-.rc--e-radiant .rc-front { animation: rc-radiant 2.2s ease-in-out infinite; }
+.rc--e-radiant .rc-flip::before {
+  content: ''; position: absolute; inset: -3%; border-radius: 9cqw; pointer-events: none;
+  box-shadow: 0 0 9cqw 2cqw rgba(255,170,70,0.85); animation: rc-pulse 2.2s ease-in-out infinite; will-change: opacity;
+}
 .rc--e-radiant .rc-foil {
   background: radial-gradient(90% 70% at 50% 40%, rgba(255,170,70,0.45), transparent 70%);
-  mix-blend-mode: screen; animation: rc-radiant-core 2.2s ease-in-out infinite;
+  mix-blend-mode: screen; animation: rc-pulse 2.2s ease-in-out infinite;
 }
 
 .rc--e-prismatic .rc-foil {
+  inset: -40%;
   background:
     repeating-linear-gradient(115deg, rgba(255,255,255,0) 0 5cqw, rgba(255,255,255,0.35) 5.6cqw, rgba(255,255,255,0) 6.6cqw 11cqw),
     repeating-linear-gradient(125deg, #ff5b8a 0, #ffb35b 9cqw, #f7f06b 18cqw, #6bf29a 27cqw, #5bd4ff 36cqw, #8b7bff 45cqw, #ff5bd0 54cqw, #ff5b8a 63cqw);
   background-size: 100% 100%, 200% 200%;
   background-position: 0 0, var(--mx) var(--my);
   mix-blend-mode: color-dodge; opacity: 0.34;
-  animation: rc-prism-idle 7s linear infinite;
+  animation: rc-drift 7s ease-in-out infinite alternate; will-change: transform;
 }
 .rc--e-prismatic.is-tilting .rc-foil { animation: none; opacity: 0.55; }
 .rc--e-prismatic .rc-art { filter: saturate(1.25) contrast(1.05); }
@@ -183,21 +187,17 @@
 .rc--e-ethereal { --rc-metal-lo: #2c4a66; --rc-metal: #8fc2e8; --rc-metal-hi: #eaf6ff; }
 .rc--e-ethereal .rc-art { filter: saturate(0.6) brightness(1.1) hue-rotate(-12deg); }
 .rc--e-ethereal .rc-foil {
+  inset: -40%;
   background:
-    radial-gradient(30% 20% at 20% 30%, rgba(200,235,255,0.35), transparent 70%),
-    radial-gradient(25% 18% at 75% 65%, rgba(220,210,255,0.3), transparent 70%),
-    radial-gradient(35% 25% at 50% 90%, rgba(180,240,255,0.25), transparent 70%);
-  background-size: 200% 200%; mix-blend-mode: screen; animation: rc-ether 5s ease-in-out infinite alternate;
+    radial-gradient(18% 12% at 30% 38%, rgba(200,235,255,0.4), transparent 70%),
+    radial-gradient(15% 11% at 65% 58%, rgba(220,210,255,0.35), transparent 70%),
+    radial-gradient(20% 14% at 48% 72%, rgba(180,240,255,0.3), transparent 70%);
+  mix-blend-mode: screen; animation: rc-drift 5s ease-in-out infinite alternate, rc-pulse 3.3s ease-in-out infinite; will-change: transform, opacity;
 }
 
-@keyframes rc-sheen { 0% { background-position: 130% 0, 0 0 } 100% { background-position: -130% 0, 0 0 } }
-@keyframes rc-radiant {
-  0%, 100% { box-shadow: 0 0 2cqw rgba(255,160,60,0.45), 0 1.2cqw 4cqw rgba(0,0,0,0.55); }
-  50% { box-shadow: 0 0 9cqw 1cqw rgba(255,170,70,0.85), 0 1.2cqw 4cqw rgba(0,0,0,0.55); }
-}
-@keyframes rc-radiant-core { 0%, 100% { opacity: 0.45 } 50% { opacity: 1 } }
-@keyframes rc-prism-idle { 0% { background-position: 0 0, 0% 30% } 50% { background-position: 0 0, 100% 70% } 100% { background-position: 0 0, 0% 30% } }
-@keyframes rc-ether { 0% { background-position: 0% 0%; opacity: 0.6 } 100% { background-position: 100% 100%; opacity: 1 } }
+@keyframes rc-sweep { from { transform: translateX(-34%) } to { transform: translateX(34%) } }
+@keyframes rc-pulse { 0%, 100% { opacity: 0.4 } 50% { opacity: 1 } }
+@keyframes rc-drift { from { transform: translate(-12%, -8%) } to { transform: translate(12%, 8%) } }
 
 /* locked silhouette */
 .rc.is-locked .rc-art > :first-child { filter: brightness(0) opacity(0.55); }

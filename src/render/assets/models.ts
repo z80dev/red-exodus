@@ -56,7 +56,7 @@ function bakePart(src: BufferGeometry, mat: Material | undefined): BufferGeometr
   return out;
 }
 
-export function finalizeAsset(key: string, parts: BufferGeometry[], fromGlb: boolean): ModelAsset {
+function finalizeAsset(key: string, parts: BufferGeometry[], fromGlb: boolean): ModelAsset {
   const geometry = parts.length === 1 ? parts[0] : (mergeGeometries(parts, false) ?? parts[0]);
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();

@@ -50,8 +50,9 @@ Every prompt = `SUBJECT` + `FRAMING(kind)` + `PALETTE(hue)` + `STYLE` + `NEGATIV
 ```
 STYLE    = painterly stylized fantasy-historical illustration, hand-painted digital oil with
            visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal
-           silhouette, dramatic chiaroscuro, strong warm rim light, luminous glow, limited rich palette
-           with deep ink-navy shadows and gold-leaf highlights, full-bleed painting that fills the
+           silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against
+           deep darkness, painted shadows toward the corners, limited rich palette with deep ink-navy
+           shadows and gold-leaf highlights, full-bleed painting that fills the
            entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI
            and Slay the Spire
 NEGATIVE = no text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame,
@@ -67,7 +68,7 @@ Chosen after the style exploration (8 test images across GPT Image 2.5 Sunburst,
 Medium and Seedream 5 Pro — see `art/previews/gen_styletest.png`):
 
 - **Cards, eras, key art** — `bytedance/seedream/v5/pro/text-to-image`. Follows the recipe most
-  faithfully: bold graphic silhouettes that read at 96 px, built-in ink vignette, gold-leaf flecks, and
+  faithfully: bold graphic silhouettes that read at 96 px, rich shadow and gold-leaf flecks, and
   native 1536² / 2048×1152 / 1152×2048 output that maps onto the shipped sizes without upscaling.
   (Nano Banana Pro added a white passe-partout border; Krea read as flat children's-book; GPT Image was
   lush but busy at card size and only 1024×768 for backdrops.)
@@ -82,6 +83,22 @@ python3 scripts/nous_image.py --batch art/gen/<kind>.json --jobs 4   # → art/g
 ~/.hermes/hermes-agent/venv/bin/python scripts/art_post.py [kind…]   # crop/resize/vignette → WebP + contact sheets
 bun scripts/art_manifest.ts                           # public/art/** → src/ui/art/artManifest.ts
 ```
+
+Gateway throttling: `python3 scripts/art_batch.py art/gen/<kind>.json --jobs 4` calls the same
+`nous_image.generate` function with bounded transient-error backoff. Run one queue at a time; multiple
+queues compete for the same model rate limit. To queue several kinds, pass several batch filenames.
+Backdrops use the lighter `BACKDROP_LIGHT` prompt clause (open luminous skies); cards use `CARD_LIGHT`
+(low-key with painted corners in deep shadow).
+
+### Vignette sheets
+
+Omens and Reforms are simpler symbolic paintings generated four to a 2×2 sheet (two remaining entries
+use a side-by-side sheet). Each job records `cells` in reading order and its `layout`; `art_post.py`
+finds the central dark seam, slices each cell, trims 2% of the cell edge, centre-crops square, then
+applies the same finishing as single-card generations. Each content id receives its own unique 512²
+WebP, not a shared image. Forty illustrations require eleven model generations this way.
+Raw `_sheet_*.png` files never enter the public manifest. Regenerating a sheet automatically updates
+its per-id crops on the next post-processing run.
 
 - Raw PNGs live in `art/gen/out/` (gitignored). The batch runner skips outputs that already exist, so
   regenerating an outlier = delete its PNG and rerun the batch.

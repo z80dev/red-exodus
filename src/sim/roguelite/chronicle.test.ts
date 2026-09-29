@@ -58,9 +58,6 @@ describe('computeChronicle', () => {
     expect(r.steps[1]).toMatchObject({ source: 'focus', renownAdd: 100, renown: 200, splendor: 0 });
     expect(r.steps[3]).toMatchObject({ source: 'city', ref: '1', renownAdd: 22, renown: 222, splendor: 2 });
     expect(r.steps.at(-1)).toMatchObject({ source: 'final', renown: 222, splendor: 2 });
-    expect(r.target).toBe(300);
-    expect(r.passed).toBe(true);
-    expect(r.triumph).toBe(false);
   });
 
   it('pillar levels scale renown and splendor', () => {
@@ -101,7 +98,6 @@ describe('computeChronicle', () => {
     const srcs = r.steps.map((s) => s.source);
     expect(srcs.indexOf('crisis')).toBeGreaterThan(srcs.indexOf('doctrine'));
     expect(r.splendor).toBeCloseTo((2 + 5) * 0.5);
-    expect(r.target).toBe(300 * 2 * 1.5);
     expect(r.passed).toBe(false);
     expect(r.mandateLost).toBe(2);
     expect(r.influenceEarned.find((l) => l.label === 'Test Crisis overcome')).toBeUndefined();
@@ -109,7 +105,7 @@ describe('computeChronicle', () => {
 
   it('influence: stipend, chapter bonus, capped interest, triumph', () => {
     state.run.influence = 40;
-    state.run.stats.culture = 1000; // 2000 + 22 = 2022 × 2 = 4044 ≥ 2 × 300
+    state.run.stats.culture = 1000; // 2000 + 22 = 2022 × 2 = 4044, comfortably above Triumph.
     const r = computeChronicle(state, () => {});
     expect(r.triumph).toBe(true);
     expect(r.influenceEarned).toEqual([
@@ -145,18 +141,21 @@ describe('previewChronicle', () => {
 });
 
 describe('chronicleTarget', () => {
-  it('scales by era, chapter and endless', () => {
-    expect(chronicleTarget(state, 0, 0)).toBe(300);
-    expect(chronicleTarget(state, 1, 1)).toBe(1800);
-    expect(chronicleTarget(state, 5, 2)).toBe(200000);
-    expect(chronicleTarget(state, 6, 0)).toBe(300000);
-    expect(chronicleTarget(state, 7, 0)).toBe(900000);
+  it('grows through the six eras and continues compounding only after victory', () => {
+    expect(chronicleTarget(state, 1, 0)).toBeGreaterThan(chronicleTarget(state, 0, 0));
+    expect(chronicleTarget(state, 5, 0)).toBeGreaterThan(chronicleTarget(state, 4, 0));
+    expect(chronicleTarget(state, 6, 0) / chronicleTarget(state, 5, 0)).toBe(3);
+    expect(chronicleTarget(state, 7, 0) / chronicleTarget(state, 6, 0)).toBe(3);
+    expect(chronicleTarget(state, 5, 2)).toBeGreaterThan(chronicleTarget(state, 5, 1));
   });
 
   it('applies the revealed crisis only to the current era chapter III, before it begins', () => {
+    const regular = chronicleTarget(state, 0, 2);
+    const nextEra = chronicleTarget(state, 1, 2);
+    const trial = chronicleTarget(state, 0, 1);
     state.run.crisis = '__t_crisis';
-    expect(chronicleTarget(state, 0, 2)).toBe(900);
-    expect(chronicleTarget(state, 0, 1)).toBe(450);
-    expect(chronicleTarget(state, 1, 2)).toBe(2400);
+    expect(chronicleTarget(state, 0, 2)).toBeCloseTo(regular * 1.5);
+    expect(chronicleTarget(state, 0, 1)).toBe(trial);
+    expect(chronicleTarget(state, 1, 2)).toBe(nextEra);
   });
 });

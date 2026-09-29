@@ -89,6 +89,10 @@
 .tb-mandate { flex: none; min-height: 44px; min-width: 44px; padding: 0 6px; border-radius: 11px; border: 1px solid transparent; background: transparent; cursor: pointer; display: grid; place-items: center; }
 .tb-mandate.is-active { background: rgba(255,107,138,0.12); border-color: rgba(255,107,138,0.35); }
 
+/* top-bar controls are visually compact but keep a ≥44px touch target */
+.tb-pill, .tb-clock, .tb-mandate { position: relative; }
+.tb-pill::after, .tb-clock::after, .tb-mandate::after, .lm::after { content: ''; position: absolute; inset: -3px 0; }
+
 /* ───────────────────────── legacy meter ───────────────────────── */
 .lm {
   --lm-a: var(--renown); --lm-b: #9b7bff;
@@ -307,7 +311,7 @@
 .mc-combat { padding-top: 10px; }
 .mc-combat.is-great { border-color: var(--gold-400); }
 .mc-combat.is-awful { border-color: rgba(255,96,96,0.6); }
-.mc-verdict { text-align: center; font-size: 17px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 40px 6px; }
+.mc-verdict { text-align: center; font-size: 17px; line-height: 34px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 40px 4px; white-space: nowrap; }
 .mc-verdict.is-great { color: var(--gold-300); text-shadow: 0 0 14px rgba(246,221,143,0.5); }
 .mc-verdict.is-good { color: var(--good); }
 .mc-verdict.is-even { color: var(--parchment); }
@@ -381,8 +385,8 @@
 
 /* ───────────────────────── toasts ───────────────────────── */
 .ts {
-  position: fixed; z-index: 80; left: 50%; transform: translateX(-50%); top: calc(var(--hud-t) + var(--hud-top-h, 170px) + 6px);
-  width: min(420px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 5px; pointer-events: none;
+  position: fixed; z-index: 80; left: var(--hud-l); right: calc(var(--hud-r) + 56px); top: calc(var(--hud-t) + var(--hud-top-h, 170px) + 6px);
+  max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 5px; pointer-events: none;
 }
 .ts__item {
   pointer-events: auto; display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 5px 12px 5px 7px; cursor: pointer;
@@ -670,13 +674,13 @@
   .hud__cards:has(.mc) .up__portrait { width: 40px; height: 40px; }
   .hud__cards:has(.mc) .up__stats { margin-top: 2px; }
   .mc { padding: 8px 10px 8px; }
-  .mc-verdict { font-size: 15px; margin-bottom: 2px; }
+  .mc-verdict { font-size: 15px; line-height: 32px; margin-bottom: 4px; }
   .mc-side__str { font-size: 17px; }
   .mc-odds { margin: 6px 0 4px; }
   .mc-combat__actions { margin-top: 6px; }
   .mc-combat__actions .k-btn { min-height: 40px; }
   .et { min-height: 54px; min-width: 136px; }
-  .ts { top: calc(var(--safe-top) + 56px); }
+  .ts { top: calc(var(--hud-t) + 50px); left: auto; width: min(400px, 48vw); }
   .tt__cur { order: 0; width: auto; flex: 1; min-width: 240px; }
   .tt-detail { padding: 6px 12px; }
   .tt-detail__icon { width: 40px; height: 40px; }
@@ -708,7 +712,7 @@
   .hud__dock-row { grid-column: 2; grid-row: 1; }
   .et { min-height: 68px; min-width: 190px; border-radius: 20px; }
   .et__label b { font-size: 19px; }
-  .ts { left: auto; right: calc(var(--hud-r) + 60px); transform: none; top: calc(var(--safe-top) + 80px); width: 380px; }
+  .ts { left: auto; right: calc(var(--hud-r) + 60px); top: calc(var(--hud-t) + 76px); width: 380px; }
   .tt__panel { left: 5vw; right: 5vw; top: 5vh; bottom: 5vh; }
   .tt__cur { order: 0; width: auto; flex: 0 1 380px; }
 }

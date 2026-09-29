@@ -66,7 +66,8 @@ export class CameraRig {
 
   pitch(): number {
     const t = Math.min(1, Math.max(0, (this.dist - this.minDist) / (this.maxDist - this.minDist)));
-    return NEAR_PITCH + (FAR_PITCH - NEAR_PITCH) * t * t * (3 - 2 * t);
+    // tall portrait frusta see far toward the horizon: look down a little more steeply there
+    return NEAR_PITCH + (FAR_PITCH - NEAR_PITCH) * t * t * (3 - 2 * t) + (this.aspectK - 1) * 0.9;
   }
 
   attach(el: HTMLElement): void {

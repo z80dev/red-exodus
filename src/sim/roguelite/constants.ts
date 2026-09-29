@@ -11,15 +11,17 @@ export const CRISIS_CHAPTER = 2;
 export const CHAPTER_LENGTHS = [6, 6, 8] as const;
 
 // ── run start ──
-export const START_MANDATE = 3;
+export const START_MANDATE = 5;
 export const START_INFLUENCE = 4;
 export const START_FOCUS: PillarId = 'prosperity';
 export const START_DOCTRINE_SLOTS = 5;
 export const START_EDICT_SLOTS = 2;
 
 // ── chronicle targets ──
-export const ERA_TARGETS = [300, 1200, 4000, 12000, 35000, 100000] as const;
-export const CHAPTER_TARGET_MUL = [1, 1.5, 2] as const;
+export const ERA_TARGETS = [620, 2700, 7000, 24000, 55000, 130000] as const;
+export const CHAPTER_TARGET_MUL = [1, 1.1, 2.7] as const;
+/** The terminal Crisis is a slightly gentler check than recurring Crisis chapters. */
+export const FINAL_CRISIS_TARGET_MUL = 2.2;
 /** each endless era multiplies the previous era's base target */
 export const ENDLESS_ERA_MUL = 3;
 
@@ -48,8 +50,8 @@ export const TRIUMPH_INFLUENCE = 3;
 // ── council ──
 export const SHOP_DOCTRINE_SLOTS = 2;
 export const SHOP_PACK_SLOTS = 2;
-export const RARITY_WEIGHTS_SHOP: Record<Rarity, number> = { common: 70, uncommon: 25, rare: 5, legendary: 0 };
-export const RARITY_WEIGHTS_PACK: Record<Rarity, number> = { common: 70, uncommon: 25, rare: 5, legendary: 1.5 };
+export const RARITY_WEIGHTS_SHOP: Record<Rarity, number> = { common: 55, uncommon: 35, rare: 10, legendary: 0 };
+export const RARITY_WEIGHTS_PACK: Record<Rarity, number> = { common: 55, uncommon: 30, rare: 10, legendary: 3 };
 /** edition roll probabilities (remainder = base) */
 export const EDITION_CHANCE: Record<Exclude<Edition, 'base'>, number> = { gilded: 0.04, radiant: 0.025, prismatic: 0.01, ethereal: 0.005 };
 export const DOCTRINE_PRICE: Record<Rarity, number> = { common: 4, uncommon: 6, rare: 8, legendary: 12 };

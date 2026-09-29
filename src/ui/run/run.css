@@ -78,7 +78,7 @@
 .rcr--crisis .rcr-vignette { background: radial-gradient(90% 70% at 50% 55%, rgba(60,8,10,0.3), rgba(3,5,9,0.86) 90%), linear-gradient(180deg, rgba(3,5,9,0.45), rgba(3,5,9,0.72)); }
 .rcr-stage {
   position: relative; z-index: 10; width: min(100%, 1100px); height: 100%;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 20px;
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 18px; padding: 20px; overflow-y: auto;
 }
 .rcr-title { text-align: center; transition: transform 700ms var(--ease-out); }
 .rcr-era-num { font-size: 14px; letter-spacing: 0.5em; text-indent: 0.5em; color: var(--gold-400); text-transform: uppercase; animation: k-fade 800ms both; }

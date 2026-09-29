@@ -2,8 +2,8 @@
 // rivers, cloud fog, instanced props & cities, units, fx, highlights, camera rig, lighting per era,
 // post-processing and the DOM overlay model. Event animation lives in director.ts.
 import {
-  ACESFilmicToneMapping, AmbientLight, BufferAttribute, BufferGeometry, Color, DirectionalLight, Fog, Group,
-  HemisphereLight, Mesh, MeshStandardMaterial, PCFSoftShadowMap, Scene, ShaderMaterial, SRGBColorSpace,
+  ACESFilmicToneMapping, AmbientLight, BufferAttribute, BufferGeometry, Color, DirectionalLight, DoubleSide, Fog, Group,
+  HemisphereLight, Mesh, MeshStandardMaterial, PCFShadowMap, Scene, ShaderMaterial, SRGBColorSpace,
   Vector3, WebGLRenderer,
 } from 'three';
 import { UNITS } from '../content';
@@ -18,7 +18,8 @@ import { CameraRig, ZOOM_PRESETS } from './camera';
 import { createClouds, setCloudDetail } from './clouds';
 import { Director } from './director';
 import { Fx } from './fx';
-import { WATER_TERRAIN, colX, mapBounds, rowZ, worldTile } from './hexgeo';
+import { worldToTile } from '../sim/hex';
+import { WATER_TERRAIN, colX, mapBounds, rowZ } from './hexgeo';
 import type { BannerData, FlagData } from './overlayStore';
 import { OverlayStore } from './overlayStore';
 import { type EraLight, eraLight } from './palette';
@@ -109,7 +110,7 @@ export class AeonsRenderer implements Renderer {
     this.gl.toneMapping = ACESFilmicToneMapping;
     this.gl.toneMappingExposure = 1;
     this.gl.shadowMap.enabled = true;
-    this.gl.shadowMap.type = PCFSoftShadowMap;
+    this.gl.shadowMap.type = PCFShadowMap;
     this.gl.info.autoReset = false;
     this.rig = new CameraRig({
       pick: (x, y) => this.pick(x, y),
@@ -140,6 +141,7 @@ export class AeonsRenderer implements Renderer {
       uniforms: { uTime: U.uTime },
       transparent: true,
       depthWrite: false,
+      side: DoubleSide,
     });
     this.scene.add(this.world, this.units.group, this.fx.group);
     this.scene.add(this.sun, this.sun.target, this.hemi, this.ambient);
@@ -147,6 +149,7 @@ export class AeonsRenderer implements Renderer {
     this.sun.castShadow = true;
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.02;
+    this.sun.shadow.radius = 2.5;
     this.world.add(this.nature.group, this.cities.group);
     this.director = new Director(this);
     this.unsubLib = this.lib.onLoaded(() => {
@@ -493,9 +496,12 @@ export class AeonsRenderer implements Renderer {
     this.markers = [];
     this.overlay.setMarkers([]);
     const f = this.field;
-    if (!f || !h || h.path.length < 2) return;
+    if (!f || !h || h.path.length < 1 || (h.path.length < 2 && h.selected === null)) return;
     const map = state.map;
-    const pts = h.path.map((t) => {
+    // draw from the selected unit, whether or not the planned path includes its own tile
+    const route = h.selected !== null && h.path[0] !== h.selected ? [h.selected, ...h.path] : h.path;
+    if (route.length < 2) return;
+    const pts = route.map((t) => {
       const tile = map.tiles[t];
       return new Vector3(colX(tile.col, tile.row), 0, rowZ(tile.row));
     });
@@ -515,7 +521,7 @@ export class AeonsRenderer implements Renderer {
       for (let s = 0; s < seg; s++) dense.push(curve[i].clone().lerp(curve[i + 1], s / seg));
     }
     dense.push(curve[curve.length - 1]);
-    const width = 0.07;
+    const width = 0.085;
     const pos = new Float32Array(dense.length * 6);
     const along = new Float32Array(dense.length * 2);
     const side = new Float32Array(dense.length * 2);
@@ -595,6 +601,7 @@ export class AeonsRenderer implements Renderer {
     this.hemi.intensity = l.hemiIntensity;
     this.ambient.intensity = 0.1;
     this.fog.color.set(l.haze);
+    U.uHaze.value.set(l.haze);
     this.scene.background = this.fog.color;
     this.gl.toneMappingExposure = l.exposure;
     U.uSky.value.set(l.sky);
@@ -653,7 +660,7 @@ export class AeonsRenderer implements Renderer {
           if (p.y <= Math.max(groundAt(f, p.x, p.z), 0)) hi = mid;
           else lo = mid;
         }
-        return worldTile(state.map, p.x, p.z);
+        return worldToTile(state.map, p.x, p.z);
       }
       prevT = t;
       t += 0.06;
@@ -735,6 +742,7 @@ export class AeonsRenderer implements Renderer {
     const d = this.rig.dist;
     this.fog.near = d * 1.35;
     this.fog.far = d * 4.2 + 12;
+    U.uHazeRange.value.set(this.fog.near, this.fog.far);
   }
 
   private positionOverlay(): void {

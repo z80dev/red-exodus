@@ -25,6 +25,9 @@ export interface SharedUniforms {
   uCloud: { value: Color };
   uCloudShadow: { value: Color };
   uHeightTex: { value: DataTexture | null };
+  /** scene haze color + (near, far) distances, for custom shaders outside three's fog */
+  uHaze: { value: Color };
+  uHazeRange: { value: Vector2 };
   /** heightfield texture mapping: xz origin + size in world units */
   uHeightRect: { value: Vector4 };
 }
@@ -39,7 +42,7 @@ export const U: SharedUniforms = {
     value: [
       new Vector3(0, 0, 0),
       new Vector3(1.0, 0.86, 0.45), // city
-      new Vector3(0.36, 0.72, 1.0), // move
+      new Vector3(0.22, 0.6, 1.0), // move
       new Vector3(0.55, 0.95, 0.45), // improve
       new Vector3(0.78, 0.5, 1.0), // target
       new Vector3(1.0, 0.24, 0.2), // attack
@@ -56,6 +59,8 @@ export const U: SharedUniforms = {
   uCloud: { value: new Color('#ffffff') },
   uCloudShadow: { value: new Color('#a0a8b4') },
   uHeightTex: { value: null },
+  uHaze: { value: new Color('#dddddd') },
+  uHazeRange: { value: new Vector2(20, 60) },
   uHeightRect: { value: new Vector4(0, 0, 1, 1) },
 };
 
@@ -215,8 +220,8 @@ export function patchTerrainMaterial(mat: MeshStandardMaterial): void {
         `#include <emissivemap_fragment>
         diffuseColor.rgb = mix(diffuseColor.rgb, aeB.rgb * 0.8, aeB.a * 0.55);
         totalEmissiveRadiance += aeB.rgb * aeB.a * 0.35;
-        diffuseColor.rgb = mix(diffuseColor.rgb, aeH.rgb, aeH.a * 0.6);
-        totalEmissiveRadiance += aeH.rgb * aeH.a * 0.55;`,
+        diffuseColor.rgb = mix(diffuseColor.rgb, aeH.rgb * 0.8, aeH.a * 0.5);
+        totalEmissiveRadiance += aeH.rgb * aeH.a * 0.28;`,
       )
       .replace('#include <opaque_fragment>', 'outgoingLight = aeApplyFog(outgoingLight, aeFog);\n#include <opaque_fragment>');
   };

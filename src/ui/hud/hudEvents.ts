@@ -152,7 +152,7 @@ function happinessToast(value: number): void {
   lastHappiness = value;
   if (prev == null) return;
   if (prev >= 0 && value < 0) toast('Your people are unhappy — cities stop growing.', 'bad', 'unhappy');
-  else if (prev > -10 && value <= -10) toast('Unrest! Yields −20% and rebels may rise.', 'bad', 'unhappy');
+  else if (prev > -10 && value <= -10) toast('Unrest! Yields suffer and rebels may rise.', 'bad', 'unhappy');
   else if (prev < 0 && value >= 0) toast('Your people are content again.', 'good', 'happy');
 }
 

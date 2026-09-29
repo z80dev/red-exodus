@@ -1,7 +1,7 @@
 // HUD harness: a real game (createGame + autoplay to a lived-in turn) under the full GameScreen, drawn on a lightweight
 // 2D SVG debug map that implements the Renderer bridge (highlights, screenPos, focus, taps) so every interaction can be
 // exercised without the 3D renderer. URL: ?dev=HudDemo[&seed=X][&turns=14][&panel=city|tech|empire|journal|pause]
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { PointerEvent as RPointerEvent } from 'react';
 import { create } from 'zustand';
 import { DOCTRINES, EDICTS, FEATURES, LEADERS, TECHS, TERRAINS } from '../content';
@@ -19,6 +19,7 @@ import { hexToWorld } from '../sim/hex';
 import { grantDoctrine } from '../sim/roguelite';
 import { BARBARIAN, HUMAN } from '../sim/types';
 import type { GameState, TileIdx } from '../sim/types';
+import { GameCanvas } from '../render/GameCanvas';
 import { GameScreen } from '../ui/hud/GameScreen';
 import { toast } from '../ui/hud/toast';
 
@@ -239,23 +240,24 @@ function DebugMap() {
 }
 
 // ───────────────────────────── harness root ─────────────────────────────
+// build the fixture once at module load (the harness module is only imported for ?dev=HudDemo)
+{
+  const q = new URLSearchParams(location.search);
+  // coach marks off unless explicitly requested (?tutorial=1)
+  saveProfile(updateSettings(loadProfile(), { tutorialDone: q.get('tutorial') !== '1' }));
+  const state = buildFixture(q.get('seed') ?? 'HUD-DEMO', Number(q.get('turns') ?? 14));
+  // ?reveal=1: explore the whole map (meets every rival) for Empire/journal screenshots
+  if (q.get('reveal') === '1') state.players[HUMAN].vis = state.players[HUMAN].vis.map((v) => Math.max(v, 1));
+  useGame.setState({ state, version: useGame.getState().version + 1, screen: 'game', selection: null, panel: (q.get('panel') as Panel | null) ?? 'none', mode: { kind: 'normal' } });
+  Object.assign(window, { hud: { useGame, interaction, toast, useMap } });
+}
+
 export default function HudDemo() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const q = new URLSearchParams(location.search);
-    // coach marks off unless explicitly requested (?tutorial=1)
-    saveProfile(updateSettings(loadProfile(), { tutorialDone: q.get('tutorial') !== '1' }));
-    const state = buildFixture(q.get('seed') ?? 'HUD-DEMO', Number(q.get('turns') ?? 14));
-    // ?reveal=1: explore the whole map (meets every rival) for Empire/journal screenshots
-    if (q.get('reveal') === '1') state.players[HUMAN].vis = state.players[HUMAN].vis.map((v) => Math.max(v, 1));
-    useGame.setState({ state, version: useGame.getState().version + 1, screen: 'game', selection: null, panel: (q.get('panel') as Panel | null) ?? 'none', mode: { kind: 'normal' } });
-    Object.assign(window, { hud: { useGame, interaction, toast, useMap } });
-    setReady(true);
-  }, []);
-  if (!ready) return null;
+  // ?canvas=1 renders the real 3D GameCanvas instead of the 2D debug map
+  const real = new URLSearchParams(location.search).get('canvas') === '1';
   return (
     <>
-      <DebugMap />
+      {real ? <GameCanvas /> : <DebugMap />}
       <GameScreen />
     </>
   );

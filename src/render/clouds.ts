@@ -6,7 +6,7 @@ import { DoubleSide, Group, Mesh, PlaneGeometry, ShaderMaterial } from 'three';
 import { GLSL_NOISE } from './noise';
 import { GLSL_TILES, U } from './shaders';
 
-export const CLOUD_SHELLS = 5;
+const CLOUD_SHELLS = 5;
 const BASE_Y = 0.85;
 const SHELL_STEP = 0.14;
 
@@ -25,6 +25,8 @@ function frag(k: number): string {
   uniform vec3 uCloud;
   uniform vec3 uCloudShadow;
   uniform vec3 uSunDir;
+  uniform vec3 uHaze;
+  uniform vec2 uHazeRange;
   ${GLSL_NOISE}
   ${GLSL_TILES}
   const float H = ${h.toFixed(3)};
@@ -49,8 +51,10 @@ function frag(k: number): string {
     float lee = clamp((n - n2) * 10.0, -1.0, 1.0);
     float edge = 1.0 - smoothstep(0.0, 0.12, D - thr);
     float light = 0.12 + H * 0.8 + lee * 0.22 - edge * (0.2 - H * 0.35);
-    vec3 shadowC = uCloudShadow * vec3(0.78, 0.82, 0.92);
+    vec3 shadowC = mix(uCloudShadow, uCloud, 0.3) * vec3(0.9, 0.93, 1.0);
     vec3 col = mix(shadowC, uCloud * 1.05, clamp(light, 0.0, 1.0));
+    float haze = smoothstep(uHazeRange.x, uHazeRange.y, distance(cameraPosition, vWorld));
+    col = mix(col, uHaze, haze * 0.85);
     gl_FragColor = vec4(col, a);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

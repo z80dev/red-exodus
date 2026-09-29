@@ -4,6 +4,10 @@ import type { CSSProperties, ReactNode } from 'react';
 import { audio } from '../../audio';
 import { CRISES } from '../../content';
 import { useGame, useSim } from '../../game/store';
+import {
+  DARK_AGE_YIELD_PCT, INCOME_BASE, INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, MANDATE_LOSS_CRISIS_FAIL, MANDATE_LOSS_FAIL,
+  TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
+} from '../../sim/roguelite';
 import { empireYields, goldBreakdown, happinessBreakdown, humanCities } from '../../sim/selectors';
 import type { EmpireYields } from '../../sim/selectors';
 import { Icon } from '../icons/Icon';
@@ -176,7 +180,7 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
           <Ornament />
           {h.lines.map((l, i) => <Line key={i} label={l.label} value={signed(l.amount)} tone={l.amount < 0 ? 'bad' : 'good'} />)}
           <Line label="Total" value={signed(h.value)} strong tone={h.value < 0 ? 'bad' : 'good'} />
-          {h.value <= -10 ? <p className="pop-note pop-note--bad">Revolt looms: all yields −20% and rebels may rise.</p>
+          {h.value <= -10 ? <p className="pop-note pop-note--bad">Unrest: yields suffer and rebels may rise.</p>
             : h.value < 0 ? <p className="pop-note pop-note--bad">Unhappy: cities have stopped growing.</p>
             : <p className="pop-note">Luxuries, temples and wonders keep the people content. Each city and citizen costs happiness.</p>}
         </>
@@ -188,9 +192,9 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
           <PopTitle icon="influence" color="var(--influence)" value={`${run.influence}◈`}>Influence</PopTitle>
           <Ornament />
           <p className="pop-note">Spent at the <b>Council</b> after each Chronicle on Doctrines, Edicts, Scrolls, Packs and Reforms.</p>
-          <Line label="Chapter income" value={`+${3 + run.chapter + 1}◈`} />
-          <Line label="Interest (1 per 5 unspent, max 5)" value={`+${Math.min(5, Math.floor(run.influence / 5))}◈`} />
-          <Line label="Triumph (score ≥ 2× target)" value="+3◈" tone="dim" />
+          <Line label="Chapter income" value={`+${INCOME_BASE + (INCOME_CHAPTER_BONUS[run.chapter] ?? 0)}◈`} />
+          <Line label={`Interest (1 per ${INTEREST_PER} unspent, max ${INTEREST_CAP})`} value={`+${Math.min(INTEREST_CAP, Math.floor(run.influence / INTEREST_PER))}◈`} />
+          <Line label={`Triumph (score ≥ ${TRIUMPH_RATIO}× target)`} value={`+${TRIUMPH_INFLUENCE}◈`} tone="dim" />
         </>
       );
     case 'mandate':
@@ -199,8 +203,8 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
           <PopTitle icon="mandate" color="var(--mandate)" value={`${run.mandate}/${run.maxMandate}`}>Mandate</PopTitle>
           <Ornament />
           <div className="pop-hearts"><Hearts value={run.mandate} max={run.maxMandate} size={26} /></div>
-          <p className="pop-note">Missing a chapter's Legacy target costs <b>1 Mandate</b> (2 in a Crisis chapter) and brings a Dark Age. At 0 your civilization collapses.</p>
-          {run.darkAge && <p className="pop-note pop-note--bad">Dark Age: all yields −15% this chapter.</p>}
+          <p className="pop-note">Missing a chapter's Legacy target costs <b>{MANDATE_LOSS_FAIL} Mandate</b> ({MANDATE_LOSS_CRISIS_FAIL} in a Crisis chapter) and brings a Dark Age. At 0 your civilization collapses.</p>
+          {run.darkAge && <p className="pop-note pop-note--bad">Dark Age: all yields {signed(DARK_AGE_YIELD_PCT)}% this chapter.</p>}
         </>
       );
     case 'clock': {

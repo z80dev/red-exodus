@@ -205,7 +205,7 @@ uniform float uTime;
 void main() {
   float edge = sin(vUv.x * 3.14159 * 2.0 * 3.0 + uTime * 6.0) * 0.15 + 0.85;
   float fade = pow(1.0 - vUv.y, 1.6);
-  gl_FragColor = vec4(uColor * (1.2 + edge * 0.6), uAlpha * fade * edge);
+  gl_FragColor = vec4(uColor * (0.75 + edge * 0.35), uAlpha * fade * edge * 0.8);
 }`;
 
 export class Fx {
@@ -260,7 +260,7 @@ export class Fx {
       const e = 1 - (1 - t) ** 3;
       m.scale.set(0.1 + radius * e, 1, 0.1 + radius * e);
       m.scale.x *= width;
-      mat.opacity = (1 - t) * 0.9;
+      mat.opacity = (1 - t) * 0.7;
     }).then(() => {
       this.group.remove(m);
       mat.dispose();

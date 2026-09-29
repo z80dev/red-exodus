@@ -89,7 +89,7 @@ export function createWater(cx: number, cz: number, size: number): Mesh {
         {
           vec3 V = normalize(cameraPosition - vAeWorld);
           float fres = pow(1.0 - max(dot(wn, V), 0.0), 3.0);
-          totalEmissiveRadiance += uSky * fres * 0.55 * (1.0 - foam);
+          totalEmissiveRadiance += mix(uSky, uShallow, 0.35) * fres * 0.28 * (1.0 - foam);
           vec3 R = reflect(-V, wn);
           float sunDot = max(dot(R, normalize(uSunDir)), 0.0);
           float glitter = smoothstep(0.93, 0.99, aeNoise(aeP * 18.0 + vec2(uTime * 0.8, -uTime * 0.6))) * pow(sunDot, 24.0);

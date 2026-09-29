@@ -15,6 +15,8 @@ import { crisisCard, doctrineCard, edictCard, leaderCard, omenCard, packCard, pi
 import { DoctrineBar } from '../ui/run/DoctrineBar';
 import { EdictTray } from '../ui/run/EdictTray';
 import { RunOverlays } from '../ui/run/RunOverlays';
+import { primeRunEndUnlocks } from '../ui/run/RunEnd';
+import { LEADERS } from '../content';
 import { CRISES, OMENS, REFORMS } from '../content';
 import { Button } from '../ui/kit';
 import '../ui/run/card.css';
@@ -70,7 +72,7 @@ function fixtureChronicle(state: GameState, passed: boolean): ChronicleResult {
     if (st.splendorMul != null) s *= st.splendorMul;
     steps.push({ ...st, renown: r, splendor: Math.round(s * 100) / 100 });
   };
-  const k = passed ? 0.14 : 0.05;
+  const k = passed ? 0.05 : 0.015;
   const lines: Record<PillarId, [string, number][]> = {
     arts: [[`${Math.round(312 * k)} culture`, 312 * k]],
     discovery: [[`${Math.round(250 * k)} science`, 150 * k], ['1 tech', 30]],
@@ -97,8 +99,9 @@ function fixtureChronicle(state: GameState, passed: boolean): ChronicleResult {
   if (!passed) push({ source: 'darkAge', label: 'Dark Age', splendorMul: 0.85 });
   else push({ source: 'crisis', label: 'The Long Winter', splendorMul: 0.9 });
   push({ source: 'final', label: 'Legacy' });
-  const target = chronicleTarget(state, run.era, run.chapter);
   const score = Math.floor(r * s);
+  // the failing fixture keeps the real formula but falls ~30% short of its target
+  const target = passed ? chronicleTarget(state, run.era, run.chapter) : Math.round(score * 1.45);
   const ok = score >= target;
   return {
     era: run.era, chapter: run.chapter, target, steps, renown: r, splendor: s, score, passed: ok,
@@ -169,6 +172,16 @@ function setup(scene: Scene, era: number): GameState {
       state.turn = scene === 'victory' ? 121 : 67;
       if (scene === 'victory') { run.era = 5; run.chapter = 2; run.phase = 'victory'; }
       else { run.era = 3; run.chapter = 1; run.phase = 'defeat'; run.defeatReason = 'Your Mandate is exhausted — the people have turned their backs on the throne.'; run.mandate = 0; }
+      // fixture unlocks: never touch the real profile from the gallery
+      const leaderIds = Object.keys(LEADERS).filter((id) => id !== state.config.leaderId);
+      primeRunEndUnlocks(state, {
+        unlocks: [
+          ...leaderIds.slice(0, 2).map((id) => ({ kind: 'leader', id, name: LEADERS[id].name })),
+          { kind: 'doctrine', id: pickDoctrines()[3]?.id ?? '', name: 'Doctrine' },
+          { kind: 'ascension', id: '1', name: 'Ascension 1' },
+          ...(scene === 'victory' ? leaderIds.slice(2, 7).map((id) => ({ kind: 'leader', id, name: LEADERS[id].name })) : []),
+        ],
+      });
       break;
     }
     case 'bars':

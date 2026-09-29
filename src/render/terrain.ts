@@ -193,9 +193,9 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
           const list = riverByTile[k === 0 ? ti : r * W + c];
           for (const s of list) dmin = Math.min(dmin, segDist(x, z, s));
         }
-        if (dmin < 0.3) {
-          const f = 1 - smooth(0.06, 0.3, dmin);
-          h = h - 0.1 * f;
+        if (dmin < 0.42) {
+          const f = 1 - smooth(0.1, 0.42, dmin);
+          h = h - 0.09 * f;
         }
       }
       heights[vi] = h;
@@ -354,12 +354,4 @@ export function buildHeightTexture(f: TerrainField): DataTexture {
   tex.minFilter = LinearFilter;
   tex.needsUpdate = true;
   return tex;
-}
-
-/** where a model standing on a tile center should sit */
-export function tileSurface(f: TerrainField, idx: number): { x: number; y: number; z: number } {
-  const t = f.map.tiles[idx];
-  const x = colX(t.col, t.row);
-  const z = rowZ(t.row);
-  return { x, y: Math.max(groundAt(f, x, z), WATER_TERRAIN[t.terrain] ? 0 : -1), z };
 }

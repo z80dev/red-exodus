@@ -290,7 +290,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         await new Promise<void>((resolve) => {
           const frame = (now: number) => {
             if (cancelled) return resolve();
-            const t = Math.min(1, (now - t0) / countMs);
+            const t = Math.max(0, Math.min(1, (now - t0) / countMs));
             const e = 1 - (1 - t) ** 3;
             setLegacy(result.score * e);
             if (now - lastTick > 75 && t < 1) {

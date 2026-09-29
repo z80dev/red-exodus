@@ -5,7 +5,7 @@ import { availableTechs } from '../economy';
 import { hexDistance, neighbors, tilesInRadius } from '../hex';
 import { findPath, reachableTiles } from '../pathfinding';
 import { randInt } from '../rng';
-import { councilBuyError, packPickError } from '../roguelite/council';
+import { chooseOmen, councilAction, orderDoctrine, playEdict } from './rogueAutoplay';
 import type { Action, AiPersonality, City, Emit, GameState, PlayerId, ProductionItem, TileIdx, Unit } from '../types';
 import { BARBARIAN, HUMAN, PILLARS } from '../types';
 import { isCivilian, militaryAt, createUnit, unitDef } from '../units';
@@ -393,20 +393,10 @@ export function autoplayNextAction(state: GameState): Action | null {
       stats.buildings * 20 + stats.wonders * 200 + Math.floor(flow.production * turns / 45) * 20,
     ];
     const focus = PILLARS.reduce((best, p, i) => scores[i] * state.run.pillarLevels[p] > scores[PILLARS.indexOf(best)] * state.run.pillarLevels[best] ? p : best, PILLARS[0]);
-    return { type: 'chooseChapterStart', focus, omen: state.run.omenOffer[0] ?? null };
+    return { type: 'chooseChapterStart', focus, omen: chooseOmen(state) };
   }
   if (phase === 'chronicle') return { type: 'ackChronicle' };
-  if (phase === 'council') {
-    const council = state.run.council;
-    if (council?.pack) {
-      const pick = council.pack.options.findIndex((_, i) => packPickError(state, i) === null);
-      return { type: 'packPick', index: pick < 0 ? null : pick };
-    }
-    const slot = council?.items.findIndex((item, i) => item && councilBuyError(state, i) === null &&
-      (item.kind === 'scroll' || item.kind === 'doctrine' && state.run.doctrines.length < state.run.doctrineSlots ||
-        item.kind === 'reform' || item.kind === 'pack' && state.run.doctrines.length < state.run.doctrineSlots)) ?? -1;
-    return slot >= 0 ? { type: 'councilBuy', slot } : { type: 'leaveCouncil' };
-  }
+  if (phase === 'council') return councilAction(state);
   if (phase !== 'playing') return null;
-  return decision(state, HUMAN, 'expansionist');
+  return orderDoctrine(state) ?? playEdict(state) ?? decision(state, HUMAN, 'expansionist');
 }

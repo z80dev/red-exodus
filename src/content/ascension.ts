@@ -14,10 +14,10 @@ function enemyMod(a: CombatArgs, label: string, pct: number): void {
 export const ASCENSIONS: AscensionDef[] = [
   {
     level: 1, name: 'Ambition',
-    description: 'Chronicle targets **+20%**.',
+    description: 'Chronicle targets **+5%**.',
     effects: {
       target(_ctx, a) {
-        a.value *= 1.2;
+        a.value *= 1.05;
       },
     },
   },
@@ -45,11 +45,11 @@ export const ASCENSIONS: AscensionDef[] = [
   },
   {
     level: 4, name: 'Gathering Storm',
-    description: 'Crisis chapter targets **×1.25**.',
+    description: 'Crisis chapter targets **×1.05**.',
     effects: {
       target(ctx, a) {
         const chapter = (a as Scalar & { chapter?: number }).chapter ?? ctx.state.run.chapter;
-        if (chapter === CRISIS_CHAPTER) a.value *= 1.25;
+        if (chapter === CRISIS_CHAPTER) a.value *= 1.05;
       },
     },
   },

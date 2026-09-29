@@ -1,4 +1,6 @@
 // Journal: the empire's chronicle of notable events (state.log), newest first, grouped by turn.
+import { useEffect } from 'react';
+import { create } from 'zustand';
 import { audio } from '../../audio';
 import { getRenderer } from '../../game/bridge';
 import { useGame, useSim } from '../../game/store';
@@ -8,8 +10,22 @@ import { RichText } from '../icons/RichText';
 import { Sheet, SheetHeader } from '../kit';
 import { playerColor } from './format';
 
+/** number of journal entries the player has seen (drives the rail's unread badge) */
+const useSeen = create<{ seen: number }>(() => ({ seen: -1 }));
+
+/** entries already seen; a fresh session counts everything already in the log as read */
+export function useJournalSeen(): number {
+  const seen = useSeen((s) => s.seen);
+  return seen < 0 ? useGame.getState().state?.log.length ?? 0 : seen;
+}
+
 export function JournalSheet() {
   const log = useSim((s) => s.log);
+  const count = log?.length ?? 0;
+  useEffect(() => {
+    useSeen.setState({ seen: count });
+    return () => useSeen.setState({ seen: useGame.getState().state?.log.length ?? count });
+  }, [count]);
   const turn = useSim((s) => s.turn) ?? 0;
   const state = useGame((g) => g.state);
   const close = () => { audio.sfx('close'); useGame.getState().setPanel('none'); };

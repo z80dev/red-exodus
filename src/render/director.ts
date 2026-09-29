@@ -6,7 +6,7 @@ import { WONDERS } from '../content';
 import type { GameState, PlayerId, SimEvent, TileIdx } from '../sim/types';
 import { HUMAN } from '../sim/types';
 import type { AeonsRenderer } from './AeonsRenderer';
-import { hexDist } from './hexgeo';
+import { hexDistance } from '../sim/hex';
 import type { UnitView } from './units';
 import { UNIT_SCALE } from './units';
 import { planCities, playerById, teamColors } from './world';
@@ -311,13 +311,13 @@ export class Director {
         let best = Infinity;
         for (const u of Object.values(state.units)) {
           if (u.owner !== HUMAN) continue;
-          const d = hexDist(map, u.tile, ev.tiles[0]);
+          const d = hexDistance(map, u.tile, ev.tiles[0]);
           if (d < best) {
             best = d;
             origin = u.tile;
           }
         }
-        r.tiles.reveal(ev.tiles, ev.tiles.map((t) => Math.max(0, hexDist(map, origin, t) - 1) * 0.09));
+        r.tiles.reveal(ev.tiles, ev.tiles.map((t) => Math.max(0, hexDistance(map, origin, t) - 1) * 0.09));
         r.applyOwners(state, null);
         r.refreshProps(state);
         r.refreshOverlay(state);

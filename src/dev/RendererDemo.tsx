@@ -5,13 +5,13 @@ import { useEffect, useRef, useState } from 'react';
 import { BUILDINGS, IMPROVEMENTS, LEADERS, RESOURCES, WONDERS } from '../content';
 import type { Highlights } from '../game/bridge';
 import { EMPTY_HIGHLIGHTS } from '../game/bridge';
-import { applyAction, createGame } from '../sim/engine';
+import { applyAction, applyPlayerAction, createGame } from '../sim/engine';
+import { hexDistance, neighbors } from '../sim/hex';
 import { findPath, reachableTiles } from '../sim/pathfinding';
 import type { GameState, MapSize, SimEvent, TileIdx } from '../sim/types';
 import { HUMAN } from '../sim/types';
 import { AeonsRenderer } from '../render/AeonsRenderer';
 import { ALL_MODEL_KEYS } from '../render/assets/manifest';
-import { neighborsOf, hexDist } from '../render/hexgeo';
 import { Overlay } from '../render/OverlayLayer';
 import '../render/overlay.css';
 
@@ -30,7 +30,7 @@ function newState(): GameState {
 function showcase(state: GameState): void {
   const map = state.map;
   // found a capital for each civ with its settler
-  for (const u of Object.values(state.units)) if (u.type === 'settler') applyAction(state, { type: 'foundCity', unitId: u.id });
+  for (const u of Object.values(state.units)) if (u.type === 'settler') (u.moves = 2), applyPlayerAction(state, u.owner, { type: 'foundCity', unitId: u.id }, () => {});
   for (const p of state.players) {
     if (p.id === 99) continue;
     const era = Number(params.get('era') ?? 3);
@@ -48,12 +48,12 @@ function showcase(state: GameState): void {
     for (const w of c.wonders) state.wonderOwners[w] = c.id;
     // territory ring 2 + improvements on it
     for (const t of map.tiles) {
-      if (hexDist(map, t.idx, c.tile) <= 2 && t.owner === null) {
+      if (hexDistance(map, t.idx, c.tile) <= 2 && t.owner === null) {
         t.owner = c.owner;
         t.cityId = c.id;
       }
     }
-    for (const n of neighborsOf(map, c.tile)) {
+    for (const n of neighbors(map, c.tile)) {
       const t = map.tiles[n];
       if (t.elevation === 'mountain' || t.improvement) continue;
       const res = t.resource ? RESOURCES[t.resource] : null;
@@ -68,7 +68,7 @@ function showcase(state: GameState): void {
     let k = 0;
     for (const t of map.tiles) {
       if (k >= types.length) break;
-      if (hexDist(map, t.idx, cap.tile) !== 2 || t.terrain === 'ocean' || t.elevation === 'mountain') continue;
+      if (hexDistance(map, t.idx, cap.tile) !== 2 || t.terrain === 'ocean' || t.elevation === 'mountain') continue;
       if (Object.values(state.units).some((u) => u.tile === t.idx)) continue;
       const id = state.nextId++;
       state.units[id] = { id, owner: k % 3 === 2 ? 1 : HUMAN, type: types[k], tile: t.idx, hp: k % 2 ? 100 : 55, moves: 2, hasAttacked: false, xp: 0, level: 1, promotions: [], promotionChoices: k === 1 ? ['a', 'b'] : null, order: null, fortifyTurns: 0, age: 0 };
@@ -103,7 +103,7 @@ export default function RendererDemo() {
       } else {
         const u = state.units[unitId];
         const move = reachableTiles(state, u).map((x) => x.tile).filter((t) => t !== u.tile);
-        const attack = Object.values(state.units).filter((o) => o.owner !== HUMAN && hexDist(state.map, o.tile, u.tile) <= 1).map((o) => o.tile);
+        const attack = Object.values(state.units).filter((o) => o.owner !== HUMAN && hexDistance(state.map, o.tile, u.tile) <= 1).map((o) => o.tile);
         hiRef.current = { ...EMPTY_HIGHLIGHTS, selected: u.tile, move, attack };
       }
       renderer.setHighlights(hiRef.current);
@@ -260,7 +260,7 @@ export default function RendererDemo() {
           {btn('Improve', () => {
             const c = humanCity();
             if (!c || !state) return;
-            const t = neighborsOf(state.map, c.tile).map((i) => state.map.tiles[i]).find((x) => !x.improvement && ['grassland', 'plains'].includes(x.terrain) && x.elevation === 'flat');
+            const t = neighbors(state.map, c.tile).map((i) => state.map.tiles[i]).find((x) => !x.improvement && ['grassland', 'plains'].includes(x.terrain) && x.elevation === 'flat');
             if (!t) return;
             t.improvement = 'farm';
             t.feature = null;
@@ -269,7 +269,7 @@ export default function RendererDemo() {
           {btn('Border', () => {
             const c = humanCity();
             if (!c || !state) return;
-            const ring = state.map.tiles.filter((t) => t.owner === null && hexDist(state.map, t.idx, c.tile) === 3).slice(0, 4);
+            const ring = state.map.tiles.filter((t) => t.owner === null && hexDistance(state.map, t.idx, c.tile) === 3).slice(0, 4);
             for (const t of ring) {
               t.owner = HUMAN;
               t.cityId = c.id;

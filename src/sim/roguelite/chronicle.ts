@@ -9,7 +9,7 @@ import {
 } from '../../content';
 import {
   CHAPTER_NAMES, CHAPTER_TARGET_MUL, CITY_RENOWN_PER_POP, CITY_RENOWN_PER_WONDER, CRISIS_CHAPTER, ENDLESS_ERA_MUL,
-  ERA_TARGETS, FINAL_ERA, FOCUS_RENOWN_MUL, GILDED_RENOWN_BASE, GILDED_RENOWN_PER_ERA, INCOME_BASE,
+  ERA_TARGETS, FINAL_CRISIS_TARGET_MUL, FINAL_ERA, FOCUS_RENOWN_MUL, GILDED_RENOWN_BASE, GILDED_RENOWN_PER_ERA, INCOME_BASE,
   INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, MANDATE_LOSS_CRISIS_FAIL, MANDATE_LOSS_FAIL, PRISMATIC_SPLENDOR_MUL,
   RADIANT_SPLENDOR, TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
 } from './constants';
@@ -30,7 +30,8 @@ export function eraBaseTarget(era: number): number {
  */
 export function chronicleTarget(state: GameState, era: number, chapter: number): number {
   const run = state.run;
-  let value = eraBaseTarget(era) * CHAPTER_TARGET_MUL[Math.min(chapter, CHAPTER_TARGET_MUL.length - 1)];
+  let value = eraBaseTarget(era) * (era === FINAL_ERA && chapter === CRISIS_CHAPTER
+    ? FINAL_CRISIS_TARGET_MUL : CHAPTER_TARGET_MUL[Math.min(chapter, CHAPTER_TARGET_MUL.length - 1)]);
   const crisisChapter = chapter === CRISIS_CHAPTER && era === run.era && run.crisis != null;
   const crisis = crisisChapter ? CRISES[run.crisis!] : undefined;
   if (crisis) value *= crisis.targetMul ?? 1;

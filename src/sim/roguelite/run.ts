@@ -168,9 +168,13 @@ export function ackChronicle(state: GameState, emit: Emit): string | null {
   run.omen = null;
   if (run.mandate <= 0) {
     defeatRun(state, 'Your Mandate is spent. The people have turned away from your rule.', emit);
-  } else if (r.era === FINAL_ERA && r.chapter === CRISIS_CHAPTER && r.passed) {
-    run.phase = 'victory';
-    emit({ type: 'runWon' });
+  } else if (r.era === FINAL_ERA && r.chapter === CRISIS_CHAPTER) {
+    if (r.passed) {
+      run.phase = 'victory';
+      emit({ type: 'runWon' });
+    } else {
+      defeatRun(state, 'The final Chronicle fell short. Your empire leaves no lasting Legacy.', emit);
+    }
   } else {
     run.phase = 'council';
     generateCouncil(state, emit);

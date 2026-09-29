@@ -5,9 +5,11 @@ import { BUILDINGS, IMPROVEMENTS, NATURAL_WONDERS, RESOURCES, TECHS, WONDERS } f
 import type { City, GameState, Player, Tile, TileIdx } from '../sim/types';
 import { HUMAN } from '../sim/types';
 import { MODEL_KEYS } from './assets/manifest';
-import { APOTHEM, CORNER_VEC, DIR_VEC, WATER_TERRAIN, colX, hash01, neighborOf, rowZ } from './hexgeo';
+import { neighbor } from '../sim/hex';
+import { APOTHEM, CORNER_VEC, DIR_VEC, WATER_TERRAIN, colX, hash01, rowZ } from './hexgeo';
 import { BARBARIAN_COLORS } from './palette';
 import type { PropLayer } from './props';
+import { type RiverSeg, segDist } from './rivers';
 import { type TerrainField, groundAt } from './terrain';
 
 const CITY_KEYS: Record<string, true> = Object.fromEntries(MODEL_KEYS.city.map((k) => [k, true]));
@@ -88,7 +90,7 @@ export function planCities(state: GameState): CityPlan {
   for (const c of cities) {
     const around: TileIdx[] = [];
     for (let d = 0; d < 6; d++) {
-      const n = neighborOf(map, c.tile, d);
+      const n = neighbor(map, c.tile, d);
       if (n >= 0 && !reserved.has(n) && map.tiles[n].owner === c.owner && isBuildable(map.tiles[n])) around.push(n);
     }
     around.sort((a, b) => hash01(c.id, a) - hash01(c.id, b));
@@ -139,6 +141,15 @@ function pick<T>(arr: readonly T[], h: number): T {
 export function composeNature(state: GameState, f: TerrainField, layer: PropLayer, plan: CityPlan, reveal: boolean): void {
   const map = state.map;
   const human = state.players[HUMAN];
+  const riverSegs = new Map<TileIdx, RiverSeg[]>();
+  for (const sg of f.rivers) {
+    for (const ti of [sg.t0, sg.t1]) {
+      if (ti < 0) continue;
+      const list = riverSegs.get(ti);
+      if (list) list.push(sg);
+      else riverSegs.set(ti, [sg]);
+    }
+  }
   layer.begin();
   for (const t of map.tiles) {
     if (!explored(state, t.idx, reveal)) continue;
@@ -193,7 +204,7 @@ export function composeNature(state: GameState, f: TerrainField, layer: PropLaye
     // features
     const feat = t.feature;
     if (feat === 'ice') {
-      for (const p of scatter(seed, 2, 0.0, 0.55, 0.45)) place(layer, 'ice_floe', cx + p.x, 0.0, cz + p.z, hash01(seed, p.z * 50) * 6, 0.9 + hash01(seed, p.x * 50) * 0.5);
+      for (const p of scatter(seed, 2, 0.0, 0.55, 0.45)) place(layer, 'ice_floe', cx + p.x, 0.0, cz + p.z, hash01(seed, p.z * 50) * 6, 0.6 + hash01(seed, p.x * 50) * 0.35);
       continue;
     }
     if (feat === 'reef') {
@@ -201,8 +212,10 @@ export function composeNature(state: GameState, f: TerrainField, layer: PropLaye
       continue;
     }
     if (water) continue;
+    const segs = riverSegs.get(t.idx);
     const trees = (keys: readonly string[], n: number, minR: number, scale: number) => {
       for (const [i, p] of scatter(seed, n, minR, 0.82, 0.2).entries()) {
+        if (segs?.some((sg) => segDist(cx + p.x, cz + p.z, sg) < 0.2)) continue;
         const k = pick(keys, hash01(seed, i, 21));
         const s = scale * (0.85 + hash01(seed, i, 22) * 0.4);
         place(layer, k, cx + p.x, g(p.x, p.z) - 0.01, cz + p.z, hash01(seed, i, 23) * Math.PI * 2, s, undefined, (hash01(seed, i, 24) - 0.5) * 0.12, (hash01(seed, i, 25) - 0.5) * 0.12);
@@ -234,17 +247,17 @@ export function composeNature(state: GameState, f: TerrainField, layer: PropLaye
         const rx = Math.cos(a) * 0.5;
         const rz = Math.sin(a) * 0.5;
         if (knoll) place(layer, 'hill_rocks', cx + rx, g(rx, rz) - 0.03, cz + rz, a, 0.6);
-        else trees(['rock_small', 'rock_small', 'rock_large'], 1 + Math.floor(hash01(seed, 34) * 2), 0.4, 0.9);
+        else if (r > 0.45) trees(['rock_small', 'rock_small', 'rock_large'], 1, 0.4, 0.9);
       }
       const decor: Record<string, readonly string[]> = {
         grassland: ['flowers', 'bush', 'flowers', 'rock_small'],
-        plains: ['bush', 'rock_small', 'flowers'],
+        plains: ['bush', 'flowers', 'bush', 'rock_small'],
         desert: ['cactus', 'rock_small', 'cactus'],
         tundra: ['rock_small', 'bush', 'tree_pine'],
         snow: ['rock_small', 'tree_snowpine'],
       };
       const list = decor[t.terrain];
-      if (list && r < 0.55) trees(list, 1 + Math.floor(hash01(seed, 33) * 3), 0.38, 1.0);
+      if (list && r < 0.5 && t.elevation !== 'hills') trees(list, 1 + Math.floor(hash01(seed, 33) * 3), 0.38, 1.0);
     }
   }
   layer.commit();

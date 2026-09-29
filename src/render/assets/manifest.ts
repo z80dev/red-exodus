@@ -1,8 +1,8 @@
 // Model key registry (the Blender → Renderer asset contract, docs/ARCHITECTURE.md §3D asset contract)
 // plus runtime manifest loading from public/models/manifest.<group>.json.
 
-export type ModelGroup = 'nature' | 'city' | 'wonders' | 'units';
-export const MODEL_GROUPS: readonly ModelGroup[] = ['nature', 'city', 'wonders', 'units'];
+type ModelGroup = 'nature' | 'city' | 'wonders' | 'units';
+const MODEL_GROUPS: readonly ModelGroup[] = ['nature', 'city', 'wonders', 'units'];
 
 export interface ManifestEntry {
   key: string;
@@ -21,13 +21,13 @@ const LANDMARKS = [
   'temple', 'library', 'market', 'barracks', 'harbor', 'granary', 'workshop', 'university', 'amphitheater', 'bank',
   'factory', 'observatory', 'castle', 'aqueduct', 'cathedral', 'powerplant', 'stadium', 'lighthouse',
 ];
-export const WONDER_IDS = [
+const WONDER_IDS = [
   'pyramids', 'stonehenge', 'hanging_gardens', 'colossus', 'great_library', 'oracle',
   'great_wall', 'hagia_sophia', 'angkor_wat', 'taj_mahal', 'leaning_tower', 'himeji',
   'big_ben', 'eiffel', 'liberty', 'opera_house', 'cristo', 'launch_pad',
 ];
-export const NATURAL_WONDER_IDS = ['sky_arch', 'ember_peak', 'crystal_falls', 'elder_tree', 'titan_bones', 'mirror_lake'];
-export const UNIT_IDS = [
+const NATURAL_WONDER_IDS = ['sky_arch', 'ember_peak', 'crystal_falls', 'elder_tree', 'titan_bones', 'mirror_lake'];
+const UNIT_IDS = [
   'settler', 'scout', 'warrior', 'archer', 'spearman', 'horseman', 'swordsman', 'catapult', 'chariot',
   'man_at_arms', 'crossbowman', 'pikeman', 'knight', 'trebuchet', 'musketman', 'cannon', 'lancer',
   'rifleman', 'field_gun', 'cavalry', 'artillery', 'infantry', 'machine_gun', 'at_gun', 'tank', 'rocket_artillery',

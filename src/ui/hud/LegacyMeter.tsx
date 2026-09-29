@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { audio } from '../../audio';
 import { useGame } from '../../game/store';
-import { previewChronicle } from '../../sim/roguelite';
+import { TRIUMPH_INFLUENCE, TRIUMPH_RATIO, previewChronicle } from '../../sim/roguelite';
 import type { ChronicleResult, ChronicleStep } from '../../sim/types';
 import { Line, Ornament, Popover, fmt, useAnimatedNumber } from '../kit';
 import { Icon } from '../icons/Icon';
@@ -60,7 +60,7 @@ export function LegacyMeter() {
   if (!res) return null;
   const ratio = shown / target;
   const fill = Math.min(1, ratio);
-  const triumph = ratio >= 2;
+  const triumph = ratio >= TRIUMPH_RATIO;
   const tone = triumph ? 'is-triumph' : passed ? 'is-pass' : ratio >= 0.75 ? 'is-close' : '';
 
   return (
@@ -144,7 +144,7 @@ function LegacyBreakdown({ res }: { res: ChronicleResult }) {
       </div>
       <Line label="Chapter target" value={fmt(res.target)} strong />
       <Line label={passed ? 'Surplus' : 'Still needed'} value={fmt(Math.abs(res.score - res.target))} tone={passed ? 'good' : 'bad'} />
-      {res.score < res.target * 2 && passed && <Line label="Triumph at 2× target (+3◈)" value={fmt(res.target * 2)} tone="dim" />}
+      {res.score < res.target * TRIUMPH_RATIO && passed && <Line label={`Triumph at ${TRIUMPH_RATIO}× target (+${TRIUMPH_INFLUENCE}◈)`} value={fmt(res.target * TRIUMPH_RATIO)} tone="dim" />}
     </div>
   );
 }

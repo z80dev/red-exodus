@@ -1,6 +1,6 @@
 // Unit visuals: one mesh per unit (baked model geometry + per-unit material for team colors, hit flash,
 // dissolve), idle bob/breathing, smooth facing, hop movement, lunges, deaths, spawn pops.
-import { Color, Group, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import { Group, Mesh, MeshStandardMaterial, Vector3 } from 'three';
 import { UNITS } from '../content';
 import type { GameState, TileIdx, Unit } from '../sim/types';
 import { HUMAN } from '../sim/types';
@@ -202,4 +202,3 @@ export class UnitLayer {
   }
 }
 
-export const DAMAGE_COLOR = new Color('#ff5a4f');

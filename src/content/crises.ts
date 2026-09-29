@@ -329,14 +329,14 @@ const LIST: CrisisDef[] = [
   {
     id: 'famine', name: 'The Great Famine', eras: [2, 3], reward: 5, affectsAll: true,
     icon: 'wheat', art: { hue: 40, motif: 'wheat' },
-    description: '{food} Food is **−40%** in every city (**−20%** with a **Granary**). Strikes every civilization.',
+    description: '{food} Food is **−25%** in every city (**−10%** with a **Granary**). Strikes every civilization.',
     flavor: 'The granaries echoed. Mothers sang to children about bread.',
     effects: {
       onBegin(ctx) {
         strike(ctx, 'Famine! The harvest has failed across the world.', 'wheat');
       },
       cityYield(_ctx, a) {
-        a.pct.food -= has(a.city, 'granary') ? 20 : 40;
+        a.pct.food -= has(a.city, 'granary') ? 10 : 25;
       },
     },
   },
@@ -371,15 +371,15 @@ const LIST: CrisisDef[] = [
   {
     id: 'comet_omen', name: 'Comet of Ill Omen', eras: [3, 4], reward: 6,
     icon: 'star', art: { hue: 250, motif: 'star' },
-    description: 'Your **Focus** pillar\'s {renown} is **not doubled** in this chapter\'s Chronicle.',
+    description: "Your **Focus** pillar receives only half its usual bonus in this chapter's Chronicle (×1.5 instead of ×2).",
     flavor: 'A second sun with a burning tail — the astrologers wept, and the people believed them.',
     effects: {
       onBegin(ctx) {
-        strike(ctx, 'A comet blazes overhead. Your Focus will not be doubled this chapter.', 'star');
+        strike(ctx, 'A comet blazes overhead. Your Focus bonus is halved this chapter.', 'star');
       },
       chronicle(ctx, c) {
         const focus = pillarRenown(ctx.state, c.stats, c.focus);
-        if (focus > 0) c.addRenown(-focus * (FOCUS_RENOWN_MUL - 1), 'Comet: Focus eclipsed');
+        if (focus > 0) c.addRenown(-focus * (FOCUS_RENOWN_MUL - 1) * 0.5, 'Comet: Focus eclipsed');
       },
     },
   },
