@@ -60,11 +60,11 @@ export function Tutorial() {
   const left = Math.max(14, Math.min(viewport.width - width - 14, spotlight ? spotlight.x + spotlight.width / 2 - width / 2 : (viewport.width - width) / 2));
   const below = spotlight && spotlight.y + spotlight.height + height + 26 < viewport.height;
   const top = spotlight ? Math.max(12, Math.min(viewport.height - height - 12, below ? spotlight.y + spotlight.height + 15 : spotlight.y - height - 15)) : viewport.height < 500 ? 90 : viewport.height - height - 110;
-  return <aside className="ae-tutorial" aria-label="Chronicler’s guidance">
+  return <aside className="ae-tutorial" aria-label="Flight recorder guidance">
     {spotlight && <svg className="ae-tutorial-spotlight" width="100%" height="100%" aria-hidden="true"><defs><mask id="ae-tutorial-cutout"><rect width="100%" height="100%" fill="white" /><rect x={spotlight.x} y={spotlight.y} width={spotlight.width} height={spotlight.height} rx="12" fill="black" /></mask></defs><rect width="100%" height="100%" fill="var(--ink-950)" opacity="0.4" mask="url(#ae-tutorial-cutout)" /><rect x={spotlight.x} y={spotlight.y} width={spotlight.width} height={spotlight.height} rx="12" fill="none" stroke="var(--gold-400)" strokeWidth="1.5" /></svg>}
     <section className="ae-coachmark" key={step.id} style={{ width, left, top }} role="status">
       {spotlight && <span className={`ae-coach-arrow ${below ? 'up' : 'down'}`} style={{ left: Math.max(20, Math.min(width - 30, spotlight.x + spotlight.width / 2 - left)) }} />}
-      <span className="ae-eyebrow"><Icon name={step.icon} size={16} />The chronicler <span>{completed.length + 1} / {TUTORIAL_STEPS.length}</span></span><h3>{step.title}</h3><p>{step.text}</p><div><button onClick={() => acknowledge(true)}>Skip tutorial</button><button onClick={() => acknowledge()}>Understood <Icon name="chevronRight" size={15} /></button></div>
+      <span className="ae-eyebrow"><Icon name={step.icon} size={16} />Flight recorder <span>{completed.length + 1} / {TUTORIAL_STEPS.length}</span></span><h3>{step.title}</h3><p>{step.text}</p><div><button onClick={() => acknowledge(true)}>Skip tutorial</button><button onClick={() => acknowledge()}>Understood <Icon name="chevronRight" size={15} /></button></div>
     </section>
   </aside>;
 }

@@ -1,21 +1,78 @@
 {
- "long_winter": "A colossal blizzard shaped like a frost giant rising over a tiny walled village half-buried in snow, frozen river, pale small sun behind the storm, one warm hearth light glowing in a single window resisting the cold.",
- "steppe_horde": "A towering wall of dust on the steppe with the shadows of hundreds of horse archers galloping out of it under red war banners, war drums, a lone watchtower of a small village in the foreground about to be engulfed.",
- "great_flood": "A gigantic wave of brown floodwater bursting over a river valley, drowning fields and mud-brick houses, rooftops and a lone reed boat with tiny figures clinging to it, endless rain slashing from a dark sky, lightning over distant hilltops.",
- "dark_prophecy": "A blindfolded oracle on a tripod above a smoking chasm, violet smoke rising and forming a colossal skull-like face with a single burning eye in the sky above a distant city, ashes drifting like snow.",
- "schism": "Two rival high priests facing each other across a cracked stone altar, one holding a white flame and one a crimson flame, the temple split down the middle by a jagged glowing fissure, crowds divided in shadow on either side.",
- "sea_peoples": "A fleet of black-sailed raider longships with monstrous prows emerging from a storm-tossed sea fog at night, torches blazing, a small coastal town with a lighthouse on the shore beneath them, waves crashing.",
- "rival_ascendant": "A colossal crowned warlord silhouette in crimson armour rising over the horizon like a second sun, casting a huge shadow over a small city, a burning torn treaty drifting in the wind, legions marching below.",
- "plague": "A hooded plague doctor with a long beaked mask walking a deserted medieval street at night carrying a lantern, sickly green miasma curling through the alleys, a lone bell tower with a silent bell, rats at the gutters, doors marked with shadows.",
- "iconoclasm": "A mob with raised hammers toppling a great gilded saint statue from a cathedral pedestal, its golden mask shattering into flying fragments, torchlight and dust, stained glass cracking above.",
- "famine": "Cracked barren earth and withered black wheat stalks under a merciless bronze sun, an empty granary with open doors, a thin mother holding a child on the dusty road, crows circling.",
- "peasant_revolt": "An angry crowd of peasants with pitchforks, torches and scythes storming the gates of a noble manor at night, flames leaping from the roof, a toppled carriage, silhouettes against a fiery orange sky.",
- "comet_omen": "A gigantic blood-red comet with a burning tail tearing across a violet night sky over a Renaissance city, astrologers on a rooftop observatory recoiling, the whole city bathed in eerie light.",
- "debt_crisis": "A king's golden treasury vault stripped bare, a crowned figure slumped on an empty throne, stacks of coins crumbling into dust and slipping away through cracks in the floor, a single guttering candle.",
- "trade_collapse": "Abandoned merchant galleons rotting at anchor in a silent grey harbour, sails in tatters, unsold silk bales and spice crates piled on an empty rain-soaked quay, gulls on broken masts.",
- "industrial_smog": "A choking industrial city drowned in thick yellow-black smog, towering smokestacks belching soot, gas lamps burning at noon, silhouettes of coughing workers with rags over their faces on an iron bridge.",
- "pandemic": "A vast translucent green serpent of miasma coiling around the skyscrapers of a modern city at dusk, empty streets, ambulance lights glowing, a lone masked doctor looking up at it.",
- "world_war": "A burning sky full of biplanes and zeppelins above a no-man's-land of trenches, barbed wire and tanks, searchlights crossing, a torn battle flag on a splintered pole in the foreground, fire on every horizon.",
- "nuclear_standoff": "Two colossal shadowy hands reaching toward two glowing red buttons above a sleeping modern city at night, a faint ghostly mushroom-cloud silhouette reflected in the sky, the world holding its breath.",
- "great_blackout": "A vast modern city skyline plunged into total darkness at dusk, skyscrapers black, one enormous lightning bolt splitting the sky and briefly lighting the dead towers, a single candle flickering in one window in the foreground."
+ "long_winter": {
+  "subject": "A cinematic Martian colony hazard named Polar Night: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Polar Night. Frost Flats and Polar Ice yield nothing; colony Food is −. The sun kept its distance. It had heard about the heating bill.. Use a subtle mountain-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 205
+ },
+ "steppe_horde": {
+  "subject": "A cinematic Martian colony hazard named Feral Uprising: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Feral Uprising. Feral raiders gather beyond your borders at the start and every other turn. They came early, landed badly, and decided that was your fault.. Use a subtle horse-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 22
+ },
+ "great_flood": {
+  "subject": "A cinematic Martian colony hazard named Brine Surge: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Brine Surge. Colonies lose Food as brine systems contaminate the water reclaimers. The brine was technically liquid. It was not technically drinkable.. Use a subtle wave-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 195
+ },
+ "dark_prophecy": {
+  "subject": "A cinematic Martian colony hazard named Telemetry Failure: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Telemetry Failure. Sol Report target is . Survive and earn Scrip. The numbers are bad. The dashboard has stopped pretending otherwise.. Use a subtle eye-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 275
+ },
+ "schism": {
+  "subject": "A cinematic Martian colony hazard named Comms Blackout: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Comms Blackout. The Breakthrough draft shows fewer research option. The Uplink can hear you. It has chosen not to answer.. Use a subtle bolt-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 300
+ },
+ "sea_peoples": {
+  "subject": "A cinematic Martian colony hazard named Phobos Debris Shower: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Phobos Debris Shower. Orbital debris strikes colony systems: every city loses Industry. Phobos is coming apart. Nobody filed a maintenance ticket.. Use a subtle star-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 215
+ },
+ "rival_ascendant": {
+  "subject": "A cinematic Martian colony hazard named Rival Landing: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Rival Landing. A rival gets combat strength against your forces this chapter. Their landing beacon says peaceful survey. Their guns say otherwise.. Use a subtle flame-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 0
+ },
+ "plague": {
+  "subject": "A cinematic Martian colony hazard named Cryo Bay Failure: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Cryo Bay Failure. The Ark loses Cryo pod when the failure begins. The freezer alarm has been screaming for three hours. That is not a good sign.. Use a subtle skull-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 88
+ },
+ "iconoclasm": {
+  "subject": "A cinematic Martian colony hazard named Perchlorate Bloom: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Perchlorate Bloom. Food output is − in every colony. The soil is fertile in the same way a battery is a beverage.. Use a subtle serpent-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 35
+ },
+ "famine": {
+  "subject": "A cinematic Martian colony hazard named Greenhouse Blight: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Greenhouse Blight. Food is − in every colony; seed stock is failing across Mars. The first tomatoes were delicious. The last ones were mostly paperwork.. Use a subtle tree-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 40
+ },
+ "peasant_revolt": {
+  "subject": "A cinematic Martian colony hazard named Hab Pressure Leak: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Hab Pressure Leak. Every colony loses Food and Industry to emergency repairs. The leak was small. So was the crews remaining patience.. Use a subtle flame-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 12
+ },
+ "comet_omen": {
+  "subject": "A cinematic Martian colony hazard named Solar Particle Event: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Solar Particle Event. Research output is − while the solar event scrambles instruments. The Sun sent a memo. It was mostly radiation.. Use a subtle sun-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 250
+ },
+ "debt_crisis": {
+  "subject": "A cinematic Martian colony hazard named Ark Orbit Decay: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Ark Orbit Decay. Orbital Drops cost additional Cryo pod this chapter. The Ark is drifting. Somebody has been spending the station-keeping budget.. Use a subtle moon-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 50
+ },
+ "trade_collapse": {
+  "subject": "A cinematic Martian colony hazard named Supply Chain Collapse: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Supply Chain Collapse. Credits are − in every colony; installations cost Credits. The cargo schedule was optimistic. The cargo was not there.. Use a subtle gear-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 28
+ },
+ "industrial_smog": {
+  "subject": "A cinematic Martian colony hazard named Global Dust Storm: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Global Dust Storm. Great storms batter Mars. extra storm cells spawn at the start of the Crisis. The horizon is gone. The horizon had a good run.. Use a subtle mountain-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 70
+ },
+ "pandemic": {
+  "subject": "A cinematic Martian colony hazard named Water Reclaimer Failure: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Water Reclaimer Failure. Colonies without a Water Reclaimer lose population at chapter start. The water loop is closed. The complaint loop is not.. Use a subtle gear-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 140
+ },
+ "world_war": {
+  "subject": "A cinematic Martian colony hazard named Feral Armory Seizure: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Feral Armory Seizure. Military units cost Industry to produce. The ferals have discovered the armory. The armory was not locked.. Use a subtle sword-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 355
+ },
+ "nuclear_standoff": {
+  "subject": "A cinematic Martian colony hazard named Earth’s Last Broadcast: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Earths Last Broadcast. All colonies suffer − Data while the last transmission monopolizes the arrays. A voice from Earth, buried under static and thirty years of bad news.. Use a subtle eye-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 15
+ },
+ "great_blackout": {
+  "subject": "A cinematic Martian colony hazard named Reactor Scram: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: Reactor Scram. Colonies without a Fusion Plant suffer − Industry and Data. The reactor shut itself down. It was the most sensible thing anyone did today.. Use a subtle bolt-shaped prop or silhouette. Ominous, fair and readable at small card size; include one small practical human response.",
+  "hue": 230
+ }
 }

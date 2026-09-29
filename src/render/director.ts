@@ -21,9 +21,12 @@ const GOLD = new Color('#ffd36b');
 const WHITE = new Color('#fff6e0');
 const EMBER = new Color('#ff8a3a');
 const SMOKE = new Color('#5b5550');
-const DUST = new Color('#cbb68e');
+const DUST = new Color('#c08a5e');
 const SCI = new Color('#6fc3ff');
-const LEAF = new Color('#8fd05a');
+const LEAF = new Color('#9fbf4a');
+const CRYO = new Color('#5fd4e8');
+const FROST = new Color('#dff7ff');
+const STORM_DUST = new Color('#8a4a2a');
 
 export class Director {
   active = false;
@@ -34,6 +37,10 @@ export class Director {
   private r: AeonsRenderer;
   private queue: Job[] = [];
   private unitChains = new Map<number, Promise<void>>();
+  /** animations that must finish before the batch ends but must not block the next event (storm moves) */
+  private background: Promise<void>[] = [];
+  /** colony tile → its drop pod's descent; the matching cityFounded waits for touchdown */
+  private drops = new Map<TileIdx, Promise<void>>();
   private cancelled = false;
 
   constructor(r: AeonsRenderer) {
@@ -50,6 +57,8 @@ export class Director {
   cancel(): void {
     this.cancelled = true;
     this.r.fx.flush();
+    this.background = [];
+    this.drops.clear();
     for (const j of this.queue.splice(0)) j.resolve();
   }
 
@@ -93,6 +102,8 @@ export class Director {
       else await Promise.race([p, this.r.fx.wait(0.16)]);
     }
     await Promise.all(pending);
+    await Promise.all(this.background.splice(0));
+    this.drops.clear();
   }
 
   /** serialize animations per unit */
@@ -189,21 +200,67 @@ export class Director {
         });
       }
       case 'cityFounded': {
-        const visible = this.vis(state, ev.tile);
-        r.refreshProps(state);
-        r.applyOwners(state, visible ? this.cityTiles(state, ev.cityId) : null);
-        r.refreshOverlay(state);
-        // the settler is consumed
-        for (const v of [...r.units.views.values()]) if (v.tile === ev.tile && !state.units[v.id] && !v.dying) this.consume(v);
-        if (!visible) return null;
-        const p = this.pos(ev.tile);
+        const drop = this.drops.get(ev.tile);
+        if (drop) return drop.then(() => this.founded(ev, state, speed) ?? undefined);
+        return this.founded(ev, state, speed);
+      }
+      case 'podLanded': {
+        if (!this.vis(state, ev.tile)) return null;
+        r.holdCity(state, ev.tile, true);
         const team = teamColors(playerById(state, ev.player));
-        void fx.ring(p.clone().setY(p.y + 0.05), team.a, 1.6, 1.0, 1);
-        void fx.ring(p.clone().setY(p.y + 0.05), GOLD, 1.1, 0.8, 1);
-        fx.burst(p.clone().setY(p.y + 0.05), { count: 40, color: DUST, additive: false, speed: 1.3, up: 0.3, life: 1.1, size: 0.22, grow: 2, spread: 1.6, drag: 3.5, radius: 0.3 });
-        fx.burst(p.clone().setY(p.y + 0.3), { count: 40, color: GOLD, color2: WHITE, speed: 1.0, up: 1.6, life: 1.4, size: 0.09, star: true, gravity: 1.2, drag: 1.2 });
-        r.rig.shake(0.05);
-        return fx.wait(1.1 * speed);
+        const p = (async () => {
+          if (ev.player === HUMAN) {
+            r.focusTile(ev.tile, { animate: true });
+            await fx.wait(0.35);
+          }
+          await r.pods.land(this.pos(ev.tile), team, speed, (a) => r.rig.shake(ev.player === HUMAN ? a : a * 0.5));
+          r.holdCity(state, ev.tile, false);
+        })();
+        this.drops.set(ev.tile, p);
+        return p;
+      }
+      case 'colonistsThawed': {
+        const c = state.cities[ev.cityId];
+        r.refreshProps(state);
+        r.refreshOverlay(state);
+        if (!c || !this.vis(state, c.tile)) return null;
+        const p = this.pos(c.tile);
+        void fx.beam(p, CRYO, 0.5, 2.6, 1.6 * speed);
+        void fx.ring(p.clone().setY(p.y + 0.05), CRYO, 1.3, 1.0);
+        fx.burst(p.clone().setY(p.y + 0.08), { count: 44, color: CRYO, color2: FROST, speed: 0.22, up: 1.3, life: 1.7, size: 0.07, star: true, radius: 0.5, gravity: -0.35, drag: 0.8 });
+        fx.burst(p.clone().setY(p.y + 0.05), { count: 14, color: FROST, additive: false, speed: 0.5, up: 0.25, spread: 1.6, life: 1.2, size: 0.26, grow: 1.6, drag: 2.5, radius: 0.3 });
+        if (ev.player === HUMAN) r.overlay.pop({ kind: 'label', text: `+${ev.pop}`, icon: 'thaw', color: '#5fd4e8', x: p.x, y: p.y + 0.9, z: p.z, life: 1.6 });
+        return fx.wait((ev.player === HUMAN ? 1.1 : 0.5) * speed);
+      }
+      case 'stormSpawned':
+        this.background.push(r.storms.spawn(ev.storm));
+        return fx.wait(0.2);
+      case 'stormMoved': {
+        // storms roll together: the next event starts right away, the batch waits for arrival
+        this.background.push(r.storms.move(state, ev.id, ev.from, ev.to));
+        return fx.wait(0.12);
+      }
+      case 'stormEnded':
+        return r.storms.end(ev.id);
+      case 'stormDamage': {
+        if (!this.vis(state, ev.tile)) return null;
+        const hit = async () => {
+          const v = ev.unitId !== undefined ? r.units.views.get(ev.unitId) : undefined;
+          const p = v ? v.root.position.clone() : this.pos(ev.tile);
+          const h = v ? v.height : ev.cityId !== undefined ? 0.6 : 0.3;
+          fx.burst(p.clone().setY(p.y + h * 0.5), { count: 18, color: STORM_DUST, color2: DUST, additive: false, speed: 1.4, up: 0.25, spread: 2.4, drag: 2.5, life: 0.9, size: 0.24, grow: 1.8, radius: 0.2 });
+          if (v) {
+            void fx.tween(0.45, (t) => {
+              v.u.uFlash.value = (1 - t) * 1.4;
+              v.body.position.x = Math.sin(t * 36) * 0.025 * (1 - t);
+            });
+          }
+          r.overlay.pop({ kind: 'damage', text: `-${Math.round(ev.amount)}`, icon: 'storm', color: '#ffa05a', x: p.x, y: p.y + h + 0.3, z: p.z, life: 1.3 });
+          if (ev.player === HUMAN) r.rig.shake(0.035);
+          await fx.wait(0.35 * speed);
+        };
+        const settle = r.storms.settled();
+        return ev.unitId !== undefined ? this.chain(ev.unitId, () => settle.then(hit)) : settle.then(hit);
       }
       case 'cityCaptured': {
         r.refreshProps(state);
@@ -359,9 +416,31 @@ export class Director {
         return null;
       }
       default:
-        // turnStart/turnEnd, gold/happiness, war/peace, elimination, roguelite bookkeeping, notify: UI-only
+        // turnStart/turnEnd, gold/happiness, war/peace, elimination, cryo/research offers, roguelite bookkeeping,
+        // notify: UI-only
         return null;
     }
+  }
+
+  /** a colony appears: the hab unfolds in a dust ring (after its drop pod touched down, if any) */
+  private founded(ev: Extract<SimEvent, { type: 'cityFounded' }>, state: GameState, speed: number): Promise<void> | null {
+    const r = this.r;
+    const fx = r.fx;
+    const visible = this.vis(state, ev.tile);
+    r.refreshProps(state);
+    r.applyOwners(state, visible ? this.cityTiles(state, ev.cityId) : null);
+    r.refreshOverlay(state);
+    // a Hab Crawler is consumed
+    for (const v of [...r.units.views.values()]) if (v.tile === ev.tile && !state.units[v.id] && !v.dying) this.consume(v);
+    if (!visible) return null;
+    const p = this.pos(ev.tile);
+    const team = teamColors(playerById(state, ev.player));
+    void fx.ring(p.clone().setY(p.y + 0.05), team.a, 1.6, 1.0, 1);
+    void fx.ring(p.clone().setY(p.y + 0.05), GOLD, 1.1, 0.8, 1);
+    fx.burst(p.clone().setY(p.y + 0.05), { count: 40, color: DUST, additive: false, speed: 1.3, up: 0.3, life: 1.1, size: 0.22, grow: 2, spread: 1.6, drag: 3.5, radius: 0.3 });
+    fx.burst(p.clone().setY(p.y + 0.3), { count: 40, color: GOLD, color2: WHITE, speed: 1.0, up: 1.6, life: 1.4, size: 0.09, star: true, gravity: 1.2, drag: 1.2 });
+    r.rig.shake(0.05);
+    return fx.wait(1.1 * speed);
   }
 
   private consume(v: UnitView): void {

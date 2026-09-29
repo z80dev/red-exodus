@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { audio } from '../../audio';
 import { EDICTS, IMPROVEMENTS, RESOURCES } from '../../content';
 import {
-  buyImprovement, cancelMode, cancelPreview, confirmPreview, deselect, improveTile, improveTiles, useInteraction,
+  buyImprovement, cancelMode, cancelPreview, confirmPreview, deselect, improveTile, improveTiles, orbitalDropSiteCount, useInteraction,
 } from '../../game/interaction';
 import type { Preview } from '../../game/interaction';
 import { useGame, useSim } from '../../game/store';
@@ -16,6 +16,9 @@ import type { GameState, TileIdx, Yields } from '../../sim/types';
 import { Icon } from '../icons/Icon';
 import { Button, IconButton, fmt } from '../kit';
 import { YIELD_META, playerColor, turnsLabel, unitName } from './format';
+import { stormPowerAt } from '../../sim/mars';
+import { hexDistance } from '../../sim/hex';
+import { T } from '../terms';
 
 export function MapCards() {
   const preview = useInteraction((u) => u.preview);
@@ -60,6 +63,13 @@ function TileCard({ idx }: { idx: TileIdx }) {
     const t = s.map.tiles[idx];
     return t.owner === HUMAN && !Object.values(s.cities).some((c) => c.tile === idx) && improvementOptions(s, HUMAN, idx).some((o) => o.placeable);
   });
+  const stormInfo = useSim((s) => {
+    const power = stormPowerAt(s, idx);
+    if (power) return { power, forecast: false };
+    const forecast = s.storms.some((storm) => storm.path.slice(storm.step + 1, storm.step + 3)
+      .some((eye) => eye != null && hexDistance(s.map, eye, idx) <= storm.radius));
+    return forecast ? { power: 0, forecast: true } : null;
+  });
   if (!info) return null;
   if (!info.explored) return null;
   return (
@@ -80,6 +90,9 @@ function TileCard({ idx }: { idx: TileIdx }) {
         <span className="mc-tag"><Icon name="moves" size={13} /> {info.impassable ? 'Impassable' : `${info.moveCost} move${info.moveCost === 1 ? '' : 's'}`}</span>
         {info.river && <span className="mc-tag mc-tag--river"><Icon name="river" size={13} /> River</span>}
         {info.worked && <span className="mc-tag mc-tag--good"><Icon name="check" size={13} /> Worked</span>}
+        {stormInfo && <span className={`mc-tag mc-tag--storm ${stormInfo.forecast ? 'is-forecast' : ''}`}>
+          <Icon name="storm" size={13} /> {T.storm}{stormInfo.forecast ? ' forecast · next two Sols' : ` · power ${stormInfo.power}`}
+        </span>}
       </div>
       {info.naturalWonder && <p className="mc__desc">{info.naturalWonder.description}</p>}
       <div className="mc-tile__list">
@@ -284,7 +297,12 @@ function ImprovePicker({ idx }: { idx: TileIdx }) {
 export function ModeBanner() {
   const mode = useGame((g) => g.mode);
   const strike = useInteraction((u) => u.strikeCity);
+  const dropTargeting = useInteraction((u) => u.dropTargeting);
   const data = useSim((s) => {
+    if (dropTargeting) {
+      const sites = orbitalDropSiteCount(s);
+      return { icon: 'cryo', title: T.drop, text: `Tap a highlighted clear tile to land a colony · ${sites} valid ${sites === 1 ? 'site' : 'sites'}.`, done: 'Cancel' };
+    }
     if (mode.kind === 'edictTarget') {
       const inst = s.run.edicts.find((e) => e.uid === mode.uid);
       const def = inst ? EDICTS[inst.id] : undefined;

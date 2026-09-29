@@ -1,14 +1,14 @@
 // Roguelite tunables. Balance lives here; the lead retunes with `bun scripts/sim.ts`.
 import type { Edition, PillarId, Rarity } from '../types';
 
-export const ERA_NAMES = ['Ancient', 'Classical', 'Medieval', 'Renaissance', 'Industrial', 'Modern'] as const;
-export const CHAPTER_NAMES = ['Rise', 'Trial', 'Crisis'] as const;
+export const ERA_NAMES = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'] as const;
+export const CHAPTER_NAMES = ['Dawn', 'Dusk', 'Crisis'] as const;
 /** last scripted era; passing its Crisis chapter wins the run */
 export const FINAL_ERA = 5;
 export const CHAPTERS_PER_ERA = 3;
 export const CRISIS_CHAPTER = 2;
-/** turns per chapter I / II / III */
-export const CHAPTER_LENGTHS = [6, 6, 8] as const;
+/** turns per chapter I / II / III (≈78-turn runs) */
+export const CHAPTER_LENGTHS = [4, 4, 5] as const;
 
 // ── run start ──
 export const START_MANDATE = 5;
@@ -18,7 +18,8 @@ export const START_DOCTRINE_SLOTS = 5;
 export const START_EDICT_SLOTS = 2;
 
 // ── chronicle targets ──
-export const ERA_TARGETS = [620, 2700, 7000, 24000, 55000, 130000] as const;
+/** first retune for 13-turn eras (was 20): ×0.65 of the 20-turn table; final balance via `bun scripts/sim.ts` */
+export const ERA_TARGETS = [500, 2600, 8500, 21000, 45000, 100000] as const;
 export const CHAPTER_TARGET_MUL = [1, 1.1, 2.7] as const;
 /** The terminal Crisis is a slightly gentler check than recurring Crisis chapters. */
 export const FINAL_CRISIS_TARGET_MUL = 2.2;

@@ -278,5 +278,11 @@
 .rfx-float--bad { color: var(--bad); }
 .rfx-float--good { color: var(--good); }
 .rfx-dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; }
+.rc--crisis { --rc-metal-lo: #3a1b14; --rc-metal: #b5552b; --rc-metal-hi: #ffc27d; --rc-gem: #f28c28; }
+.rc--omen { --rc-metal-lo: #12333a; --rc-metal: #2d8290; --rc-metal-hi: #9ce9f0; --rc-gem: #5fd4e8; }
+.rc--reform { --rc-metal-lo: #27302b; --rc-metal: #819147; --rc-metal-hi: #cadc7a; --rc-gem: #a7c458; }
+.rc--pack { --rc-metal-lo: #432418; --rc-metal: #b5552b; --rc-metal-hi: #ffc27d; --rc-gem: #5fd4e8; }
+.rc--r-rare { --rc-metal-lo: #343018; --rc-metal: #a38a32; --rc-metal-hi: #f4d66b; --rc-gem: var(--r-rare); }
+.rc--r-legendary { --rc-metal-lo: #4a2414; --rc-metal: #d87735; --rc-metal-hi: #ffd28e; --rc-gem: var(--r-legendary); }
 .rfx-flyer { z-index: 1; }
 .rfx-ring { position: absolute; width: 90px; height: 90px; border-radius: 50%; border: 3px solid; box-shadow: 0 0 18px currentColor; }

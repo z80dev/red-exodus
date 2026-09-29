@@ -30,38 +30,41 @@ HEIGHT_RANGE = (0.4, 0.95)
 
 # name: (sRGB hex, roughness, emission strength)
 PALETTE = {
-    # stone family
-    'stone': ('#c9bfae', .85, 0), 'stone_dark': ('#a39885', .88, 0), 'stone_light': ('#e2dac9', .82, 0),
-    'marble': ('#f1ede4', .72, 0), 'marble_shade': ('#d9d2c3', .75, 0),
-    'sandstone': ('#e0c38a', .88, 0), 'sandstone_dark': ('#bf9a61', .9, 0), 'limestone': ('#ecdcae', .86, 0),
-    'granite': ('#8f8a84', .88, 0), 'basalt': ('#57524d', .9, 0), 'plaster': ('#efe6d2', .82, 0),
-    'rose': ('#dba58b', .85, 0), 'rose_dark': ('#b97d65', .88, 0), 'laterite': ('#a7967c', .9, 0),
-    'moss_stone': ('#8c8f6c', .9, 0), 'brick': ('#a8563e', .88, 0), 'clay': ('#d4a373', .88, 0),
-    'rock': ('#8a8177', .9, 0), 'rock_dark': ('#6e665e', .9, 0), 'rock_light': ('#a89f94', .88, 0),
-    # ground
-    'sand': ('#e3cf9a', .9, 0), 'sand_dark': ('#cdb47c', .9, 0), 'grass': ('#86b04a', .9, 0),
-    'grass_dark': ('#6f9a3e', .9, 0), 'dirt': ('#9a7650', .9, 0), 'paving': ('#d8cdb6', .86, 0),
-    'snow': ('#f2f4f7', .8, 0),
-    # vegetation
-    'foliage': ('#5b8c3a', .88, 0), 'foliage_dark': ('#3f6e2a', .9, 0), 'foliage_light': ('#86b04a', .86, 0),
-    'blossom': ('#e98fae', .85, 0), 'flower_y': ('#f2c84b', .85, 0), 'flower_r': ('#d9483b', .85, 0),
-    'trunk': ('#6b4a2f', .9, 0), 'bark_old': ('#7d6348', .9, 0), 'vine': ('#4f7f33', .9, 0),
-    # built
-    'terracotta': ('#b5523b', .85, 0), 'timber': ('#7a5534', .88, 0), 'wood_dark': ('#4f3624', .9, 0),
-    'gold': ('#e0b84a', .55, 0), 'bronze': ('#b0793d', .6, 0), 'patina': ('#79b8a0', .78, 0),
-    'patina_dark': ('#5a9682', .8, 0), 'copper': ('#c27a4a', .7, 0), 'lead_roof': ('#6d7682', .8, 0),
-    'slate': ('#4d5664', .82, 0), 'roof_tile_dark': ('#3f4756', .8, 0), 'white_plaster': ('#f6f3ec', .8, 0),
-    'concrete': ('#b8bcc2', .85, 0), 'concrete_dark': ('#8e939a', .86, 0), 'steel': ('#6a737e', .7, 0),
-    'iron': ('#4a4f57', .75, 0), 'eiffel': ('#7b5c43', .75, 0), 'eiffel_dark': ('#5e4533', .78, 0),
-    'shell_white': ('#f7f5ef', .7, 0), 'shell_tile': ('#e6e2d6', .72, 0), 'rocket_white': ('#f3f4f6', .7, 0),
-    'red': ('#c0392b', .8, 0), 'red_dark': ('#8e2a20', .85, 0), 'black': ('#2b2d33', .85, 0),
-    'clock': ('#f5eedb', .8, 0), 'jade': ('#5aa58a', .8, 0), 'lapis': ('#3d5fa8', .8, 0),
-    'bone': ('#ece2c6', .78, 0), 'bone_shade': ('#cfc0a0', .82, 0),
-    'crystal': ('#9fe3ff', .5, 0), 'crystal_deep': ('#6aa9e8', .5, 0),
-    'glass': ('#6fa8c9', .35, 0), 'glass_dark': ('#4b7f9f', .4, 0),
+    # Mars structural stone, regolith and vitrified sinter
+    'stone': ('#b5552b', .9, 0), 'stone_dark': ('#783d2b', .92, 0), 'stone_light': ('#d9a066', .84, 0),
+    'marble': ('#e7e3dc', .76, 0), 'marble_shade': ('#a99b8e', .82, 0),
+    'sandstone': ('#c8693a', .9, 0), 'sandstone_dark': ('#9b4424', .92, 0), 'limestone': ('#d9a066', .9, 0),
+    'granite': ('#57463d', .92, 0), 'basalt': ('#3b2f2a', .94, 0), 'plaster': ('#e7e3dc', .88, 0),
+    'rose': ('#c8693a', .9, 0), 'rose_dark': ('#9b4424', .92, 0), 'laterite': ('#9b4424', .93, 0),
+    'moss_stone': ('#8a8f46', .92, 0), 'brick': ('#b5552b', .9, 0), 'clay': ('#d9a066', .9, 0),
+    'rock': ('#9b6044', .94, 0), 'rock_dark': ('#57463d', .95, 0), 'rock_light': ('#c8693a', .9, 0),
+    # Dust, basalt and polar ice
+    'sand': ('#c8693a', .95, 0), 'sand_dark': ('#6e3219', .96, 0), 'grass': ('#a4552c', .96, 0),
+    'grass_dark': ('#6e3219', .96, 0), 'dirt': ('#9b4424', .96, 0), 'paving': ('#57463d', .9, 0),
+    'snow': ('#eef3f6', .8, 0),
+    # Sparse lichen; old-wood analogues are salvage composites
+    'foliage': ('#c77b2c', .88, 0), 'foliage_dark': ('#783d2b', .9, 0), 'foliage_light': ('#d9a066', .86, 0),
+    'interior_foliage': ('#8a9a3b', .82, 0),
+    'blossom': ('#c77b2c', .85, 0), 'flower_y': ('#d9a066', .85, 0), 'flower_r': ('#b5552b', .85, 0),
+    'trunk': ('#57463d', .9, 0), 'bark_old': ('#783d2b', .9, 0), 'vine': ('#9b4424', .9, 0),
+    # Hab shells, hulls, solar arrays, hazard trim
+    'terracotta': ('#b5552b', .88, 0), 'timber': ('#57463d', .92, 0), 'wood_dark': ('#3b2f2a', .94, 0),
+    'gold': ('#d9a066', .56, 0), 'bronze': ('#9b6044', .65, 0), 'patina': ('#3f8f8a', .78, 0),
+    'patina_dark': ('#285e60', .84, 0), 'copper': ('#c8693a', .75, 0), 'lead_roof': ('#8d9097', .82, 0),
+    'slate': ('#3b2f2a', .88, 0), 'roof_tile_dark': ('#3b2f2a', .88, 0), 'white_plaster': ('#e7e3dc', .82, 0),
+    'concrete': ('#8d9097', .88, 0), 'concrete_dark': ('#57463d', .9, 0), 'steel': ('#8d9097', .72, 0),
+    'iron': ('#3b2f2a', .78, 0), 'eiffel': ('#9b4424', .8, 0), 'eiffel_dark': ('#57463d', .84, 0),
+    'shell_white': ('#e7e3dc', .72, 0), 'shell_tile': ('#8d9097', .78, 0), 'rocket_white': ('#e7e3dc', .74, 0),
+    'red': ('#b5552b', .84, 0), 'red_dark': ('#6e3219', .9, 0), 'black': ('#292729', .9, 0),
+    'clock': ('#eef3f6', .82, 0), 'jade': ('#8a9a3b', .82, 0), 'lapis': ('#3f8f8a', .78, 0),
+    'bone': ('#d9a066', .82, 0), 'bone_shade': ('#9b6044', .88, 0),
+    'crystal': ('#5fd4e8', .5, 0), 'crystal_deep': ('#3f8f8a', .54, 0),
+    'glass': ('#6fa8c9', .35, 0), 'glass_dark': ('#31556a', .42, 0),
     # renderer-contract materials
-    'TEAM': ('#3f7fd9', .8, 0), 'TEAM_DARK': ('#264f8c', .85, 0),
-    'WATER': ('#3f93bf', .25, 0), 'EMISSIVE': ('#ff7a1a', .6, 4.0),
+    'TEAM': ('#f28c28', .8, 0), 'TEAM_DARK': ('#9b4424', .86, 0),
+    'WATER': ('#3f8f8a', .28, 0), 'EMISSIVE': ('#f28c28', .6, 4.0),
+    'EMISSIVE_CYAN': ('#5fd4e8', .5, 3.0),
+    'hazard': ('#f28c28', .76, 0), 'solar': ('#1d2a44', .46, 0), 'cryo': ('#5fd4e8', .46, 0),
 }
 
 _MATS = {}
@@ -820,13 +823,14 @@ def setup_stage(label=None, elevation=30.0, azimuth=28.0, res=1024, tile=True, d
         me = bpy.data.meshes.new('tile')
         tb.to_mesh(me)
         tb.free()
-        g = bpy.data.materials.new('tile_grass')
+        g = bpy.data.materials.new('tile_regolith')
         g.use_nodes = True
-        g.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*hex_rgb('#7fa447'), 1)
-        g.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = .95
-        d = bpy.data.materials.new('tile_dirt')
+        g.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*hex_rgb('#b5552b'), 1)
+        g.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = .96
+        d = bpy.data.materials.new('tile_basalt')
         d.use_nodes = True
-        d.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*hex_rgb('#6d5238'), 1)
+        d.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (*hex_rgb('#6e3219'), 1)
+        d.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value = .96
         me.materials.append(g)
         me.materials.append(d)
         for p in me.polygons:

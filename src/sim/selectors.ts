@@ -18,6 +18,7 @@ import {
   projectOutput, round1, sciencePerTurn, techCost, techUnlocks, turnsToResearch, unitCount, unitUpkeep,
 } from './economy';
 import { idleUnits } from './units';
+import { stormAt } from './mars';
 
 // ───────────────────────────── result types ─────────────────────────────
 
@@ -53,6 +54,8 @@ export interface TileInfo {
   units: { id: UnitId; type: UnitTypeId; name: string; owner: PlayerId; hp: number }[];
   camp: boolean;
   ruin: boolean;
+  /** dust storm over this tile right now (explored tiles only) */
+  storm: { id: number; power: number; great: boolean } | null;
 }
 
 export interface YieldLine {
@@ -115,6 +118,8 @@ export interface TechNode {
   turns: number | null;
   unlocks: { units: UnitTypeId[]; buildings: BuildingId[]; wonders: WonderId[]; improvements: ImprovementId[]; resources: ResourceId[] };
   description: string;
+  /** in the human's current Breakthrough draft */
+  offered: boolean;
   icon: string;
 }
 
@@ -194,7 +199,7 @@ export function tileInfo(state: GameState, idx: TileIdx): TileInfo {
     elevation: { id: t.elevation, name: elevation?.name ?? t.elevation },
     feature: null, water: false, river: false, impassable: false, yields: emptyYields(), defensePct: 0, moveCost: 0,
     owner: null, territoryOf: null, city: null, worked: false, resource: null, improvement: null, naturalWonder: null,
-    units: [], camp: false, ruin: false,
+    units: [], camp: false, ruin: false, storm: null,
   };
   if (vis === 0) return base;
 
@@ -239,6 +244,8 @@ export function tileInfo(state: GameState, idx: TileIdx): TileInfo {
   }
   base.camp = t.camp;
   base.ruin = t.ruin;
+  const storm = stormAt(state, idx);
+  if (storm) base.storm = { id: storm.id, power: storm.power, great: !!storm.great };
   if (vis === 2) {
     for (const id in state.units) {
       const u = state.units[id];
@@ -317,9 +324,9 @@ export function productionOptions(state: GameState, city: City): ProductionOptio
     push({ kind: 'building', id }, 'building', d.icon, d.description);
   }
   for (const id in WONDERS) push({ kind: 'wonder', id }, 'wonder', WONDERS[id].icon, WONDERS[id].description);
-  push({ kind: 'project', id: 'wealth' }, 'project', 'gold', 'Convert production into gold (1:1).');
-  push({ kind: 'project', id: 'research' }, 'project', 'sci', 'Convert production into science (1:1).');
-  if (player.isHuman) push({ kind: 'project', id: 'festival' }, 'project', 'renown', 'Convert production into Arts renown for the Chronicle.');
+  push({ kind: 'project', id: 'wealth' }, 'project', 'gold', 'Convert Industry into Credits (1:1).');
+  push({ kind: 'project', id: 'research' }, 'project', 'sci', 'Convert Industry into Data (1:1).');
+  if (player.isHuman) push({ kind: 'project', id: 'festival' }, 'project', 'renown', 'Convert Industry into Heritage Output for the Sol Report.');
   return out.sort((a, b) =>
     (a.lockedReason ? 1 : 0) - (b.lockedReason ? 1 : 0)
     || CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category]
@@ -356,7 +363,7 @@ export function techTree(state: GameState, pid: PlayerId = HUMAN): TechNode[] {
       progress: status === 'researched' ? cost : p.researchProgress[id] ?? 0,
       turns: turns != null && Number.isFinite(turns) ? turns : null,
       unlocks: { ...techUnlocks(id, p.leaderId), improvements: improvementsByTech[id] ?? [], resources: resourcesByTech[id] ?? [] },
-      description: d.description, icon: d.icon,
+      description: d.description, icon: d.icon, offered: p.researchOffer.includes(id),
     });
   }
   return out.sort((a, b) => a.era - b.era || a.pos.col - b.pos.col || a.pos.row - b.pos.row);

@@ -208,7 +208,7 @@ def sheet(name, keys, cols, cell, width=2000, team_cycle=False):
     view_w = W * 1.02
     view_h = (H - row) * math.sin(math.radians(SHEET_EL)) + cell * 1.05
     setup(width, int(width * view_h / view_w))
-    ground(max(W, H) * 3, "#d8d0bb")
+    ground(max(W, H) * 3, "#d9a066")
     ca, sa = math.cos(math.radians(SHEET_AZ)), math.sin(math.radians(SHEET_AZ))
 
     def rot(x, y):
@@ -238,7 +238,7 @@ HOUSE_RING = [  # (angle deg, radius, variant, rot)
 
 def compose_city(era, at=(0, 0, 0), team=0):
     ox, oy, oz = at
-    hex_tile(1.0, 0.08, (ox, oy, oz), top="#8fb553", side="#8c6b48", name=f"hex{era}")
+    hex_tile(1.0, 0.08, (ox, oy, oz), top="#b5552b", side="#3b2f2a", name=f"hex{era}")
     import_model(f"city_center_{era}", (ox, oy, oz), team=team)
     for a, r, v, rot in HOUSE_RING:
         x, y = ox + r * math.cos(math.radians(a)), oy + r * math.sin(math.radians(a))
@@ -260,20 +260,20 @@ def neighbours(at, era):
         a = math.radians(60 * k)
         d = 1.732
         hex_tile(1.0, 0.08, (ox + d * math.cos(a), oy + d * math.sin(a), oz - 0.01),
-                 top="#7fa843" if k % 2 else "#86ad4a", side="#8c6b48", name=f"n{era}{k}")
+                 top="#c8693a" if k % 2 else "#9b4424", side="#3b2f2a", name=f"n{era}{k}")
 
 
 def era_scenes():
     for era in range(6):
         setup(1400, 1100)
-        ground(40, "#4f9cc4", z=-0.12)
+        ground(40, "#d9a066", z=-0.12)
         compose_city(era, (0, 0, 0))
         neighbours((0, 0, 0), era)
         camera((0, 0.05, 0.12), 2.9, el=42, az=-22)
         render(os.path.join(L.PREVIEW_DIR, f"city_era_{era}.png"))
     setup(2400, 1450)
-    ground(60, "#4f9cc4", z=-0.12)
-    names = ["Ancient", "Classical", "Medieval", "Renaissance", "Industrial", "Modern"]
+    ground(60, "#d9a066", z=-0.12)
+    names = ["Landfall", "Foothold", "Frontier", "Industry", "Terraform", "New Earth"]
     for era in range(6):
         c, r = era % 3, era // 3
         at = (c * 2.4 - 2.4, (0.5 - r) * 2.95, 0)

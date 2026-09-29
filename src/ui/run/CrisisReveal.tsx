@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { CRISES } from '../../content';
-import { useSim } from '../../game/store';
+import { useGame, useSim } from '../../game/store';
 import { backdropFor } from '../art/artManifest';
 import { Button } from '../kit';
 import { Icon } from '../icons/Icon';
@@ -13,6 +13,7 @@ import { useParticles } from './fx';
 import { Ornament, usePortrait } from './parts';
 import { act, eraTagline, eraTitle, haptic, roman, sfx, uiSettings } from './runUtil';
 import './run.css';
+import { T } from '../terms';
 
 type Stage = 'era' | 'crisis';
 
@@ -49,10 +50,13 @@ export function CrisisReveal() {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [stage, fast, particles]);
 
+  const state = useGame((s) => s.state);
   if (!run) return null;
   const bg = backdropFor('eras', String(Math.min(era, 5)), portrait);
   const def = crisisId ? CRISES[crisisId] : undefined;
   const title = eraTitle(era);
+  const player = state?.players[0];
+  const stormPressure = state?.storms.reduce((power, storm) => power + storm.power, 0) ?? 0;
 
   return (
     <div
@@ -67,7 +71,7 @@ export function CrisisReveal() {
 
       <div className="rcr-stage">
         <header className="rcr-title">
-          <div className="rcr-era-num display">Era {roman(era + 1)}</div>
+          <div className="rcr-era-num display">ARK ERA {roman(era + 1)}</div>
           <h1 className="rcr-era-name display" aria-label={title}>
             {title.split('').map((ch, i) => (
               <span key={i} style={{ animationDelay: `${180 + i * 45}ms` }}>{ch === ' ' ? '\u00a0' : ch}</span>
@@ -80,7 +84,7 @@ export function CrisisReveal() {
         {stage === 'crisis' && (
           <section className="rcr-crisis">
             <div className="rcr-omen display">
-              {crisisId ? <>In <em>Chapter III</em> a crisis will strike</> : 'This era holds no crisis'}
+              {crisisId ? <>Chapter III: <em>Dust and consequence</em></> : 'This era holds no crisis'}
             </div>
             {crisisId && (
               <div className="rcr-cardwrap" ref={cardRef}>
@@ -95,8 +99,10 @@ export function CrisisReveal() {
                   <p className="rcr-flavor">“{def.flavor}”</p>
                   <div className="rcr-chips">
                     {def.targetMul && def.targetMul !== 1 && <span className="rcr-chip rcr-chip--bad">Target ×{def.targetMul}</span>}
-                    {def.reward > 0 && <span className="rcr-chip"><RichText text={`Survive: +${def.reward} {influence}`} /></span>}
+                    {def.reward > 0 && <span className="rcr-chip">Survive: +{def.reward} {T.influence}</span>}
                     <span className="rcr-chip">Two chapters to prepare</span>
+                    {player && <span className="rcr-chip rcr-chip--cryo"><Icon name="cryo" size={14} /> {player.cryo} {T.cryo} aboard</span>}
+                    {stormPressure > 0 && <span className="rcr-chip rcr-chip--storm"><Icon name="storm" size={14} /> Storm pressure {stormPressure}</span>}
                   </div>
                 </>
               )}
@@ -108,7 +114,7 @@ export function CrisisReveal() {
                   act({ type: 'ackCrisis' });
                 }}
               >
-                {crisisId ? 'Prepare' : 'Begin'} <Icon name="chevronRight" size={16} />
+                {crisisId ? 'Prepare the Ark' : 'Begin Landfall'} <Icon name="chevronRight" size={16} />
               </Button>
             </div>
           </section>

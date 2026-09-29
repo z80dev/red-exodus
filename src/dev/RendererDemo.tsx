@@ -1,12 +1,15 @@
-// Renderer harness: `?dev=RendererDemo` — the real sim driving the map renderer in isolation.
-// Params: reveal=1, era=0..5, showcase=1 (grown empire fixture), q=low|high, attract=1, seed=<s>, size=small|standard|large.
-// Tap your unit → move/attack highlights; tap a highlighted tile to act; buttons trigger showcase fx.
+// Renderer harness: `?dev=RendererDemo` — the real sim driving the Mars map renderer in isolation.
+// Params: reveal=1, era=0..5, showcase=1 (grown colonies fixture), storms=1 (a power-3 storm + a great storm near
+// the Ark Hab), q=low|high, attract=1, seed=<s>, size=small|standard|large, zoom=near|mid|far, clean=1.
+// Tap your unit → move/attack highlights; tap a highlighted tile to act; buttons trigger showcase fx
+// (storms: spawn / advance a round; Ark: Orbital Drop, Thaw).
 import { useEffect, useRef, useState } from 'react';
 import { BUILDINGS, IMPROVEMENTS, LEADERS, RESOURCES, WONDERS } from '../content';
 import type { Highlights } from '../game/bridge';
 import { EMPTY_HIGHLIGHTS } from '../game/bridge';
 import { applyAction, applyPlayerAction, createGame } from '../sim/engine';
 import { hexDistance, neighbors } from '../sim/hex';
+import { advanceStorms, canOrbitalDrop, spawnStorm } from '../sim/mars';
 import { findPath, reachableTiles } from '../sim/pathfinding';
 import type { GameState, MapSize, SimEvent, TileIdx } from '../sim/types';
 import { HUMAN } from '../sim/types';
@@ -92,6 +95,11 @@ export default function RendererDemo() {
     const host = hostRef.current!;
     const state = newState();
     if (params.get('showcase')) showcase(state);
+    if (params.get('storms')) {
+      const cap = Object.values(state.cities).find((c) => c.owner === HUMAN)?.tile ?? state.map.starts[HUMAN];
+      spawnStorm(state, { power: 3, radius: 2, near: cap }, () => {});
+      spawnStorm(state, { power: 3, radius: 3, great: true }, () => {});
+    }
     stateRef.current = state;
     const run = (events: SimEvent[]) => {
       void renderer.play(events, state).then(() => renderer.sync(state));
@@ -275,6 +283,50 @@ export default function RendererDemo() {
               t.cityId = c.id;
             }
             play([{ type: 'borderGrew', cityId: c.id, player: HUMAN, tiles: ring.map((t) => t.idx) }]);
+          })}
+          {btn('Storm', () => {
+            if (!state) return;
+            const events: SimEvent[] = [];
+            const cell = spawnStorm(state, { power: 1 + (state.nextStormId % 3), radius: 2, near: humanCity()?.tile }, (e) => events.push(e));
+            setLog(cell ? `storm #${cell.id} power ${cell.power}, ${cell.path.length} steps` : 'no storm route');
+            play(events);
+          })}
+          {btn('Great storm', () => {
+            if (!state) return;
+            const events: SimEvent[] = [];
+            const cell = spawnStorm(state, { power: 3, radius: 3, great: true, near: humanCity()?.tile }, (e) => events.push(e));
+            setLog(cell ? `great storm #${cell.id}` : 'no storm route');
+            play(events);
+          })}
+          {btn('Storm round', () => {
+            if (!state) return;
+            const events: SimEvent[] = [];
+            advanceStorms(state, (e) => events.push(e));
+            setLog(`storms: ${events.map((e) => e.type).join(', ') || 'none'}`);
+            play(events);
+          })}
+          {btn('Drop', () => {
+            const c = humanCity();
+            const human = state?.players[HUMAN];
+            if (!c || !state || !human) return;
+            human.cryo = Math.max(human.cryo, 1);
+            const site = state.map.tiles
+              .map((t) => t.idx)
+              .filter((t) => canOrbitalDrop(state, HUMAN, t) === null)
+              .sort((a, b) => hexDistance(state.map, a, c.tile) - hexDistance(state.map, b, c.tile))[0];
+            if (site === undefined) return setLog('no valid drop site');
+            const res = applyAction(state, { type: 'orbitalDrop', tile: site });
+            setLog(res.ok ? `drop: ${res.events.map((e) => e.type).join(', ')}` : `drop failed: ${res.error}`);
+            if (res.ok) play(res.events);
+          })}
+          {btn('Thaw', () => {
+            const c = humanCity();
+            const human = state?.players[HUMAN];
+            if (!c || !state || !human) return;
+            human.cryo = Math.max(human.cryo, 1);
+            const res = applyAction(state, { type: 'thawColonists', cityId: c.id });
+            setLog(res.ok ? 'thawed' : `thaw failed: ${res.error}`);
+            if (res.ok) play(res.events);
           })}
           {log && <div style={{ width: '100%', font: '500 11px var(--font-ui)', color: '#ffe', textShadow: '0 1px 2px #000' }}>{log}</div>}
         </div>

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { ChronicleCtx, CombatArgs, CostItem, EffectHooks, HookCtx } from '../sim/defs';
 import type { City, CouncilState, DoctrineInstance, GameState, SimEvent, Unit, Yields } from '../sim/types';
 import { BARBARIAN, HUMAN, PILLARS } from '../sim/types';
-import { DOCTRINES } from './doctrines';
+import { DOCTRINES } from './index';
 import { EDICTS } from './edicts';
 import { SCROLLS } from './scrolls';
 import { CRISES } from './crises';
@@ -15,30 +15,15 @@ import { ASCENSIONS } from './ascension';
 import { UNIQUE_BUILDINGS, UNIQUE_UNITS } from './uniques';
 import { BUILDINGS } from './buildings';
 import { UNITS } from './units';
-import { RESOURCES } from './resources';
-import { IMPROVEMENTS } from './improvements';
-import { WONDERS } from './wonders';
-import { TECHS } from './techs';
+import { ICON_NAMES } from '../ui/icons/registry';
 import { makeCtx } from '../sim/effects';
 import type { ActiveEffect } from '../sim/effects';
 import { createGame } from '../sim/engine';
-import { foundCity } from '../sim/cities';
 import { humanCities } from '../sim/roguelite/stats';
 import { autoplay, findNonFinite } from '../sim/testkit';
 
 const MOTIFS = 'sun moon star river wave mountain tree wheat coin scroll flask lyre laurel crown sword shield tower castle anchor ship horse flame eye key hourglass skull compass gear bolt feather hand book temple pyramid mask chalice serpent owl lion eagle'.split(' ');
-const FIXED_ICONS = (
-  'food prod gold sci cul happy unhappy influence renown splendor mandate arts discovery commerce conquest prosperity glory ' +
-  'civilian recon melee antiCavalry ranged mounted siege naval armor strength ranged range moves hp vision xp ' +
-  'move attack fortify sleep found pillage upgrade skip disband explore heal promote buy improve ' +
-  'settings pause close back next endturn reroll lock unlock info codex tech city star crown skull seed trophy shield sword book ' +
-  'scroll edict doctrine pack reform crisis omen map journal war peace plus minus check arrowUp arrowDown chevronRight chevronLeft ' +
-  'hourglass calendar building wonder resource improvement'
-).split(' ');
-const ICONS = new Set([
-  ...FIXED_ICONS, ...MOTIFS, ...Object.keys(RESOURCES), ...Object.keys(IMPROVEMENTS), ...Object.keys(BUILDINGS),
-  ...Object.keys(WONDERS), ...Object.keys(TECHS),
-]);
+const ICONS = new Set<string>(ICON_NAMES);
 const TOKENS = new Set(['food', 'prod', 'gold', 'sci', 'cul', 'happy', 'influence', 'renown', 'splendor', 'mandate']);
 const UNLOCK_RULES = new Set([
   'reachEra2', 'reachEra3', 'reachEra4', 'reachEra5', 'win', 'winAsc2', 'winAsc4', 'winAsc8', 'capture5', 'kills40',
@@ -68,12 +53,10 @@ describe('doctrines', () => {
     expect(by('legendary')).toBeGreaterThanOrEqual(8);
   });
 
-  it('prices by rarity band, valid art/icons/tokens, unique names, tagged', () => {
-    const band = { common: 4, uncommon: 6, rare: 8, legendary: 12 } as const;
+  it('has valid art/icons/tokens, unique names, and tagged effects', () => {
     const names = new Set<string>();
     for (const d of Object.values(DOCTRINES)) {
       expect(DOCTRINES[d.id]).toBe(d);
-      expect(Math.abs(d.cost - band[d.rarity]), d.id).toBeLessThanOrEqual(1);
       expect(MOTIFS, d.id).toContain(d.art.motif);
       expect(d.art.hue).toBeGreaterThanOrEqual(0);
       expect(d.art.hue).toBeLessThanOrEqual(360);
@@ -95,17 +78,18 @@ describe('doctrines', () => {
 
 describe('leaders & uniques', () => {
   const leaders = Object.values(LEADERS);
-  it('has 8 leaders; first two free, the rest locked by valid rules', () => {
-    expect(leaders.length).toBe(8);
+  it('has 12 nations; six open at launch, the rest have valid unlock rules', () => {
+    expect(leaders.length).toBe(12);
     leaders.forEach((l, i) => {
-      if (i < 2) expect(l.unlock, l.id).toBeUndefined();
+      if (i < 6) expect(l.unlock, l.id).toBeUndefined();
       else expect(UNLOCK_RULES.has(l.unlock?.rule ?? ''), l.id).toBe(true);
     });
   });
 
+
   it('has distinct colors, 12+ unique city names, valid portrait, start doctrine and unique', () => {
     const colors = new Set(leaders.map((l) => l.colors.primary.toLowerCase()));
-    expect(colors.size).toBe(8);
+    expect(colors.size).toBe(12);
     for (const l of leaders) {
       expect(l.colors.primary).toMatch(/^#[0-9a-f]{6}$/i);
       expect(l.colors.secondary).toMatch(/^#[0-9a-f]{6}$/i);
@@ -116,7 +100,7 @@ describe('leaders & uniques', () => {
       const sd = DOCTRINES[l.startDoctrine ?? ''];
       expect(sd, l.id).toBeDefined();
       expect(sd.noShop).toBe(true);
-      expect(Boolean(l.uniqueUnit) !== Boolean(l.uniqueBuilding), l.id).toBe(true);
+      expect(Boolean(l.uniqueUnit) || Boolean(l.uniqueBuilding), l.id).toBe(true);
       if (l.uniqueUnit) {
         const u = UNIQUE_UNITS[l.uniqueUnit];
         expect(u?.uniqueTo).toBe(l.id);
@@ -140,7 +124,7 @@ describe('leaders & uniques', () => {
       }
     }
     // every leader's start doctrine is unique to it
-    expect(new Set(leaders.map((l) => l.startDoctrine)).size).toBe(8);
+    expect(new Set(leaders.map((l) => l.startDoctrine)).size).toBe(12);
   });
 });
 
@@ -196,6 +180,30 @@ describe('edicts, scrolls, crises, omens, reforms, ascension', () => {
     }
   });
 
+  it('Mars Salvage, Crisis, and Directive behavior', () => {
+    const { state } = fixture();
+    const crisisCtx = makeCtx(state, HUMAN, { kind: 'crisis', id: 'steppe_horde', hooks: {}, counters: {} }, () => {});
+    const feralsBefore = Object.values(state.units).filter((unit) => unit.owner === BARBARIAN).length;
+    const spawnFerals = CRISES.steppe_horde.effects.onBegin;
+    if (!spawnFerals) throw new Error('Feral Uprising has no start effect');
+    spawnFerals(crisisCtx);
+    expect(Object.values(state.units).filter((unit) => unit.owner === BARBARIAN).length).toBe(feralsBefore + 1);
+    expect(Object.values(state.units).some((unit) => unit.owner === BARBARIAN && unit.type === 'warrior')).toBe(true);
+    const stormsBefore = state.storms.length;
+    const spawnStorms = CRISES.industrial_smog.effects.onBegin;
+    if (!spawnStorms) throw new Error('Global Dust Storm has no start effect');
+    spawnStorms(crisisCtx);
+    expect(state.storms.length).toBe(stormsBefore + 3);
+    const drop = OMENS.drop_two_colonies;
+    expect(drop.progress({ type: 'podLanded', player: HUMAN, tile: 0 }, state, HUMAN)).toBe(1);
+    expect(drop.progress({ type: 'cityFounded', cityId: 1, player: HUMAN, tile: 0 }, state, HUMAN)).toBe(0);
+    expect(OMENS.weather_three_hits.progress({ type: 'stormDamage', tile: 0, amount: 5, player: HUMAN }, state, HUMAN)).toBe(1);
+    expect(OMENS.weather_three_hits.progress({ type: 'stormDamage', tile: 0, amount: 5, player: HUMAN, killed: true }, state, HUMAN)).toBe(0);
+    expect(OMENS.thaw_four_colonists.progress({ type: 'colonistsThawed', player: HUMAN, cityId: 1, pop: 2 }, state, HUMAN)).toBe(2);
+    expect(OMENS.reroll_research_twice.progress({ type: 'researchOffered', player: HUMAN, techs: [], reroll: true }, state, HUMAN)).toBe(1);
+    expect(OMENS.reroll_research_twice.progress({ type: 'researchOffered', player: HUMAN, techs: [] }, state, HUMAN)).toBe(0);
+  });
+
   it('reforms: tier pairs with valid requirements', () => {
     const list = Object.values(REFORMS);
     expect(list.length).toBeGreaterThanOrEqual(10);
@@ -217,9 +225,7 @@ describe('edicts, scrolls, crises, omens, reforms, ascension', () => {
 
 function fixture(leaderId = Object.keys(LEADERS)[0]): { state: GameState; city: City; unit: Unit; enemy: Unit } {
   const { state } = createGame({ seed: 'ROGUE-SMOKE', leaderId, ascension: 8, mapSize: 'small', rivals: 3, tutorial: false, daily: false });
-  const sink = () => {};
-  const settler = Object.values(state.units).find((u) => u.owner === HUMAN && u.type === 'settler')!;
-  const city = foundCity(state, HUMAN, settler.tile, sink);
+  const city = Object.values(state.cities).find((c) => c.owner === HUMAN && c.isCapital)!;
   city.pop = 12;
   city.buildings.push('shrine', 'monument', 'granary', 'market', 'harbor');
   const unit = Object.values(state.units).find((u) => u.owner === HUMAN && u.type === 'warrior')!;

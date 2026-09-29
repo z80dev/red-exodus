@@ -1,6 +1,6 @@
 // Per-tile GPU state (W×H nearest textures) with smooth CPU-side animation:
 //   state: R explored, G visible, B owner slot (0 none), A border grow (0→1 animates flare)
-//   hi:    R highlight code (see HI), G highlight fade
+//   hi:    R highlight code (see HI), G highlight fade, B storm cover density, A lightning (power-3 storms)
 import { DataTexture, NearestFilter, RGBAFormat, UnsignedByteType } from 'three';
 
 export class TileState {
@@ -19,6 +19,10 @@ export class TileState {
   private hiA: Float32Array;
   private hiCode: Uint8Array;
   private hiCodeT: Uint8Array;
+  private storm: Float32Array;
+  private stormT: Float32Array;
+  private bolt: Float32Array;
+  private boltT: Float32Array;
   private animating = true;
 
   constructor(w: number, h: number) {
@@ -44,6 +48,10 @@ export class TileState {
     this.hiA = new Float32Array(n);
     this.hiCode = new Uint8Array(n);
     this.hiCodeT = new Uint8Array(n);
+    this.storm = new Float32Array(n);
+    this.stormT = new Float32Array(n);
+    this.bolt = new Float32Array(n);
+    this.boltT = new Float32Array(n);
   }
 
   /** set fog targets from a vis array (0 unexplored, 1 explored, 2 visible). `instant` skips animation. */
@@ -81,6 +89,13 @@ export class TileState {
 
   setHighlights(codes: Uint8Array): void {
     for (let i = 0; i < codes.length; i++) this.hiCodeT[i] = codes[i];
+    this.animating = true;
+  }
+
+  /** storm cover targets per tile (0..1 density, 0..1 lightning); tiles crossfade as storms move */
+  setStorm(cover: Float32Array, bolt: Float32Array): void {
+    this.stormT.set(cover);
+    this.boltT.set(bolt);
     this.animating = true;
   }
 
@@ -129,6 +144,13 @@ export class TileState {
       }
       hd[i * 4] = this.hiCode[i];
       hd[i * 4 + 1] = Math.round(this.hiA[i] * 255);
+      if (this.storm[i] !== this.stormT[i] || this.bolt[i] !== this.boltT[i]) {
+        this.storm[i] = approach(this.storm[i], this.stormT[i], dt * 1.6);
+        this.bolt[i] = approach(this.bolt[i], this.boltT[i], dt * 1.6);
+        busy = true;
+      }
+      hd[i * 4 + 2] = Math.round(this.storm[i] * 255);
+      hd[i * 4 + 3] = Math.round(this.bolt[i] * 255);
     }
     this.tex.needsUpdate = true;
     this.hiTex.needsUpdate = true;

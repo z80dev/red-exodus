@@ -4,8 +4,8 @@ import { HUMAN } from './types';
 import { BUILDINGS, RESOURCES, TECHS } from '../content';
 import {
   ERA_TECH_COST, FREE_UNITS_BASE, FREE_UNITS_PER_CITY, HAPPINESS_BASE, HAPPINESS_PER_CITY, LUXURY_HAPPINESS,
-  POP_PER_UNHAPPY, TECH_COST_PER_KNOWN, availableTechs, computeHappiness, goldPerTurn, hasResource, processResearch,
-  techCost, unitUpkeep, updateHappiness,
+  POP_PER_UNHAPPY, TECH_COST_PER_KNOWN, TECH_PACE, availableTechs, computeHappiness, goldPerTurn, hasResource,
+  processResearch, techCost, unitUpkeep, updateHappiness,
 } from './economy';
 import { cityTerritory } from './cities';
 import { plainGame } from './testkit';
@@ -65,12 +65,12 @@ describe('gold', () => {
 });
 
 describe('research', () => {
-  it('tech cost = era base × (1 + 6% per known tech)', () => {
+  it('tech cost = era base × (1 + 6% per known tech) × pace', () => {
     const { state } = plainGame('ECO-TECH');
     const t = rootTech();
-    expect(techCost(state, HUMAN, t.id)).toBe(Math.round(ERA_TECH_COST[t.era]));
+    expect(techCost(state, HUMAN, t.id)).toBe(Math.round(ERA_TECH_COST[t.era] * TECH_PACE));
     state.players[HUMAN].techs = Object.keys(TECHS).filter((id) => id !== t.id).slice(0, 5);
-    expect(techCost(state, HUMAN, t.id)).toBe(Math.round(ERA_TECH_COST[t.era] * (1 + TECH_COST_PER_KNOWN * 5)));
+    expect(techCost(state, HUMAN, t.id)).toBe(Math.round(ERA_TECH_COST[t.era] * (1 + TECH_COST_PER_KNOWN * 5) * TECH_PACE));
   });
 
   it('only techs with all prerequisites known are available', () => {

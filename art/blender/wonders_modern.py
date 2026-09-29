@@ -13,10 +13,10 @@ from wonders_lib import PALETTE, place, polar
 
 PALETTE.setdefault('mod_asphalt', ('#55585f', .88, 0))
 PALETTE.setdefault('mod_soapstone', ('#ece7dc', .8, 0))       # Cristo Redentor
-PALETTE.setdefault('mod_ferry', ('#2f6b47', .8, 0))           # Sydney ferry green
-PALETTE.setdefault('mod_cream', ('#f1e2b8', .8, 0))
-PALETTE.setdefault('mod_podium', ('#c49a84', .86, 0))         # Sydney pink granite podium
-PALETTE.setdefault('mod_bridge', ('#5f8a6a', .82, 0))         # Westminster Bridge green
+PALETTE.setdefault('mod_ferry', ('#3f8f8a', .8, 0))           # pressure-rated skiff hull
+PALETTE.setdefault('mod_cream', ('#d9a066', .8, 0))
+PALETTE.setdefault('mod_podium', ('#57463d', .86, 0))         # basalt podium
+PALETTE.setdefault('mod_bridge', ('#9b4424', .82, 0))         # dust-dark bridgework
 PALETTE.setdefault('mod_vapor', ('#f4f7fb', .9, 0))           # LOX venting clouds
 
 

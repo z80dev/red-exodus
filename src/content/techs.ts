@@ -14,52 +14,52 @@ type T = [id: TechId, name: string, era: number, cost: number, prereqs: TechId[]
 
 const RAW: T[] = [
   // ───────── Era 0 · Ancient ─────────
-  ['agriculture', 'Agriculture', 0, 20, [], 0, 0, 'wheat', 'Seeds in furrows, the first promise of plenty. Farms, Granaries and the Hanging Gardens.'],
-  ['animal_husbandry', 'Animal Husbandry', 0, 20, [], 0, 2, 'horse', 'Tame the herds. Pastures, Horsemen, and reveals {icon:horses} Horses.'],
-  ['mining', 'Mining', 0, 20, [], 0, 4, 'mountain', 'Break the stone. Mines, Quarries and Stonehenge.'],
-  ['sailing', 'Sailing', 0, 30, ['agriculture'], 1, 0, 'ship', 'Hulls and sails. Units may **embark** on coast and lakes. Fishing Boats and the Lighthouse.'],
-  ['archery', 'Archery', 0, 28, ['animal_husbandry'], 1, 2, 'feather', 'Strike from afar. Archers and hunting Camps.'],
-  ['bronze_working', 'Bronze Working', 0, 30, ['mining'], 1, 4, 'flame', 'Copper and tin make a blade. Spearmen, Walls, Barracks, the Pyramids; reveals {icon:iron} Iron.'],
+  ['agriculture', 'Greenhouse Systems', 0, 20, [], 0, 0, 'wheat', 'Controlled-environment farming turns nitrate salts and recycled water into food. Unlocks Greenhouse Domes, Seed Silos and Hanging Greenhouses.'],
+  ['animal_husbandry', 'Bioengineering', 0, 20, [], 0, 2, 'horse', 'Engineer lichen and methane cultures. Unlocks Bioreactors, Dune Buggies and reveals {icon:horses} Methane.'],
+  ['mining', 'Regolith Extraction', 0, 20, [], 0, 4, 'mountain', 'Cut into basalt and buried deposits. Unlocks Regolith Mines, Basalt Quarries and Solar Henge.'],
+  ['sailing', 'Dust Skiffs', 0, 30, ['agriculture'], 1, 0, 'ship', 'Fan-driven sand-yachts let units **embark on and cross Dust Shallows and the Brine Lake**. Unlocks Dust Skimmers and Beacon Towers.'],
+  ['archery', 'Ballistic Targeting', 0, 28, ['animal_husbandry'], 1, 2, 'feather', 'Put projectiles where the hostile movement will be. Unlocks Slug Throwers and Extraction Rigs.'],
+  ['bronze_working', 'Alloy Fabrication', 0, 30, ['mining'], 1, 4, 'flame', 'Forge resilient alloys for Breachers, Blast Walls and Armories; reveals {icon:iron} Nickel-Iron.'],
 
   // ───────── Era 1 · Classical ─────────
-  ['writing', 'Writing', 1, 55, ['agriculture'], 0, 0, 'scroll', 'Memory made permanent. Libraries and the Great Library.'],
-  ['calendar', 'Calendar', 1, 55, ['agriculture', 'sailing'], 0, 1, 'sun', 'Read the seasons and the stars. Plantations, Temples and the Oracle.'],
-  ['the_wheel', 'The Wheel', 1, 55, ['animal_husbandry'], 0, 3, 'gear', 'The simplest machine changes everything. Chariots.'],
-  ['iron_working', 'Iron Working', 1, 60, ['bronze_working'], 0, 5, 'sword', 'Harder metal, sharper wars. Swordsmen and the Forge.'],
-  ['currency', 'Currency', 1, 65, ['writing', 'bronze_working'], 1, 1, 'coin', 'Coin replaces barter. Markets, Trading Posts and the Colossus.'],
-  ['mathematics', 'Mathematics', 1, 65, ['the_wheel', 'archery'], 1, 3, 'owl', 'Numbers bend the world. Catapults and the Amphitheater.'],
+  ['writing', 'Data Preservation', 1, 55, ['agriculture'], 0, 0, 'scroll', 'Back up knowledge before the next disaster. Unlocks Data Archives and the Library of Earth.'],
+  ['calendar', 'Sol Tracking', 1, 55, ['agriculture', 'sailing'], 0, 1, 'sun', 'Measure seasons and solar cycles. Unlocks Hydroponics Bays, Memorial Chapels and The Deep Ear.'],
+  ['the_wheel', 'Mobility Systems', 1, 55, ['animal_husbandry'], 0, 3, 'gear', 'Wheels still work, even when the world has ended. Unlocks Assault Rovers.'],
+  ['iron_working', 'Nickel-Iron Metallurgy', 1, 60, ['bronze_working'], 0, 5, 'sword', 'Harder alloys, tougher suits. Unlocks Security Troopers and Fabricators.'],
+  ['currency', 'Colony Exchange', 1, 65, ['writing', 'bronze_working'], 1, 1, 'coin', 'Standardize the trade tokens. Unlocks Exchanges, Relay Stations and the Beacon Colossus.'],
+  ['mathematics', 'Trajectory Models', 1, 65, ['the_wheel', 'archery'], 1, 3, 'owl', 'Calculate the arc before firing. Unlocks Mortar Teams and Holo-Theaters.'],
 
   // ───────── Era 2 · Medieval ─────────
-  ['cartography', 'Cartography', 2, 130, ['sailing', 'currency'], 0, 0, 'compass', 'Chart the unknown. Units may **enter the ocean**. Harbors.'],
-  ['theology', 'Theology', 2, 130, ['calendar', 'writing'], 0, 2, 'temple', 'Faith becomes institution. Cathedrals, Hagia Sophia and Angkor Wat.'],
-  ['engineering', 'Engineering', 2, 135, ['mathematics', 'calendar'], 0, 3, 'tower', 'Arches and aqueducts. Aqueducts, Lumber Mills and the Great Wall.'],
-  ['steel', 'Steel', 2, 135, ['iron_working'], 0, 5, 'shield', 'Folded, tempered, deadly. Men-at-Arms, Pikemen and Castles.'],
-  ['machinery', 'Machinery', 2, 145, ['engineering', 'iron_working'], 1, 4, 'key', 'Gears and cranks. Crossbowmen, Trebuchets, Workshops; reveals {icon:niter} Niter.'],
-  ['chivalry', 'Chivalry', 2, 145, ['the_wheel', 'steel'], 1, 5, 'lion', 'Codes of honor on horseback. Knights and Stables.'],
+  ['cartography', 'Hover Hulls', 2, 130, ['sailing', 'currency'], 0, 0, 'compass', 'Map the Dust Sea and build hover hulls: units may **enter and cross the Dust Sea**. Unlocks Skiff Docks.'],
+  ['theology', 'Memory Traditions', 2, 130, ['calendar', 'writing'], 0, 2, 'temple', 'Give grief a place to go. Unlocks Cathedrals of Earth, Dome of Remembrance and Lava Tube Temple City.'],
+  ['engineering', 'Hab Engineering', 2, 135, ['mathematics', 'calendar'], 0, 3, 'tower', 'Seal pressure, reclaim water and sinter regolith. Unlocks Water Reclaimers, Sinter Works and Storm Wall.'],
+  ['steel', 'Hardened Alloys', 2, 135, ['iron_working'], 0, 5, 'shield', 'Folded alloys make armor survivable. Unlocks Exo-Troopers, Lancer Squads and Bastion Domes.'],
+  ['machinery', 'Precision Machinery', 2, 145, ['engineering', 'iron_working'], 1, 4, 'key', 'Gears give way to powered coils. Unlocks Coilgunners, Rail Mortars and Fabricators; reveals {icon:niter} Perchlorates.'],
+  ['chivalry', 'Rover Doctrine', 2, 145, ['the_wheel', 'steel'], 1, 5, 'lion', 'Mobility doctrine for the frontier. Unlocks Hover Bikes and their maintenance bays.'],
 
   // ───────── Era 3 · Renaissance ─────────
-  ['banking', 'Banking', 3, 260, ['currency', 'cartography'], 0, 0, 'hand', 'Credit and interest. Banks.'],
-  ['education', 'Education', 3, 260, ['theology', 'mathematics'], 0, 2, 'book', 'Learning for its own sake. Universities.'],
-  ['gunpowder', 'Gunpowder', 3, 270, ['steel', 'machinery'], 0, 5, 'skull', 'Thunder in a barrel. Musketmen, Armories and Himeji Castle.'],
-  ['astronomy', 'Astronomy', 3, 280, ['education', 'cartography'], 1, 1, 'star', 'The heavens, measured. Observatories and the Leaning Tower.'],
-  ['architecture', 'Architecture', 3, 280, ['engineering', 'theology'], 1, 3, 'castle', 'Domes and perspective. Museums and the Taj Mahal.'],
-  ['metallurgy', 'Metallurgy', 3, 290, ['gunpowder', 'chivalry'], 1, 5, 'mask', 'Cast bronze and forged steel. Cannons and Lancers.'],
+  ['banking', 'Credit Systems', 3, 260, ['currency', 'cartography'], 0, 0, 'hand', 'Credit and interest finance a colony that cannot afford cash under the mattress. Unlocks Credit Vaults.'],
+  ['education', 'Applied Research', 3, 260, ['theology', 'mathematics'], 0, 2, 'book', 'Train specialists to ask useful questions. Unlocks Research Institutes.'],
+  ['gunpowder', 'Energetics', 3, 270, ['steel', 'machinery'], 0, 5, 'skull', 'Controlled energetic chemistry propels Power Armor and arms; do not confuse controlled with safe.'],
+  ['astronomy', 'Deep-Space Observation', 3, 280, ['education', 'cartography'], 1, 1, 'star', 'Read the sky and listen for a signal. Unlocks Deep Space Arrays and Olympus Observatory.'],
+  ['architecture', 'Pressure Architecture', 3, 280, ['engineering', 'theology'], 1, 3, 'castle', 'Build domes that keep a thin atmosphere outside. Unlocks museums and Monument to the Lost.'],
+  ['metallurgy', 'Electromagnetic Propulsion', 3, 290, ['gunpowder', 'chivalry'], 1, 5, 'mask', 'Conductive rails launch heavy rounds. Unlocks Mass Drivers and Strike Rovers.'],
 
   // ───────── Era 4 · Industrial ─────────
-  ['economics', 'Economics', 4, 480, ['banking', 'architecture'], 0, 1, 'crown', 'Markets as a science. Stock Exchanges and Big Ben.'],
-  ['industrialization', 'Industrialization', 4, 480, ['banking', 'metallurgy'], 0, 3, 'hourglass', 'Smoke and steam. Factories and the Eiffel Tower; reveals {icon:coal} Coal.'],
-  ['rifling', 'Rifling', 4, 490, ['gunpowder', 'metallurgy'], 0, 5, 'eye', 'Spiral grooves, deadly accuracy. Riflemen.'],
-  ['electricity', 'Electricity', 4, 520, ['industrialization', 'astronomy'], 1, 2, 'bolt', 'Lightning tamed. Power Plants, Hospitals and the Statue of Liberty.'],
-  ['military_science', 'Military Science', 4, 520, ['rifling', 'metallurgy'], 1, 5, 'laurel', 'War becomes a discipline. Cavalry, Field Guns and Military Academies.'],
-  ['ballistics', 'Ballistics', 4, 560, ['military_science', 'industrialization'], 2, 4, 'eagle', 'Trajectories computed. Artillery.'],
+  ['economics', 'Resource Economics', 4, 480, ['banking', 'architecture'], 0, 1, 'crown', 'Treat scarcity as a discipline. Unlocks stock exchanges and the Clocktower of Sols.'],
+  ['industrialization', 'Industrial Fabrication', 4, 480, ['banking', 'metallurgy'], 0, 3, 'hourglass', 'Scale production beyond the workshop. Unlocks Foundries and Skyhook Pylons; reveals {icon:coal} Thorium.'],
+  ['rifling', 'Precision Rifles', 4, 490, ['gunpowder', 'metallurgy'], 0, 5, 'eye', 'Rifling buys accuracy in thin air. Unlocks Hardsuit Marines.'],
+  ['electricity', 'Grid Power', 4, 520, ['industrialization', 'astronomy'], 1, 2, 'bolt', 'Distribute power rather than arguments. Unlocks Fusion Plants, hospitals and the Statue of Tomorrow.'],
+  ['military_science', 'Combined Tactics', 4, 520, ['rifling', 'metallurgy'], 1, 5, 'laurel', 'Train units to coordinate across a hostile landscape. Unlocks Hover Skimmers, Plasma Casters and academies.'],
+  ['ballistics', 'Long-Range Ballistics', 4, 560, ['military_science', 'industrialization'], 2, 4, 'eagle', 'Compute trajectories across the horizon. Unlocks Arc Howitzers.'],
 
   // ───────── Era 5 · Modern ─────────
-  ['radio', 'Radio', 5, 850, ['electricity', 'economics'], 0, 1, 'wave', 'Voices through the air. Broadcast Towers, Stadiums and Cristo Redentor.'],
-  ['combustion', 'Combustion', 5, 850, ['industrialization', 'military_science'], 0, 3, 'flame', 'The engine age. Oil Wells, Supermarkets; reveals {icon:oil} Oil.'],
-  ['replaceable_parts', 'Replaceable Parts', 5, 880, ['rifling', 'industrialization'], 0, 5, 'gear', 'Mass production of everything. Infantry and Machine Guns.'],
-  ['computers', 'Computers', 5, 950, ['radio', 'electricity'], 1, 1, 'moon', 'Thinking machines. Research Labs and the Opera House.'],
-  ['combined_arms', 'Combined Arms', 5, 950, ['combustion', 'replaceable_parts'], 1, 4, 'shield', 'Armor, infantry and guns as one. Tanks and Anti-Tank Guns.'],
-  ['rocketry', 'Rocketry', 5, 1000, ['computers', 'ballistics'], 2, 2, 'star', 'Beyond the sky. Rocket Artillery and the Launch Pad.'],
+  ['radio', 'Colony Broadcast', 5, 850, ['electricity', 'economics'], 0, 1, 'wave', 'A voice crosses the static. Unlocks broadcast towers, arenas and the Guardian of Mars.'],
+  ['combustion', 'Propulsion Chemistry', 5, 850, ['industrialization', 'military_science'], 0, 3, 'flame', 'Power drills and engines with volatile chemistry. Unlocks Deep Drills; reveals {icon:oil} Deuterium.'],
+  ['replaceable_parts', 'Modular Production', 5, 880, ['rifling', 'industrialization'], 0, 5, 'gear', 'Standardize components for quick repair. Unlocks Titan Frames and Pulse Turrets.'],
+  ['computers', 'Autonomous Computation', 5, 950, ['radio', 'electricity'], 1, 1, 'moon', 'Machines that think so the crew can sleep. Unlocks research labs and the Biodome Opera.'],
+  ['combined_arms', 'Planetary Defense', 5, 950, ['combustion', 'replaceable_parts'], 1, 4, 'shield', 'Armor, infantry and weapons move as one. Unlocks Hovertanks and Lance Walkers.'],
+  ['rocketry', 'Orbital Infrastructure', 5, 1000, ['computers', 'ballistics'], 2, 2, 'star', 'Reach beyond the atmosphere. Unlocks Swarm Launchers and the Space Elevator.'],
 ];
 
 export const TECHS: Record<string, TechDef> = Object.fromEntries(

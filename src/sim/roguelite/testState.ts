@@ -25,6 +25,7 @@ export function testState(seed = 'TEST'): GameState {
     id: HUMAN, name: 'Tester', civName: 'Testia', leaderId: '__test_leader', colors: { primary: '#ffffff', secondary: '#000000' },
     isHuman: true, alive: true, gold: 0, techs: [], researching: null, researchProgress: {}, vis: [2, 2, 2, 2],
     relations: {}, happiness: 0, ai: null, capitalId: 1, citiesFounded: 1, counters: {}, effectCounters: {},
+    cryo: 3, researchOffer: [], researchRerolls: 0,
   };
   return {
     schema: 1,
@@ -41,5 +42,7 @@ export function testState(seed = 'TEST'): GameState {
     naturalWondersSeen: {},
     log: [],
     gameOver: false,
+    storms: [],
+    nextStormId: 1,
   };
 }

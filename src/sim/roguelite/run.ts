@@ -1,4 +1,4 @@
-// Run clock & phases: eras → chapters → chronicle → council. DESIGN §3.
+// OWNER: SimMechanics. Run clock & phases: eras → chapters → Sol Report → the Uplink. DESIGN §3.
 import { refreshAllCities } from '../cities';
 import type { CrisisDef } from '../defs';
 import { collectEffects, makeCtx } from '../effects';
@@ -14,6 +14,7 @@ import { chronicleTarget, computeChronicle } from './chronicle';
 import { doctrinePrice, doctrineSlotsUsed, generateCouncil, sellValueFor } from './council';
 import { omenGoal, rollOmenOffers } from './omens';
 import { emptyStats, markSeen } from './stats';
+import { changeCryo, ERA_CRYO } from '../mars';
 
 /** weight multiplier for crises already faced this run (endless reuses the full pool) */
 const SEEN_CRISIS_WEIGHT = 0.2;
@@ -121,7 +122,7 @@ export function chooseChapterStart(state: GameState, focus: PillarId, omen: Omen
   const run = state.run;
   if (run.phase !== 'chapterStart') return 'Not at a chapter start';
   if (!PILLARS.includes(focus)) return 'Unknown pillar';
-  if (omen != null && (!run.omenOffer.includes(omen) || !OMENS[omen])) return 'That omen is not on offer';
+  if (omen != null && (!run.omenOffer.includes(omen) || !OMENS[omen])) return 'That Directive is not on offer';
   run.focus = focus;
   run.omen = omen != null ? { id: omen, progress: 0, done: false, goal: omenGoal(state, OMENS[omen]) } : null;
   run.omenOffer = [];
@@ -154,7 +155,7 @@ export function endChapter(state: GameState, emit: Emit): void {
   run.lastChronicle = result;
   run.phase = 'chronicle';
   emit({ type: 'chronicle', result });
-  if (result.mandateLost) changeMandate(state, -result.mandateLost, 'The Chronicle fell short', emit);
+  if (result.mandateLost) changeMandate(state, -result.mandateLost, 'The Sol Report fell short', emit);
   const income = result.influenceEarned.reduce((s, l) => s + l.amount, 0);
   addInfluence(state, income, emit);
   refreshCities(state);
@@ -162,18 +163,18 @@ export function endChapter(state: GameState, emit: Emit): void {
 
 export function ackChronicle(state: GameState, emit: Emit): string | null {
   const run = state.run;
-  if (run.phase !== 'chronicle' || !run.lastChronicle) return 'No chronicle to acknowledge';
+  if (run.phase !== 'chronicle' || !run.lastChronicle) return 'No Sol Report to acknowledge';
   const r = run.lastChronicle;
   run.stats = emptyStats();
   run.omen = null;
   if (run.mandate <= 0) {
-    defeatRun(state, 'Your Mandate is spent. The people have turned away from your rule.', emit);
+    defeatRun(state, 'Charter revoked. The Ark Council has cut your colony loose — the uplink goes quiet.', emit);
   } else if (r.era === FINAL_ERA && r.chapter === CRISIS_CHAPTER) {
     if (r.passed) {
       run.phase = 'victory';
       emit({ type: 'runWon' });
     } else {
-      defeatRun(state, 'The final Chronicle fell short. Your empire leaves no lasting Legacy.', emit);
+      defeatRun(state, 'The final Sol Report fell short. Mars will not remember your name.', emit);
     }
   } else {
     run.phase = 'council';
@@ -184,8 +185,8 @@ export function ackChronicle(state: GameState, emit: Emit): string | null {
 
 export function leaveCouncil(state: GameState, emit: Emit): string | null {
   const run = state.run;
-  if (run.phase !== 'council') return 'The Council is not in session';
-  if (run.council?.pack) return 'Choose from the open pack first';
+  if (run.phase !== 'council') return 'The Uplink is offline';
+  if (run.council?.pack) return 'Open the Supply Drop first';
   run.council = null;
   if (run.chapter < CRISIS_CHAPTER) {
     run.chapter++;
@@ -198,14 +199,16 @@ export function leaveCouncil(state: GameState, emit: Emit): string | null {
   run.chapterTurn = 0;
   run.chapterLength = CHAPTER_LENGTHS[0];
   emit({ type: 'eraStarted', era: run.era });
-  emit({ type: 'notify', text: run.era <= FINAL_ERA ? `The ${ERA_NAMES[run.era]} Era begins` : `Endless Era ${run.era - FINAL_ERA} begins`, icon: 'calendar', tone: 'info' });
+  emit({ type: 'notify', text: run.era <= FINAL_ERA ? `The ${ERA_NAMES[run.era]} era begins` : `Beyond ${run.era - FINAL_ERA} begins`, icon: 'calendar', tone: 'info' });
+  // the Ark thaws a fresh batch of pods for every surviving nation
+  for (const p of state.players) if (p.alive && p.id !== BARBARIAN) changeCryo(state, p.id, ERA_CRYO, emit);
   rollCrisis(state, emit);
   return null;
 }
 
 export function continueEndless(state: GameState, emit: Emit): string | null {
   const run = state.run;
-  if (run.phase !== 'victory') return 'Endless mode opens after victory';
+  if (run.phase !== 'victory') return 'Beyond opens after victory';
   run.phase = 'council';
   generateCouncil(state, emit);
   return null;
@@ -214,11 +217,11 @@ export function continueEndless(state: GameState, emit: Emit): string | null {
 export function grantDoctrine(state: GameState, id: DoctrineId, edition: Edition, emit: Emit): string | null {
   const run = state.run;
   const def = DOCTRINES[id];
-  if (!def) return 'Unknown doctrine';
-  if (run.doctrines.some((d) => d.id === id)) return 'Doctrine already adopted';
-  if (edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'Doctrine slots full';
+  if (!def) return 'Unknown Crew member';
+  if (run.doctrines.some((d) => d.id === id)) return 'Already aboard';
+  if (edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'All bunks full';
   const uid = run.nextUid++;
-  run.doctrines.push({ uid, id, edition, counters: {}, disabled: false, sellValue: sellValueFor(doctrinePrice(def.rarity, edition)) });
+  run.doctrines.push({ uid, id, edition, counters: {}, disabled: false, sellValue: sellValueFor(state, id, doctrinePrice(def.rarity, edition)) });
   markSeen(run, `doctrine:${id}`);
   emit({ type: 'doctrineGained', uid, id });
   const fx = collectEffects(state, HUMAN).find((f) => f.kind === 'doctrine' && f.uid === uid);
@@ -246,7 +249,7 @@ export function changeMandate(state: GameState, delta: number, reason: string, e
   if (run.mandate <= 0 && run.phase !== 'chronicle') defeatRun(state, reason, emit);
 }
 
-/** the civilization collapses (mandate exhausted, capital lost, …) */
+/** the colony collapses (Charter exhausted, Ark Hab lost, …) */
 export function defeatRun(state: GameState, reason: string, emit: Emit): void {
   const run = state.run;
   if (run.phase === 'defeat') return;

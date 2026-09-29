@@ -2,9 +2,10 @@
 import { BUILDINGS, PILLAR_DEFS, TECHS, UNITS, WONDERS } from '../../content';
 import type { CityFocus, GameState, PillarId, PlayerId, ProductionItem, YieldKey } from '../../sim/types';
 import { BARBARIAN } from '../../sim/types';
+import { PILLAR_NAMES, T, YIELD_NAMES } from '../terms';
 
-export const ERA_NAMES = ['Ancient', 'Classical', 'Medieval', 'Renaissance', 'Industrial', 'Modern'];
-export const CHAPTER_NAMES = ['Rise', 'Trial', 'Crisis'];
+export const ERA_NAMES = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'];
+export const CHAPTER_NAMES = ['Dawn', 'Dusk', 'Crisis'];
 export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
 export function eraName(era: number): string {
@@ -13,27 +14,27 @@ export function eraName(era: number): string {
 
 export interface YieldMeta { key: YieldKey; icon: string; label: string; color: string }
 export const YIELD_META: Record<YieldKey, YieldMeta> = {
-  food: { key: 'food', icon: 'food', label: 'Food', color: 'var(--y-food)' },
-  prod: { key: 'prod', icon: 'prod', label: 'Production', color: 'var(--y-prod)' },
-  gold: { key: 'gold', icon: 'gold', label: 'Gold', color: 'var(--y-gold)' },
-  sci: { key: 'sci', icon: 'sci', label: 'Science', color: 'var(--y-sci)' },
-  cul: { key: 'cul', icon: 'cul', label: 'Culture', color: 'var(--y-cul)' },
+  food: { key: 'food', icon: 'food', label: YIELD_NAMES.food, color: 'var(--y-food)' },
+  prod: { key: 'prod', icon: 'prod', label: YIELD_NAMES.prod, color: 'var(--y-prod)' },
+  gold: { key: 'gold', icon: 'gold', label: YIELD_NAMES.gold, color: 'var(--y-gold)' },
+  sci: { key: 'sci', icon: 'sci', label: YIELD_NAMES.sci, color: 'var(--y-sci)' },
+  cul: { key: 'cul', icon: 'cul', label: YIELD_NAMES.cul, color: 'var(--y-cul)' },
 };
 
 export const FOCUS_META: Record<CityFocus, { label: string; icon: string; color: string; hint: string }> = {
   balanced: { label: 'Balanced', icon: 'star', color: 'var(--gold-400)', hint: 'Work the best mix of tiles' },
-  food: { label: 'Food', icon: 'food', color: 'var(--y-food)', hint: 'Grow quickly' },
-  prod: { label: 'Industry', icon: 'prod', color: 'var(--y-prod)', hint: 'Build faster' },
-  gold: { label: 'Gold', icon: 'gold', color: 'var(--y-gold)', hint: 'Fill the treasury' },
-  sci: { label: 'Science', icon: 'sci', color: 'var(--y-sci)', hint: 'Research faster' },
-  cul: { label: 'Culture', icon: 'cul', color: 'var(--y-cul)', hint: 'Expand borders, feed Arts' },
+  food: { label: YIELD_NAMES.food, icon: 'food', color: 'var(--y-food)', hint: 'Grow quickly' },
+  prod: { label: YIELD_NAMES.prod, icon: 'prod', color: 'var(--y-prod)', hint: 'Build faster' },
+  gold: { label: YIELD_NAMES.gold, icon: 'gold', color: 'var(--y-gold)', hint: 'Fill the treasury' },
+  sci: { label: YIELD_NAMES.sci, icon: 'sci', color: 'var(--y-sci)', hint: 'Research faster' },
+  cul: { label: YIELD_NAMES.cul, icon: 'cul', color: 'var(--y-cul)', hint: `Expand borders, feed ${PILLAR_NAMES.arts}` },
 };
 export const FOCUS_ORDER: CityFocus[] = ['balanced', 'food', 'prod', 'gold', 'sci', 'cul'];
 
 export const PROJECT_META: Record<'wealth' | 'research' | 'festival', { name: string; icon: string; text: string }> = {
-  wealth: { name: 'Wealth', icon: 'gold', text: 'Convert production into gold.' },
-  research: { name: 'Research', icon: 'sci', text: 'Convert production into science.' },
-  festival: { name: 'Festival', icon: 'renown', text: 'Convert production into Renown for the Chronicle.' },
+  wealth: { name: 'Credits', icon: 'gold', text: 'Convert Industry into Credits.' },
+  research: { name: T.tech, icon: 'sci', text: 'Convert Industry into Data.' },
+  festival: { name: 'Festival', icon: 'renown', text: `Convert Industry into ${T.renown} for the ${T.report}.` },
 };
 
 export function itemName(item: ProductionItem): string {

@@ -16,17 +16,17 @@ from wonders_lib import PALETTE, place, polar
 for _k, _v in {
     # sky arch sandstone strata
     'nat_rust': ('#9c432b', .9, 0), 'nat_redrock': ('#c25d36', .9, 0), 'nat_orange': ('#dc8a4c', .88, 0),
-    'nat_cream': ('#efc98f', .88, 0), 'nat_redsand': ('#d49a63', .9, 0), 'nat_sage': ('#8f9c5a', .9, 0),
-    'nat_juniper': ('#4b6a3d', .9, 0),
+    'nat_cream': ('#d9a066', .88, 0), 'nat_redsand': ('#b5552b', .9, 0), 'nat_sage': ('#c77b2c', .9, 0),
+    'nat_juniper': ('#783d2b', .9, 0),
     # volcano
-    'nat_basalt': ('#35302e', .9, 0), 'nat_ash': ('#5b5450', .9, 0), 'nat_ash_light': ('#7f7670', .9, 0),
-    'nat_smoke': ('#8f8884', .9, 0), 'nat_smoke_light': ('#c3bdb7', .88, 0),
-    # crystal falls
-    'nat_cliff': ('#7d8899', .88, 0), 'nat_cliff_dark': ('#5c6577', .9, 0), 'nat_foam': ('#eef7fb', .8, 0),
-    'nat_amethyst': ('#a78be6', .75, 0),
-    # misc
-    'nat_moss': ('#6b9139', .9, 0), 'nat_horn': ('#6e5c47', .85, 0), 'nat_cactus': ('#5e8c4a', .88, 0),
-    'nat_lily': ('#5d9e45', .85, 0), 'nat_reed': ('#809b47', .88, 0),
+    'nat_basalt': ('#3b2f2a', .9, 0), 'nat_ash': ('#57463d', .9, 0), 'nat_ash_light': ('#8d9097', .9, 0),
+    'nat_smoke': ('#9b6044', .9, 0), 'nat_smoke_light': ('#d9a066', .88, 0),
+    # brine-fed cryo deposits and opal
+    'nat_cliff': ('#8d9097', .88, 0), 'nat_cliff_dark': ('#57463d', .9, 0), 'nat_foam': ('#eef3f6', .8, 0),
+    'nat_amethyst': ('#5fd4e8', .75, 0),
+    # lichen, meteorite, and brine flora
+    'nat_moss': ('#c77b2c', .9, 0), 'nat_horn': ('#57463d', .85, 0), 'nat_cactus': ('#b5552b', .88, 0),
+    'nat_lily': ('#3f8f8a', .85, 0), 'nat_reed': ('#c77b2c', .88, 0),
 }.items():
     PALETTE.setdefault(_k, _v)
 

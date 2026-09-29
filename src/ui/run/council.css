@@ -96,9 +96,9 @@
 .rco-info-hint p { margin: 4px 0 0; }
 .rco-info-hint .ro-ornament { width: 180px; opacity: 0.6; }
 .rco-foot { display: flex; gap: 10px; padding-bottom: calc(10px + var(--safe-bottom)); }
-.rco-reroll { flex: 1; white-space: nowrap; }
-.rco-cost { display: inline-flex; align-items: center; gap: 2px; padding: 1px 7px; border-radius: 99px; background: rgba(178,141,255,0.18); color: #e6dbff; font-family: var(--font-ui); font-weight: 800; }
-.rco-leave { flex: 1.4; font-size: 16px; white-space: nowrap; }
+ .rco-reroll { flex: 1; white-space: nowrap; }
+ .rco-reroll.is-locked { color: var(--text-faint); border-color: var(--bad); background: linear-gradient(180deg, rgba(54,30,26,0.9), rgba(24,17,17,0.95)); box-shadow: inset 0 0 12px rgba(242,140,40,0.08); }
+ .rco-reroll.is-locked svg { color: var(--bad); }
 
 /* portrait order: header, next, owned, pillars, shop, info, actions */
 .rco-head { order: 0; } .rco-next { order: 1; } .rco-owned { order: 2; } .rco-pillarbox { order: 3; }
@@ -107,6 +107,13 @@
 .rco-shop .rco-group-label { display: none; }
 .rco-shop .rco-group + .rco-group { border-top: 1px solid rgba(234,199,102,0.12); }
 .rco-row { padding: 8px 0 14px; }
+.rco-row {
+  width: 100%; max-width: 100%; box-sizing: border-box; justify-content: flex-start;
+  overflow-x: auto; overflow-y: visible; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scroll-padding-inline: 8px; scrollbar-width: thin;
+  scrollbar-color: var(--gold-500) rgba(255,255,255,0.08);
+}
+.rco-slot, .rco-slot--sold { flex: 0 0 auto; scroll-snap-align: start; }
 
 @media (max-height: 760px) and (orientation: portrait) {
   .rco-info { min-height: 72px; padding: 7px 10px; }
@@ -230,3 +237,10 @@
   .rpk-fan { flex-wrap: nowrap; gap: 8px; }
   .rpk-title { font-size: 20px; }
 }
+/* RED EXODUS: the Ark's inventory is hazard-glass, not a royal shop. */
+.rco-backdrop { background: radial-gradient(70% 50% at 50% 35%, rgba(181,85,43,0.18), transparent 75%), linear-gradient(180deg, rgba(5,9,12,0.96), rgba(14,13,12,0.98)); }
+.rco-owned { background: rgba(6,13,17,0.78); border-color: rgba(95,212,232,0.18); box-shadow: inset 0 1px rgba(255,255,255,0.04), 0 10px 28px rgba(0,0,0,0.28); }
+.rco-next-target { color: var(--gold-300); }
+.rco-cost { background: rgba(242,140,40,0.16); color: var(--gold-300); }
+.rpk-backdrop { background: radial-gradient(60% 45% at 50% 42%, rgba(95,212,232,0.2), rgba(4,8,11,0.96) 70%); }
+.rpk-pack { filter: drop-shadow(0 0 30px rgba(95,212,232,0.32)); }

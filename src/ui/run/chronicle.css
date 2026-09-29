@@ -262,3 +262,32 @@
   .rch-row-vals { font-size: 17px; }
   .rch-doctrines { gap: 16px; }
 }
+.rch-backdrop {
+  background:
+    radial-gradient(70% 45% at 50% 18%, rgba(95,212,232,0.12), transparent 70%),
+    radial-gradient(120% 90% at 50% 110%, rgba(181,85,43,0.24), transparent 60%),
+    linear-gradient(180deg, rgba(5,10,13,0.94), rgba(3,6,8,0.99));
+}
+.rch-plate--renown { background: linear-gradient(180deg, #d47b39, #813719); border-color: #f2a75e; }
+.rch-plate--splendor { background: linear-gradient(180deg, #4ba9b5, #14505c); border-color: #8ce7f0; }
+.rch-scroll-rod { background: linear-gradient(180deg, #583b2b, #c66c36 35%, #482a1e 90%); }
+.rch-scroll-rod::before, .rch-scroll-rod::after { background: radial-gradient(circle at 40% 35%, #f7c58a, #b45e31 60%, #482a1e); }
+.rch-ledger {
+  color: var(--text);
+  background: linear-gradient(110deg, rgba(12,20,24,0.97), rgba(19,25,27,0.94) 50%, rgba(9,17,20,0.97));
+  border-inline: 1px solid rgba(95,212,232,0.2);
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.42), inset 0 1px rgba(255,255,255,0.04);
+}
+.rch-ledger-empty { color: var(--text-faint); }
+.rch-row--bad .rch-row-label { color: #ff9d8c; }
+.rch-v--r { background: linear-gradient(180deg, #dc8246, #9c4527); }
+.rch-v--s { background: linear-gradient(180deg, #4caab5, #216471); }
+.rch-v--m { background: linear-gradient(180deg, #63d7e7, #237581); box-shadow: 0 0 10px rgba(95,212,232,0.5); }
+.rch-v--m.is-down { background: linear-gradient(180deg, #71615a, #3b2f2a); }
+.rch-tally-total, .rch-tally-line .num { color: var(--gold-300); }
+.rch-legacy-num { color: var(--gold-300); }
+.rch-chip, .rch-row--pillar .rch-chip, .rch-row--focus .rch-chip {
+  color: #fff; background: rgba(7,14,17,0.96); border-color: rgba(95,212,232,0.68);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.rch-chip b { color: #fff0c7; }

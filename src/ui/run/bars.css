@@ -64,3 +64,13 @@
   display: grid; place-items: center; background: var(--influence); color: #1a1030; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
 }
 .ret-note { width: 100%; text-align: center; font-size: 12px; color: var(--text-faint); }
+.rdb-nation {
+  position: absolute; left: 3px; top: 3px; z-index: 3; min-width: 23px; height: 15px; padding: 0 4px;
+  display: grid; place-items: center; border-radius: 4px; color: #fff; font: 800 8px/1 var(--font-ui);
+  letter-spacing: 0.04em; background: var(--flag); border: 1px solid rgba(255,255,255,0.65);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.9); box-shadow: 0 1px 4px rgba(0,0,0,0.55);
+}
+.rdb-socket--edict { border-color: rgba(242,140,40,0.34); color: rgba(242,140,40,0.5); }
+.rdb-slot.is-triggered .rc-front { box-shadow: 0 0 0 2px #5fd4e8, 0 0 24px rgba(95,212,232,0.65); }
+.rdb-sell { background: linear-gradient(180deg, rgba(130,53,31,0.94), rgba(60,27,20,0.94)); border-color: #f28c28; }
+.rdb-sell.is-over { background: linear-gradient(180deg, #d16e37, #84391f); box-shadow: 0 0 0 2px #ffc27d, 0 0 26px rgba(242,140,40,0.6); }

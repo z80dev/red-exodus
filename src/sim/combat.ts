@@ -175,10 +175,10 @@ export function previewCityStrike(state: GameState, city: City, target: TileIdx)
   return result && militaryAt(state, target) ? result : null;
 }
 export function resolveCityStrike(state: GameState, city: City, target: TileIdx, emit: Emit): string | null {
-  if (city.hasStruck) return 'City already struck this turn';
+  if (city.hasStruck) return 'Colony already fired this turn';
   const result = previewCityStrike(state, city, target);
   const defender = militaryAt(state, target);
-  if (!result || !defender) return 'Invalid city strike';
+  if (!result || !defender) return 'Invalid colony strike';
   const dmg = Math.max(1, Math.round(result.dmgToDefender * (0.8 + random(state.rng) * 0.4)));
   defender.hp = Math.max(0, defender.hp - dmg);
   city.hasStruck = true;

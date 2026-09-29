@@ -30,9 +30,11 @@ export function doctrinePrice(rarity: Rarity, edition: Edition): number {
   return DOCTRINE_PRICE[rarity] + EDITION_PRICE[edition];
 }
 
-/** default sell value for a doctrine bought/granted at `price`: half, min 1 */
-export function sellValueFor(price: number): number {
-  return Math.max(1, Math.floor(price / 2));
+/** sell value for a Crew card acquired at `price`: half (min 1), then the human's `sellValue` hooks */
+export function sellValueFor(state: GameState, id: string, price: number): number {
+  const a = { id, price, value: Math.max(1, Math.floor(price / 2)) };
+  runHook(state, HUMAN, 'sellValue', () => {}, null, a);
+  return Number.isFinite(a.value) ? Math.max(0, Math.floor(a.value)) : 1;
 }
 
 function edictPrice(def: EdictDef): number {
@@ -173,9 +175,10 @@ export function generateCouncil(state: GameState, emit: Emit): void {
 
 export function councilRerollError(state: GameState): string | null {
   const c = state.run.council;
-  if (state.run.phase !== 'council' || !c) return 'The Council is not in session';
-  if (c.pack) return 'Choose from the open pack first';
-  if (state.run.influence < c.rerollCost) return 'Not enough Influence';
+  if (state.run.phase !== 'council' || !c) return 'The Uplink is offline';
+  if (c.pack) return 'Open the Supply Drop first';
+  if (c.rerollLocked) return 'The Uplink cannot be rerolled';
+  if (state.run.influence < c.rerollCost) return 'Not enough Scrip';
   return null;
 }
 
@@ -202,31 +205,31 @@ function acquireError(state: GameState, item: ShopItem): string | null {
   const run = state.run;
   switch (item.kind) {
     case 'doctrine':
-      if (!DOCTRINES[item.id]) return 'Unknown doctrine';
-      if (run.doctrines.some((d) => d.id === item.id)) return 'Doctrine already adopted';
-      if (item.edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'Doctrine slots full — sell one first';
+      if (!DOCTRINES[item.id]) return 'Unknown Crew member';
+      if (run.doctrines.some((d) => d.id === item.id)) return 'Already aboard';
+      if (item.edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'All bunks full — let someone go first';
       return null;
     case 'edict':
-      if (!EDICTS[item.id]) return 'Unknown edict';
-      return edictSlotsFree(run) > 0 ? null : 'Edict slots full — use or discard one first';
+      if (!EDICTS[item.id]) return 'Unknown Salvage';
+      return edictSlotsFree(run) > 0 ? null : 'Salvage slots full — use or discard one first';
     case 'scroll':
-      return SCROLLS[item.id] ? null : 'Unknown scroll';
+      return SCROLLS[item.id] ? null : 'Unknown Blueprint';
     case 'reform':
-      if (!REFORMS[item.id]) return 'Unknown reform';
-      return run.reforms.includes(item.id) ? 'Reform already enacted' : null;
+      if (!REFORMS[item.id]) return 'Unknown Ark Module';
+      return run.reforms.includes(item.id) ? 'Ark Module already installed' : null;
     case 'pack':
-      return packAvailable(state, item.pack) ? null : 'Nothing left to find in this pack';
+      return packAvailable(state, item.pack) ? null : 'Nothing left to find in this Supply Drop';
   }
 }
 
 export function councilBuyError(state: GameState, slot: number): string | null {
   const run = state.run;
   const c = run.council;
-  if (run.phase !== 'council' || !c) return 'The Council is not in session';
-  if (c.pack) return 'Choose from the open pack first';
+  if (run.phase !== 'council' || !c) return 'The Uplink is offline';
+  if (c.pack) return 'Open the Supply Drop first';
   const item = c.items[slot];
   if (!item) return 'Sold out';
-  if (run.influence < item.price) return 'Not enough Influence';
+  if (run.influence < item.price) return 'Not enough Scrip';
   return acquireError(state, item);
 }
 
@@ -242,7 +245,7 @@ export function applyScroll(state: GameState, id: string, emit: Emit): void {
   markSeen(run, `scroll:${id}`);
   const text = targets.length === 1
     ? `${def.name}: ${PILLAR_DEFS[targets[0]].name} reaches level ${run.pillarLevels[targets[0]]}`
-    : `${def.name}: every Pillar rises ${levels} level${levels > 1 ? 's' : ''}`;
+    : `${def.name}: every pillar rises ${levels} level${levels > 1 ? 's' : ''}`;
   emit({ type: 'notify', text, icon: targets.length === 1 ? targets[0] : 'scroll', tone: 'good' });
 }
 
@@ -270,7 +273,7 @@ function acquire(state: GameState, item: ShopItem, emit: Emit): void {
   switch (item.kind) {
     case 'doctrine': {
       const err = grantDoctrine(state, item.id, item.edition, emit);
-      if (!err && item.price > 0) run.doctrines[run.doctrines.length - 1].sellValue = sellValueFor(item.price);
+      if (!err && item.price > 0) run.doctrines[run.doctrines.length - 1].sellValue = sellValueFor(state, item.id, item.price);
       break;
     }
     case 'edict':
@@ -323,7 +326,7 @@ export function councilBuy(state: GameState, slot: number, emit: Emit): string |
 
 export function packPickError(state: GameState, index: number | null): string | null {
   const c = state.run.council;
-  if (state.run.phase !== 'council' || !c?.pack) return 'No pack is open';
+  if (state.run.phase !== 'council' || !c?.pack) return 'No Supply Drop is open';
   if (index == null) return null;
   const opt = c.pack.options[index];
   if (!opt) return 'Invalid choice';
@@ -348,10 +351,11 @@ export function packPick(state: GameState, index: number | null, emit: Emit): st
 
 export function sellDoctrine(state: GameState, uid: Uid, emit: Emit): string | null {
   const run = state.run;
-  if (!['council', 'playing', 'chapterStart'].includes(run.phase)) return 'Cannot sell doctrines now';
+  if (!['council', 'playing', 'chapterStart'].includes(run.phase)) return 'Crew cannot be dismissed now';
   const idx = run.doctrines.findIndex((d) => d.uid === uid);
-  if (idx < 0) return 'No such doctrine';
+  if (idx < 0) return 'No such Crew member';
   const inst = run.doctrines[idx];
+  if (DOCTRINES[inst.id]?.noSell) return "This Crew member won't leave";
   // disabled (e.g. Iconoclasm) doctrines still undo their onGain when sold
   const hooks = DOCTRINES[inst.id]?.effects;
   if (hooks?.onLose) hooks.onLose(makeCtx(state, HUMAN, { kind: 'doctrine', id: inst.id, uid, hooks, counters: inst.counters }, emit));
@@ -366,7 +370,7 @@ export function moveDoctrine(state: GameState, uid: Uid, toIndex: number): strin
   const run = state.run;
   if (run.phase === 'victory' || run.phase === 'defeat') return 'The run is over';
   const idx = run.doctrines.findIndex((d) => d.uid === uid);
-  if (idx < 0) return 'No such doctrine';
+  if (idx < 0) return 'No such Crew member';
   const [inst] = run.doctrines.splice(idx, 1);
   const to = Math.max(0, Math.min(run.doctrines.length, Math.floor(toIndex)));
   run.doctrines.splice(to, 0, inst);

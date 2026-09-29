@@ -38,7 +38,7 @@ export const MODEL_KEYS: Record<ModelGroup, string[]> = {
   nature: [
     'tree_pine', 'tree_broadleaf', 'tree_palm', 'tree_jungle', 'tree_snowpine', 'bush', 'reeds', 'cactus', 'rock_small',
     'rock_large', 'mountain_a', 'mountain_b', 'mountain_c', 'mountain_snow', 'hill_rocks', 'ice_floe', 'reef_coral', 'flowers',
-    'camp_barbarian', 'ruin_ancient', 'road_marker',
+    'camp_barbarian', 'ruin_ancient', 'road_marker', 'drop_pod',
     ...RESOURCES.map((r) => `res_${r}`),
     ...IMPROVEMENTS.map((i) => `imp_${i}`),
   ],

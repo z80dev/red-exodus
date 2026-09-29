@@ -1,5 +1,7 @@
-// Rivers run along hex edges (tile.riverEdges). We build an oriented edge network flowing toward the
-// nearest water (BFS over hex corners), carve it into the terrain, and render animated ribbons.
+// Ancient Channels run along hex edges (tile.riverEdges). We build an oriented edge network flowing toward the
+// nearest basin (BFS over hex corners), carve it into the terrain, and render dry cut channel beds: sediment
+// striations, eroded pale banks, frost glints from the subsurface ice, and — as the planet terraforms — a thin
+// thread of meltwater down the middle.
 import {
   BufferAttribute, BufferGeometry, Color, DoubleSide, Mesh, MeshStandardMaterial,
 } from 'three';
@@ -169,7 +171,7 @@ export function buildRiverMesh(segs: RiverSeg[], ground: (x: number, z: number) 
   geo.setAttribute('uv', new BufferAttribute(uv, 2));
   geo.setIndex(idx);
   geo.computeBoundingSphere();
-  const mat = new MeshStandardMaterial({ color: new Color('#4fc3d4'), roughness: 0.18, metalness: 0, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const mat = new MeshStandardMaterial({ color: new Color('#6e3a22'), roughness: 0.95, metalness: 0, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   mat.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
     Object.assign(shader.uniforms, U);
     shader.vertexShader = shader.vertexShader
@@ -182,8 +184,8 @@ export function buildRiverMesh(segs: RiverSeg[], ground: (x: number, z: number) 
         `#include <common>
         varying vec2 vRUv;
         varying vec3 vAeWorld;
-        uniform vec3 uShallow;
-        uniform vec3 uDeep;
+        uniform vec3 uBrine;
+        uniform float uTerraform;
         ${GLSL_NOISE}
         ${GLSL_TILES}`,
       )
@@ -191,24 +193,43 @@ export function buildRiverMesh(segs: RiverSeg[], ground: (x: number, z: number) 
         '#include <color_fragment>',
         `#include <color_fragment>
         float across = abs(vRUv.y - 0.5) * 2.0;
-        float flow = vRUv.x * 1.6 - uTime * 0.55;
-        float streak = aeNoise(vec2(flow * 3.0, vRUv.y * 4.0)) * 0.6 + aeNoise(vec2(flow * 7.0, vRUv.y * 9.0 + 3.0)) * 0.4;
-        vec3 rc = mix(uShallow * 0.95, mix(uShallow, uDeep, 0.6), 1.0 - across);
-        diffuseColor.rgb = rc + vec3(0.12) * smoothstep(0.62, 0.85, streak);
-        float bank = smoothstep(0.65, 1.0, across);
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.85, 0.93, 0.95), bank * 0.3);`,
+        float flow = vRUv.x * 1.6;
+        // sediment striations along the old flow, darker bed, pale eroded banks
+        float strata = aeNoise(vec2(flow * 2.5, vRUv.y * 5.0)) * 0.6 + aeNoise(vec2(flow * 7.0, vRUv.y * 11.0 + 3.0)) * 0.4;
+        vec3 bed = diffuseColor.rgb * (0.78 + 0.35 * strata);
+        float bank = smoothstep(0.55, 1.0, across);
+        diffuseColor.rgb = mix(bed, vec3(0.72, 0.46, 0.3), bank * 0.55);
+        // patches of exposed subsurface ice in the channel floor
+        float ice = smoothstep(0.62, 0.8, aeNoise(vec2(flow * 1.3, vRUv.y * 2.0) + 7.0)) * (1.0 - bank);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.78, 0.84, 0.88), ice * 0.55);
+        // terraforming: a meltwater thread widens down the middle
+        float thread = (1.0 - smoothstep(0.05, 0.05 + 0.4 * uTerraform, across)) * smoothstep(0.08, 0.3, uTerraform);
+        diffuseColor.rgb = mix(diffuseColor.rgb, uBrine * (0.85 + 0.3 * aeNoise(vec2(flow * 4.0 - uTime * 0.6, vRUv.y * 3.0))), thread);`,
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        {
+          // frost glints: sparse twinkling crystals, strongest on the ice patches
+          vec2 gp = vAeWorld.xz * 26.0;
+          float h = aeHash(floor(gp));
+          float spark = step(0.965 - ice * 0.05, h) * smoothstep(0.35, 0.0, length(fract(gp) - 0.5));
+          float tw = 0.5 + 0.5 * sin(uTime * 3.0 + h * 40.0);
+          totalEmissiveRadiance += vec3(0.75, 0.88, 1.0) * spark * tw * 0.9 * (1.0 - thread);
+          totalEmissiveRadiance += uBrine * thread * 0.18;
+        }`,
       )
       .replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
         {
-          float n1 = aeNoise(vec2(flow * 4.0, vRUv.y * 3.0));
-          float n2 = aeNoise(vec2(flow * 4.0 + 0.2, vRUv.y * 3.0));
-          vec3 wn = normalize(vec3((n1 - n2) * 1.5, 1.0, (aeNoise(vec2(flow * 4.0, vRUv.y * 3.0 + 0.2)) - n1) * 1.5));
+          float n1 = aeNoise(vec2(flow * 3.0, vRUv.y * 4.0));
+          float n2 = aeNoise(vec2(flow * 3.0 + 0.2, vRUv.y * 4.0));
+          vec3 wn = normalize(vec3((n1 - n2) * 0.8, 1.0, (aeNoise(vec2(flow * 3.0, vRUv.y * 4.0 + 0.2)) - n1) * 0.8));
           normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz);
         }`,
       )
-      .replace('#include <opaque_fragment>', 'outgoingLight = aeApplyFog(outgoingLight, aeFogAt(vAeWorld.xz));\n#include <opaque_fragment>');
+      .replace('#include <opaque_fragment>', 'outgoingLight = aeApplyFog(aeStorm(outgoingLight, aeFetch(uTileHi, aeAxial(vAeWorld.xz)).ba, vAeWorld.xz), aeFogAt(vAeWorld.xz));\n#include <opaque_fragment>');
   };
   mat.customProgramCacheKey = () => 'ae-river';
   const mesh = new Mesh(geo, mat);

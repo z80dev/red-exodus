@@ -61,10 +61,10 @@ export function grantOmenReward(state: GameState, def: OmenDef, emit: Emit): voi
       addInfluence(state, r.amount, emit);
       break;
     case 'gold':
-      addGold(state, HUMAN, r.amount, `Omen: ${def.name}`, emit);
+      addGold(state, HUMAN, r.amount, `Directive: ${def.name}`, emit);
       break;
     case 'mandate':
-      changeMandate(state, 1, `Omen: ${def.name}`, emit);
+      changeMandate(state, 1, `Directive: ${def.name}`, emit);
       break;
     case 'doctrine': {
       const d = rollDoctrine(state, new Set(), true, r.rarity);
@@ -83,5 +83,5 @@ export function grantOmenReward(state: GameState, def: OmenDef, emit: Emit): voi
       break;
     }
   }
-  emit({ type: 'notify', text: `Omen fulfilled: ${def.name} — ${def.rewardText}`, icon: 'omen', tone: 'good' });
+  emit({ type: 'notify', text: `Directive complete: ${def.name} — ${def.rewardText}`, icon: 'omen', tone: 'good' });
 }

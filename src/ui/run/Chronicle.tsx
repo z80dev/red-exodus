@@ -1,7 +1,5 @@
-// THE CHRONICLE — the scoring ceremony. Plays lastChronicle.steps as sequenced, sound-synced beats:
-// pillar rows tick in, focus ×2 flashes, city chips pop, doctrine cards pulse left→right with floating
-// numbers, ×Splendor shakes the stage; then Renown × Splendor slam into the Legacy, the Legacy fills the
-// target bar, the stamp lands (PASSED / FAILED + mandate hearts shatter), TRIUMPH, and influence is tallied.
+// SOL REPORT — Output × Hope resolves into Viability through a sound-synced scoring ceremony.
+// Crew fire left-to-right; number bursts, Hope multipliers, and the final target slam keep the loop tactile.
 // Tap the stage to speed up (1× → 2× → instant). Profile `fastAnimations` starts at 2×.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -13,8 +11,9 @@ import { Card } from './Card';
 import { doctrineCard } from './cards';
 import { bump, centerOf, floatAt, floatText, shake, streak, useParticles, useTweened } from './fx';
 import { Hearts, Ornament } from './parts';
-import { act, chapterTitle, eraName, fmt, fmtMul, fmtSplendor, haptic, pillarInfo, roman, sfx, uiSettings } from './runUtil';
+import { act, chapterTitle, eraName, fmt, fmtMul, fmtSplendor, haptic, pillarInfo, sfx, uiSettings } from './runUtil';
 import './chronicle.css';
+import { T } from '../terms';
 
 type Tone = 'renown' | 'splendor' | 'mul' | 'bad' | 'neutral' | 'gold';
 interface Row {
@@ -105,9 +104,9 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
     const cardEl = (uid: string) => stageRef.current?.querySelector<HTMLElement>(`[data-chron-uid="${uid}"]`) ?? null;
     const floaterFor = (s: ChronicleStep) => {
       const parts: { html: string; tone: string }[] = [];
-      if (s.renownAdd) parts.push({ html: `${s.renownAdd > 0 ? '+' : '−'}${fmt(Math.abs(s.renownAdd))} Renown`, tone: 'renown' });
-      if (s.splendorAdd) parts.push({ html: `${s.splendorAdd > 0 ? '+' : '−'}${fmtSplendor(Math.abs(s.splendorAdd))} Splendor`, tone: 'splendor' });
-      if (s.splendorMul != null && s.splendorMul !== 1) parts.push({ html: fmtMul(s.splendorMul), tone: s.splendorMul >= 1 ? 'mul' : 'bad' });
+      if (s.renownAdd) parts.push({ html: `${s.renownAdd > 0 ? '+' : '−'}${fmt(Math.abs(s.renownAdd))} Output`, tone: 'renown' });
+      if (s.splendorAdd) parts.push({ html: `${s.splendorAdd > 0 ? '+' : '−'}${fmtSplendor(Math.abs(s.splendorAdd))} Hope`, tone: 'splendor' });
+      if (s.splendorMul != null && s.splendorMul !== 1) parts.push({ html: `${fmtMul(s.splendorMul)} Hope`, tone: s.splendorMul >= 1 ? 'mul' : 'bad' });
       return parts;
     };
 
@@ -131,7 +130,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         haptic(up ? [15, 30, 25] : 30);
         const c = centerOf(splendorRef.current);
         if (up) {
-          particles.current?.burst(c.x, c.y, { colors: ['#ff5a4f', '#ffb35b', '#fff0c0', '#ff8ad8'], count: 46, speed: 9, kind: 'spark', life: 900 });
+          particles.current?.burst(c.x, c.y, { colors: ['#5fd4e8', '#f28c28', '#fff0c0', '#d9a066'], count: 46, speed: 9, kind: 'spark', life: 900 });
           floatText(c.x, c.y - 10, fmtMul(s.splendorMul), { tone: 'mul', size: 44, rise: -70, duration: 1200 });
         }
         splendorRef.current?.classList.remove('is-flash');
@@ -140,7 +139,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
       }
     };
 
-    const addRow = (r: Row) => setRows((rs) => [...rs, r]);
+    const addRow = (r: Row) => setRows((rs) => [...rs, { ...r, label: reportLabel(r.label) }]);
     const patchRow = (key: string, fn: (r: Row) => Row) => setRows((rs) => rs.map((r) => (r.key === key ? fn(r) : r)));
 
     const playStep = async (s: ChronicleStep, i: number) => {
@@ -159,7 +158,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         setRows((rs) => {
           if (!rs.some((r) => r.key === key)) {
             return [...rs, {
-              key, source: src, label: cut >= 0 ? s.label.slice(0, cut) : s.label, icon: p.icon, color: p.color, renown: 0,
+              key, source: src, label: p.name, icon: p.icon, color: p.color, renown: 0,
               splendorAdd: s.splendorAdd ?? 0, splendorMul: mul, focus: false, tone: 'renown', chips: chip,
             }];
           }
@@ -167,7 +166,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         });
         await wait(110);
         patchRow(key, (r) => ({ ...r, renown: r.renown + (s.renownAdd ?? 0) }));
-        if (juice()) streak(rowEl(key), renownRef.current, '#4fb3ff', 7);
+        if (juice()) streak(rowEl(key), renownRef.current, '#f28c28', 7);
         await wait(210);
         applyTotals(s, pitch);
         await wait(280);
@@ -190,32 +189,32 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
             el?.classList.remove('is-focus-flash');
             void el?.offsetWidth;
             el?.classList.add('is-focus-flash');
-            floatAt(el, 'FOCUS ×2', { tone: 'gold', size: 26, rise: -30, duration: 1000 });
+            floatAt(el, 'PRIORITY ×2', { tone: 'gold', size: 26, rise: -30, duration: 1000 });
             sfx('levelUp', { pitch: 1.1 });
             haptic(18);
-            streak(el, renownRef.current, '#4fb3ff', 10);
+            streak(el, renownRef.current, '#f28c28', 10);
           } else if (s.splendorAdd) {
-            floatAt(el, `+${fmtSplendor(s.splendorAdd)} Splendor`, { tone: 'splendor', size: 20 });
+            floatAt(el, `+${fmtSplendor(s.splendorAdd)} Hope`, { tone: 'splendor', size: 20 });
           }
         }
         await wait(doubling ? 260 : 180);
         applyTotals(s, pitch);
-        if (s.splendorAdd && juice()) streak(rowEl(key), splendorRef.current, '#ff5a4f', 6);
+        if (s.splendorAdd && juice()) streak(rowEl(key), splendorRef.current, '#5fd4e8', 6);
         await wait(doubling ? 440 : 360);
         return;
       }
       if (src === 'city') {
         const key = 'cities';
-        const chip = { key: `c${i}`, name: s.label, text: floaterFor(s).map((f) => f.html.replace(' Splendor', '').replace(' Renown', '')).join(' ') };
+        const chip = { key: `c${i}`, name: s.label, text: floaterFor(s).map((f) => f.html.replace(' Hope', '').replace(' Output', '')).join(' ') };
         setRows((rs) => {
           const has = rs.some((r) => r.key === key);
-          if (!has) return [...rs, { key, source: src, label: 'Cities', icon: 'city', renown: 0, splendorAdd: 0, splendorMul: null, focus: false, tone: 'splendor', chips: [chip] }];
+          if (!has) return [...rs, { key, source: src, label: 'Colonies', icon: 'city', renown: 0, splendorAdd: 0, splendorMul: null, focus: false, tone: 'splendor', chips: [chip] }];
           return rs.map((r) => (r.key === key ? { ...r, chips: [...(r.chips ?? []), chip] } : r));
         });
         await wait(90);
         if (juice()) {
           const el = ledgerRef.current?.querySelector(`[data-chip="${chip.key}"]`) ?? null;
-          streak(el, s.renownAdd ? renownRef.current : splendorRef.current, s.renownAdd ? '#4fb3ff' : '#ff5a4f', 4);
+          streak(el, s.renownAdd ? renownRef.current : splendorRef.current, s.renownAdd ? '#f28c28' : '#5fd4e8', 4);
         }
         patchRow(key, (r) => ({ ...r, renown: r.renown + (s.renownAdd ?? 0), splendorAdd: r.splendorAdd + (s.splendorAdd ?? 0) }));
         await wait(150);
@@ -237,7 +236,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
           floaterFor(s).forEach((f, k) => floatAt(card ?? rowEl(key), f.html, { tone: f.tone, size: f.tone === 'mul' ? 30 : 20, delay: k * 120, rise: -60, dy: -8 }));
           if (card) {
             bump(card, mul ? 1.22 : 1.14, mul ? 480 : 360);
-            streak(card, mul || s.splendorAdd ? splendorRef.current : renownRef.current, mul || s.splendorAdd ? '#ff5a4f' : '#4fb3ff', mul ? 12 : 7);
+            streak(card, mul || s.splendorAdd ? splendorRef.current : renownRef.current, mul || s.splendorAdd ? '#5fd4e8' : '#f28c28', mul ? 12 : 7);
           }
         }
         await wait(mul ? 260 : 200);
@@ -258,14 +257,15 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         const el = rowEl(key);
         if (bad) sfx('targetFail', { volume: 0.4, pitch: 1.3 });
         floaterFor(s).forEach((f, k) => floatAt(el, f.html, { tone: bad ? 'bad' : f.tone, size: 20, delay: k * 120 }));
-        if (s.renownAdd) streak(el, renownRef.current, bad ? '#ff6060' : '#4fb3ff', 5);
-        if (s.splendorAdd || mul) streak(el, splendorRef.current, bad ? '#ff6060' : '#ff5a4f', 5);
+        if (s.renownAdd) streak(el, renownRef.current, bad ? '#ff6060' : '#f28c28', 5);
+        if (s.splendorAdd || mul) streak(el, splendorRef.current, bad ? '#ff6060' : '#5fd4e8', 5);
       }
       await wait(200);
       applyTotals(s, pitch);
       await wait(mul ? 520 : 320);
     };
 
+    const countMs = instant() ? 0 : 1300 / speedRef.current;
     const finale = async () => {
       const finalStep = result.steps[result.steps.length - 1];
       setRenown(finalStep?.source === 'final' ? finalStep.renown : result.renown);
@@ -280,10 +280,9 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         haptic([20, 40, 30]);
         shake(stageRef.current, 14, 520);
         const c = centerOf(legacyRef.current);
-        particles.current?.burst(c.x, c.y, { colors: ['#fff0c0', '#f6dd8f', '#4fb3ff', '#ff5a4f'], count: 70, speed: 11, kind: 'spark', life: 1100 });
+        particles.current?.burst(c.x, c.y, { colors: ['#fff0c0', '#f6dd8f', '#5fd4e8', '#f28c28'], count: 70, speed: 11, kind: 'spark', life: 1100 });
       }
-      // count the Legacy up with rising ticks
-      const countMs = instant() ? 0 : 1300 / speedRef.current;
+      // Count Viability up with rising ticks
       if (countMs > 0) {
         const t0 = performance.now();
         let lastTick = 0;
@@ -340,8 +339,8 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
           sfx('triumph');
           haptic([20, 20, 20, 20, 60]);
           const w = window.innerWidth;
-          particles.current?.burst(w * 0.2, window.innerHeight * 0.35, { kind: 'confetti', count: 70, speed: 12, angle: -Math.PI / 3, spread: 1.2, colors: ['#f6dd8f', '#ff5a4f', '#4fb3ff', '#7fd67a', '#b28dff'], life: 2200 });
-          particles.current?.burst(w * 0.8, window.innerHeight * 0.35, { kind: 'confetti', count: 70, speed: 12, angle: (-2 * Math.PI) / 3, spread: 1.2, colors: ['#f6dd8f', '#ff5a4f', '#4fb3ff', '#7fd67a', '#b28dff'], life: 2200 });
+          particles.current?.burst(w * 0.2, window.innerHeight * 0.35, { kind: 'confetti', count: 70, speed: 12, angle: -Math.PI / 3, spread: 1.2, colors: ['#f6dd8f', '#f28c28', '#5fd4e8', '#8a9a3b', '#d9a066'], life: 2200 });
+          particles.current?.burst(w * 0.8, window.innerHeight * 0.35, { kind: 'confetti', count: 70, speed: 12, angle: (-2 * Math.PI) / 3, spread: 1.2, colors: ['#f6dd8f', '#f28c28', '#5fd4e8', '#8a9a3b', '#d9a066'], life: 2200 });
         }
         await wait(1000);
       }
@@ -421,9 +420,9 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
   const merged = stage === 'slam' || stage === 'fill' || stage === 'stamp' || stage === 'tally' || stage === 'done';
   const stamped = stage === 'stamp' || stage === 'tally' || stage === 'done';
   const finaleUi = stage === 'tally' || stage === 'done';
-  const lastEra = result.era === 5 && result.chapter === 2;
   const doomed = run.mandate <= 0;
-  const cta = doomed ? 'Face the Reckoning' : result.passed && lastEra ? 'Claim Your Legacy' : 'To the Council';
+  const lastEra = result.era === 5 && result.chapter === 2;
+  const cta = doomed ? 'Face the Reckoning' : result.passed && lastEra ? 'Secure New Earth' : `To ${T.council}`;
 
   return (
     <div data-tutorial="chronicle" className={`ro-overlay rch rch--${stage} ${result.passed ? 'is-pass' : 'is-fail'}`} onPointerDown={speedUp}>
@@ -431,8 +430,8 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
       <div className="ro-particles" ref={setHost} />
       <div className="rch-stage" ref={stageRef}>
         <header className="rch-head">
-          <div className="rch-title display">The Chronicle</div>
-          <div className="rch-sub">{eraName(result.era)} Era {roman(result.era + 1)} · {chapterTitle(result.chapter)}</div>
+          <div className="rch-title display">{T.report}</div>
+          <div className="rch-sub">{eraName(result.era)} · {chapterTitle(result.chapter)}</div>
           <div className="rch-hearts" ref={heartsRef}>
             <Hearts total={run.maxMandate} filled={mandateBefore} shatter={shatter} size={18} />
           </div>
@@ -453,18 +452,18 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
 
           <div className={`rch-plates ${merged ? 'is-merged' : ''}`}>
             <div className="rch-plate rch-plate--renown" ref={renownRef}>
-              <div className="rch-plate-label"><Icon name="renown" size={14} /> Renown</div>
+              <div className="rch-plate-label"><Icon name="renown" size={14} /> {T.renown}</div>
               <div className="rch-plate-num num">{fmt(renownShown)}</div>
             </div>
             <div className="rch-times display">×</div>
             <div className="rch-plate rch-plate--splendor" ref={splendorRef}>
-              <div className="rch-plate-label"><Icon name="splendor" size={14} /> Splendor</div>
+              <div className="rch-plate-label"><Icon name="splendor" size={14} /> {T.splendor}</div>
               <div className="rch-plate-num num">{fmtSplendor(splendorShown)}</div>
             </div>
           </div>
 
           <div className={`rch-legacy ${merged ? 'is-in' : ''}`} ref={legacyRef}>
-            <div className="rch-legacy-label display">Legacy</div>
+            <div className="rch-legacy-label display">= {T.score}</div>
             <div className="rch-legacy-num num display">{fmt(legacyShown)}</div>
           </div>
         </section>
@@ -481,7 +480,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
           {stamped && (
             <div className={`rch-stamp display ${result.passed ? 'is-pass' : 'is-fail'}`}>
               <span>{result.passed ? 'Passed' : 'Failed'}</span>
-              <small>{result.passed ? `${(result.score / Math.max(1, result.target)).toFixed(1)}× target` : result.mandateLost ? `−${result.mandateLost} Mandate` : 'Short of target'}</small>
+              <small>{result.passed ? `${(result.score / Math.max(1, result.target)).toFixed(1)}× target` : result.mandateLost ? `−${result.mandateLost} Charter` : 'Short of target'}</small>
             </div>
           )}
           {triumphIn && (
@@ -504,7 +503,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         <section className={`rch-bottom ${finaleUi ? 'is-tally' : ''}`}>
           {!finaleUi ? (
             <div className="rch-doctrines">
-              {doctrines.length === 0 && <div className="rch-nodoc">No doctrines yet — the Council awaits.</div>}
+              {doctrines.length === 0 && <div className="rch-nodoc">No Crew yet — The Uplink awaits.</div>}
               {doctrines.map((d) => (
                 <div key={d.uid} className={`rch-doc ${active === String(d.uid) ? 'is-active' : ''} ${d.disabled ? 'is-off' : ''}`} data-chron-uid={d.uid}>
                   <Card card={doctrineCard(d.id, d.edition)} width="var(--rch-doc-w)" tilt={false} zoomable={false} disabled={d.disabled} />
@@ -514,7 +513,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
           ) : (
             <div className="rch-tally" onPointerDown={(e) => e.stopPropagation()}>
               <div className="rch-tally-head">
-                <span className="display">Council Tribute</span>
+                <span className="display">Ark Scrip</span>
                 <div className="rch-tally-total num" ref={tallyTotalRef}>
                   <Icon name="influence" size={18} /> {fmt(influenceShown)}
                 </div>
@@ -522,7 +521,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
               <div className="rch-tally-lines">
                 {result.influenceEarned.slice(0, tallyShown).map((l, k) => (
                   <div key={k} className="rch-tally-line" data-tally={k}>
-                    <span>{l.label}</span>
+                    <span>{reportLabel(l.label)}</span>
                     <span className="num">+{l.amount} <Icon name="influence" size={13} /></span>
                   </div>
                 ))}
@@ -576,4 +575,18 @@ function LedgerRow({ row, tweenMs }: { row: Row; tweenMs: number }) {
       </span>
     </div>
   );
+}
+function reportLabel(label: string): string {
+  return label
+    .replace(/\bLegacy\b/gi, T.score)
+    .replace(/\bRenown\b/gi, T.renown)
+    .replace(/\bSplendor\b/gi, T.splendor)
+    .replace(/\bDoctrine(s)?\b/gi, T.doctrines)
+    .replace(/\bEdict(s)?\b/gi, T.edicts)
+    .replace(/\bScroll(s)?\b/gi, T.scrolls)
+    .replace(/\bInfluence\b/gi, T.influence)
+    .replace(/\bMandate\b/gi, T.mandate)
+    .replace(/\bOmen(s)?\b/gi, T.omens)
+    .replace(/\bDark Age\b/gi, T.darkAge)
+    .replace(/\bFocus\b/gi, T.focus);
 }

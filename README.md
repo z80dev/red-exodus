@@ -1,32 +1,12 @@
-# React + TypeScript + Vite
+# RED EXODUS
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Earth went dark. Twelve national Arks made it to Mars. A fast (~78-turn) roguelike colony game:
+orbital drops instead of walking settlers, telegraphed dust storms, a Breakthrough research draft, and
+Crew cards that bend the rules like Balatro jokers — every chapter your colony is scored in the
+**Sol Report**: Viability = Output × Hope.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+- Design: `docs/DESIGN.md` · id → Mars names/looks: `docs/RESKIN.md` · code contract: `docs/ARCHITECTURE.md`
+- `bun install` · `bun run dev` (http://localhost:5173) · typecheck `npx tsc -p tsconfig.app.json --noEmit` ·
+  tests `bunx vitest run` · headless balance `bun scripts/sim.ts --runs 20`
+- Dev galleries: `?dev=RendererDemo`, `?dev=HudDemo`, `?dev=RunDemo`, `?dev=MenuDemo`, `?dev=Art2DGallery`,
+  `?dev=ArtGenGallery`, `?dev=AudioDemo`, `?dev=MapGenPreview`

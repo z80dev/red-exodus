@@ -1,219 +1,47 @@
-// OWNER: ContentRogue. Omens — optional chapter objectives (Against the Storm orders). One of two is offered at
-// chapter start; the goal is fixed when accepted. `progress` counts only the given player's deeds.
-// Goals that scale read "+N per later Era": era index 0 = Ancient.
+// OWNER: ContentRogue. Ark Council Directives are optional chapter objectives; progress is event-driven.
 import type { OmenDef } from '../sim/defs';
-import type { PlayerId, SimEvent } from '../sim/types';
 import { BARBARIAN, HUMAN } from '../sim/types';
-import { DOCTRINE_PRICE } from '../sim/roguelite/constants';
 import { unitClassOf } from './doctrines';
 
-const ALL_ERAS = [0, 1, 2, 3, 4, 5];
-const LATER_ERAS = [1, 2, 3, 4, 5];
-const EDICT_REWARD = 'A random **Edict** (or {influence} if your Edict slots are full)';
-const SCROLL_REWARD = 'A random **Scroll**, read at once';
-
-function doctrineReward(rarity: 'common' | 'uncommon' | 'rare'): string {
-  const label = rarity[0].toUpperCase() + rarity.slice(1);
-  return `A random **${label}** Doctrine (or **${DOCTRINE_PRICE[rarity]}** {influence} if your slots are full)`;
-}
-
-/** income, plunder, camps and ruins count; omen rewards, edicts and tribute do not */
-function earnedGold(ev: SimEvent, player: PlayerId): number {
-  if (ev.type !== 'goldChanged' || ev.player !== player || !(ev.delta > 0)) return 0;
-  if (ev.reason.startsWith('Omen') || ev.reason.startsWith('Edict') || ev.reason.startsWith('Tribute')) return 0;
-  return ev.delta;
+const ERAS = [0, 1, 2, 3, 4, 5];
+const LATER = [1, 2, 3, 4, 5];
+const SALVAGE_REWARD = 'A random **Salvage** (or {influence} if your inventory is full)';
+const BLUEPRINT_REWARD = 'A random **Blueprint**, installed immediately';
+function crewReward(rarity: 'common' | 'uncommon' | 'rare'): string {
+  return `A random **${rarity[0].toUpperCase()}${rarity.slice(1)} Crew** (or **${rarity === 'common' ? 4 : rarity === 'uncommon' ? 6 : 8}** {influence} if your bunks are full)`;
 }
 
 const LIST: OmenDef[] = [
-  // ── conquest ──
-  {
-    id: 'red_harvest', name: 'The Red Harvest', icon: 'sword', eras: ALL_ERAS,
-    description: 'Slay **3** enemy units (**+1** per later Era).',
-    goal: (s) => 3 + s.run.era,
-    progress: (ev, _s, p) => (ev.type === 'unitDied' && ev.killer === p && ev.player !== p ? 1 : 0),
-    reward: { kind: 'doctrine', rarity: 'uncommon' }, rewardText: doctrineReward('uncommon'),
-  },
-  {
-    id: 'bane_of_barbarians', name: 'Bane of the Barbarians', icon: 'skull', eras: [0, 1, 2],
-    description: 'Slay **4** barbarian units.',
-    goal: 4,
-    progress: (ev, _s, p) => (ev.type === 'unitDied' && ev.killer === p && ev.player === BARBARIAN ? 1 : 0),
-    reward: { kind: 'gold', amount: 100 }, rewardText: '**+100** {gold}',
-  },
-  {
-    id: 'ashes_of_the_horde', name: 'Ashes of the Horde', icon: 'flame', eras: [0, 1, 2, 3],
-    description: 'Burn **2** barbarian camps.',
-    goal: 2,
-    progress: (ev, _s, p) => (ev.type === 'campCleared' && ev.player === p ? 1 : 0),
-    reward: { kind: 'influence', amount: 5 }, rewardText: '**+5** {influence}',
-  },
-  {
-    id: 'fallen_crown', name: 'The Fallen Crown', icon: 'crown', eras: LATER_ERAS,
-    description: 'Capture a city.',
-    goal: 1,
-    progress: (ev, _s, p) => (ev.type === 'cityCaptured' && ev.to === p ? 1 : 0),
-    reward: { kind: 'doctrine', rarity: 'rare' }, rewardText: doctrineReward('rare'),
-  },
-  {
-    id: 'hold_the_line', name: 'Hold the Line', icon: 'shield', eras: ALL_ERAS,
-    description: 'Repel **3** attacks: your unit or city survives being attacked.',
-    goal: 3,
-    progress: (ev, _s, p) => (ev.type === 'combat' && ev.defender.player === p && ev.attacker.player !== p && !ev.defenderKilled ? 1 : 0),
-    reward: { kind: 'doctrine', rarity: 'common' }, rewardText: doctrineReward('common'),
-  },
-  {
-    id: 'scorched_earth', name: 'Scorched Earth', icon: 'flame', eras: LATER_ERAS,
-    description: 'Pillage **3** enemy improvements.',
-    goal: 3,
-    progress: (ev, _s, p) => (ev.type === 'improvementPillaged' && ev.by === p ? 1 : 0),
-    reward: { kind: 'doctrine', rarity: 'common' }, rewardText: doctrineReward('common'),
-  },
-  {
-    id: 'veterans_of_the_line', name: 'Veterans of the Line', icon: 'xp', eras: LATER_ERAS,
-    description: 'Promote **2** units.',
-    goal: 2,
-    progress: (ev, s, p) => (ev.type === 'unitPromoted' && s.units[ev.unitId]?.owner === p ? 1 : 0),
-    reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}',
-  },
-  {
-    id: 'steel_for_old_swords', name: 'Steel for Old Swords', icon: 'upgrade', eras: LATER_ERAS,
-    description: 'Upgrade **2** units.',
-    goal: 2,
-    progress: (ev, s, p) => (ev.type === 'unitUpgraded' && s.units[ev.unitId]?.owner === p ? 1 : 0),
-    reward: { kind: 'influence', amount: 3 }, rewardText: '**+3** {influence}',
-  },
-  {
-    id: 'iron_tide', name: 'The Iron Tide', icon: 'war', eras: [0, 1, 2],
-    description: 'Muster **3** military units (**+1** per later Era).',
-    goal: (s) => 3 + s.run.era,
-    progress: (ev, s, p) => (ev.type === 'unitCreated' && ev.player === p && s.units[ev.unitId] && unitClassOf(s.units[ev.unitId].type) !== 'civilian' ? 1 : 0),
-    reward: { kind: 'gold', amount: 100 }, rewardText: '**+100** {gold}',
-  },
-  {
-    id: 'blood_and_thunder', name: 'Blood and Thunder', icon: 'skull', eras: [2, 3, 4, 5],
-    description: 'Slay **8** enemy units (**+2** per Era after the Medieval).',
-    goal: (s) => 8 + 2 * Math.max(0, s.run.era - 2),
-    progress: (ev, _s, p) => (ev.type === 'unitDied' && ev.killer === p && ev.player !== p ? 1 : 0),
-    reward: { kind: 'mandate' }, rewardText: '**+1** {mandate}',
-  },
-  {
-    id: 'doom_of_kings', name: 'Doom of Kings', icon: 'skull', eras: [2, 3, 4, 5],
-    description: 'Eliminate a rival civilization.',
-    goal: 1,
-    progress: (ev, _s, p) => (ev.type === 'playerEliminated' && ev.by === p && ev.player !== BARBARIAN ? 1 : 0),
-    reward: { kind: 'mandate' }, rewardText: '**+1** {mandate}',
-  },
-  {
-    id: 'doves_return', name: "The Dove's Return", icon: 'peace', eras: LATER_ERAS,
-    description: 'Make peace with a rival civilization.',
-    goal: 1,
-    progress: (ev, _s, p) => (ev.type === 'peaceMade' && (ev.a === p || ev.b === p) ? 1 : 0),
-    reward: { kind: 'influence', amount: 5 }, rewardText: '**+5** {influence}',
-  },
-
-  // ── prosperity ──
-  {
-    id: 'seeds_of_empire', name: 'Seeds of Empire', icon: 'found', eras: [0, 1, 2],
-    description: 'Found **2** cities.',
-    goal: 2,
-    progress: (ev, _s, p) => (ev.type === 'cityFounded' && ev.player === p ? 1 : 0),
-    reward: { kind: 'doctrine', rarity: 'common' }, rewardText: doctrineReward('common'),
-  },
-  {
-    id: 'teeming_masses', name: 'The Teeming Masses', icon: 'food', eras: ALL_ERAS,
-    description: 'Grow your population **4** times (**+2** per later Era).',
-    goal: (s) => 4 + 2 * s.run.era,
-    progress: (ev, _s, p) => (ev.type === 'cityGrew' && ev.player === p ? 1 : 0),
-    reward: { kind: 'scroll' }, rewardText: SCROLL_REWARD,
-  },
-  {
-    id: 'shining_city', name: 'The Shining City', icon: 'city', eras: ALL_ERAS,
-    description: 'Grow your capital **3** times.',
-    goal: 3,
-    progress: (ev, s, p) => (ev.type === 'cityGrew' && ev.player === p && s.cities[ev.cityId]?.isCapital ? 1 : 0),
-    reward: { kind: 'scroll' }, rewardText: SCROLL_REWARD,
-  },
-  {
-    id: 'hands_to_the_soil', name: 'Hands to the Soil', icon: 'improve', eras: [0, 1, 2, 3],
-    description: 'Build **3** improvements (**+1** per later Era).',
-    goal: (s) => 3 + s.run.era,
-    progress: (ev, _s, p) => (ev.type === 'improvementBuilt' && ev.player === p ? 1 : 0),
-    reward: { kind: 'gold', amount: 120 }, rewardText: '**+120** {gold}',
-  },
-  {
-    id: 'widening_realm', name: 'The Widening Realm', icon: 'map', eras: ALL_ERAS,
-    description: 'Claim **4** tiles through border growth (**+1** per later Era).',
-    goal: (s) => 4 + s.run.era,
-    progress: (ev, _s, p) => (ev.type === 'borderGrew' && ev.player === p ? ev.tiles.length : 0),
-    reward: { kind: 'influence', amount: 3 }, rewardText: '**+3** {influence}',
-  },
-  {
-    id: 'coin_of_the_realm', name: 'Coin of the Realm', icon: 'gold', eras: ALL_ERAS,
-    description: 'Earn **60** {gold} from income, camps, ruins and plunder (**+110** per later Era).',
-    goal: (s) => 60 + 110 * s.run.era,
-    progress: (ev, _s, p) => earnedGold(ev, p),
-    reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}',
-  },
-
-  // ── glory & discovery ──
-  {
-    id: 'stone_upon_stone', name: 'Stone upon Stone', icon: 'castle', eras: ALL_ERAS,
-    description: 'Raise **2** buildings (**+1** per later Era).',
-    goal: (s) => 2 + s.run.era,
-    progress: (ev, _s, p) => (ev.type === 'buildingBuilt' && ev.player === p && ev.building !== 'palace' ? 1 : 0),
-    reward: { kind: 'edict' }, rewardText: EDICT_REWARD,
-  },
-  {
-    id: 'wonder_for_the_ages', name: 'A Wonder for the Ages', icon: 'pyramid', eras: ALL_ERAS,
-    description: 'Complete a Wonder.',
-    goal: 1,
-    progress: (ev, _s, p) => (ev.type === 'wonderBuilt' && ev.player === p ? 1 : 0),
-    reward: { kind: 'doctrine', rarity: 'rare' }, rewardText: doctrineReward('rare'),
-  },
-  {
-    id: 'heavenly_accord', name: 'The Heavenly Accord', icon: 'sun', eras: LATER_ERAS,
-    description: 'Complete **2** Wonders.',
-    goal: 2,
-    progress: (ev, _s, p) => (ev.type === 'wonderBuilt' && ev.player === p ? 1 : 0),
-    reward: { kind: 'mandate' }, rewardText: '**+1** {mandate}',
-  },
-  {
-    id: 'font_of_knowledge', name: 'Font of Knowledge', icon: 'flask', eras: ALL_ERAS,
-    description: 'Discover **2** technologies.',
-    goal: 2,
-    progress: (ev, _s, p) => (ev.type === 'techResearched' && ev.player === p ? 1 : 0),
-    reward: { kind: 'scroll' }, rewardText: SCROLL_REWARD,
-  },
-  {
-    id: 'beyond_the_edge', name: "Beyond the Map's Edge", icon: 'compass', eras: [0, 1, 2],
-    description: 'Chart **30** unexplored tiles.',
-    goal: 30,
-    progress: (ev, _s, p) => (ev.type === 'tilesRevealed' && ev.player === p ? ev.tiles.length : 0),
-    reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}',
-  },
-  {
-    id: 'relics_of_the_ancients', name: 'Relics of the Ancients', icon: 'key', eras: [0, 1],
-    description: 'Explore ancient ruins or discover natural wonders: **2** in total.',
-    goal: 2,
-    progress: (ev, _s, p) => ((ev.type === 'ruinExplored' || ev.type === 'naturalWonderFound') && ev.player === p ? 1 : 0),
-    reward: { kind: 'edict' }, rewardText: EDICT_REWARD,
-  },
-
-  // ── the chronicle ──
-  {
-    id: 'word_of_law', name: 'The Word of Law', icon: 'edict', eras: ALL_ERAS,
-    description: 'Issue **2** Edicts.',
-    goal: 2,
-    progress: (ev, _s, p) => (ev.type === 'edictUsed' && p === HUMAN ? 1 : 0),
-    reward: { kind: 'edict' }, rewardText: EDICT_REWARD,
-  },
-  {
-    id: 'days_of_revelry', name: 'Days of Revelry', icon: 'mask', eras: ALL_ERAS,
-    description: 'Bank **40** {renown} × Era² as live Renown from festivals and edicts (Ancient = 1).',
-    goal: (s) => 40 * (s.run.era + 1) * (s.run.era + 1),
-    progress: (ev, _s, p) => (ev.type === 'renownGained' && p === HUMAN ? Math.max(0, ev.amount) : 0),
-    reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}',
-  },
+  { id: 'red_harvest', name: 'Perimeter Clearance', icon: 'sword', eras: ERAS, description: 'Neutralize **3 hostiles** (**+1** per later Era).', goal: (s) => 3 + s.run.era, progress: (ev, _s, p) => ev.type === 'unitDied' && ev.killer === p && ev.player !== p ? 1 : 0, reward: { kind: 'doctrine', rarity: 'uncommon' }, rewardText: crewReward('uncommon') },
+  { id: 'bane_of_barbarians', name: 'Feral Control', icon: 'skull', eras: [0, 1, 2], description: 'Neutralize **4 Feral units**.', goal: 4, progress: (ev, _s, p) => ev.type === 'unitDied' && ev.killer === p && ev.player === BARBARIAN ? 1 : 0, reward: { kind: 'gold', amount: 100 }, rewardText: '**+100** {gold}' },
+  { id: 'ashes_of_the_horde', name: 'Scrap the Den', icon: 'flame', eras: [0, 1, 2, 3], description: 'Clear **2 Feral Dens**.', goal: 2, progress: (ev, _s, p) => ev.type === 'campCleared' && ev.player === p ? 1 : 0, reward: { kind: 'influence', amount: 5 }, rewardText: '**+5** {influence}' },
+  { id: 'fallen_crown', name: 'Secure a Rival Hab', icon: 'city', eras: LATER, description: 'Capture a rival colony.', goal: 1, progress: (ev, _s, p) => ev.type === 'cityCaptured' && ev.to === p ? 1 : 0, reward: { kind: 'doctrine', rarity: 'rare' }, rewardText: crewReward('rare') },
+  { id: 'hold_the_line', name: 'Hold the Airlock', icon: 'shield', eras: ERAS, description: 'Repel **3 attacks**: your unit or colony survives an attack.', goal: 3, progress: (ev, _s, p) => ev.type === 'combat' && ev.defender.player === p && ev.attacker.player !== p && !ev.defenderKilled ? 1 : 0, reward: { kind: 'doctrine', rarity: 'common' }, rewardText: crewReward('common') },
+  { id: 'scorched_earth', name: 'Deny the Scrap', icon: 'flame', eras: LATER, description: 'Pillage **3 enemy installations**.', goal: 3, progress: (ev, _s, p) => ev.type === 'improvementPillaged' && ev.by === p ? 1 : 0, reward: { kind: 'doctrine', rarity: 'common' }, rewardText: crewReward('common') },
+  { id: 'veterans_of_the_line', name: 'Crew Qualifications', icon: 'xp', eras: LATER, description: 'Promote **2 units**.', goal: 2, progress: (ev, s, p) => ev.type === 'unitPromoted' && s.units[ev.unitId]?.owner === p ? 1 : 0, reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}' },
+  { id: 'steel_for_old_swords', name: 'Field Retrofit', icon: 'upgrade', eras: LATER, description: 'Upgrade **2 units**.', goal: 2, progress: (ev, s, p) => ev.type === 'unitUpgraded' && s.units[ev.unitId]?.owner === p ? 1 : 0, reward: { kind: 'influence', amount: 3 }, rewardText: '**+3** {influence}' },
+  { id: 'iron_tide', name: 'Perimeter Roster', icon: 'war', eras: [0, 1, 2], description: 'Deploy **3 military units** (**+1** per later Era).', goal: (s) => 3 + s.run.era, progress: (ev, s, p) => ev.type === 'unitCreated' && ev.player === p && s.units[ev.unitId] && unitClassOf(s.units[ev.unitId].type) !== 'civilian' ? 1 : 0, reward: { kind: 'gold', amount: 100 }, rewardText: '**+100** {gold}' },
+  { id: 'blood_and_thunder', name: 'Overmatch', icon: 'skull', eras: [2, 3, 4, 5], description: 'Neutralize **8 hostiles** (**+2** per later Era).', goal: (s) => 8 + 2 * Math.max(0, s.run.era - 2), progress: (ev, _s, p) => ev.type === 'unitDied' && ev.killer === p && ev.player !== p ? 1 : 0, reward: { kind: 'mandate' }, rewardText: '**+1** {mandate}' },
+  { id: 'doom_of_kings', name: 'End a Rival Mission', icon: 'skull', eras: [2, 3, 4, 5], description: 'Eliminate a rival Ark.', goal: 1, progress: (ev, _s, p) => ev.type === 'playerEliminated' && ev.by === p && ev.player !== BARBARIAN ? 1 : 0, reward: { kind: 'mandate' }, rewardText: '**+1** {mandate}' },
+  { id: 'doves_return', name: 'Open a Channel', icon: 'peace', eras: LATER, description: 'Make peace with a rival nation.', goal: 1, progress: (ev, _s, p) => ev.type === 'peaceMade' && (ev.a === p || ev.b === p) ? 1 : 0, reward: { kind: 'influence', amount: 5 }, rewardText: '**+5** {influence}' },
+  { id: 'seeds_of_empire', name: 'Expand the Landing Zone', icon: 'drop', eras: [0, 1, 2], description: 'Complete **2 Orbital Drops**.', goal: 2, progress: (ev, _s, p) => ev.type === 'cityFounded' && ev.player === p ? 1 : 0, reward: { kind: 'doctrine', rarity: 'common' }, rewardText: crewReward('common') },
+  { id: 'teeming_masses', name: 'Wake the Passengers', icon: 'food', eras: ERAS, description: 'Grow your population **4** times (**+2** per later Era).', goal: (s) => 4 + 2 * s.run.era, progress: (ev, _s, p) => ev.type === 'cityGrew' && ev.player === p ? 1 : 0, reward: { kind: 'scroll' }, rewardText: BLUEPRINT_REWARD },
+  { id: 'shining_city', name: 'Ark Hab Capacity', icon: 'city', eras: ERAS, description: 'Grow the Ark Hab **3 times**.', goal: 3, progress: (ev, s, p) => ev.type === 'cityGrew' && ev.player === p && s.cities[ev.cityId]?.isCapital ? 1 : 0, reward: { kind: 'scroll' }, rewardText: BLUEPRINT_REWARD },
+  { id: 'hands_to_the_soil', name: 'Install the Essentials', icon: 'improve', eras: [0, 1, 2, 3], description: 'Build **3 installations** (**+1** per later Era).', goal: (s) => 3 + s.run.era, progress: (ev, _s, p) => ev.type === 'improvementBuilt' && ev.player === p ? 1 : 0, reward: { kind: 'gold', amount: 120 }, rewardText: '**+120** {gold}' },
+  { id: 'widening_realm', name: 'Mark the Perimeter', icon: 'map', eras: ERAS, description: 'Claim **4 tiles** through colony borders (**+1** per later Era).', goal: (s) => 4 + s.run.era, progress: (ev, _s, p) => ev.type === 'borderGrew' && ev.player === p ? ev.tiles.length : 0, reward: { kind: 'influence', amount: 3 }, rewardText: '**+3** {influence}' },
+  { id: 'coin_of_the_realm', name: 'Balance the Books', icon: 'gold', eras: ERAS, description: 'Earn **60 Credits** from operations (**+110** per later Era).', goal: (s) => 60 + 110 * s.run.era, progress: (ev, _s, p) => ev.type === 'goldChanged' && ev.player === p && ev.delta > 0 && !/Directive|Salvage|Tribute/.test(ev.reason) ? ev.delta : 0, reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}' },
+  { id: 'stone_upon_stone', name: 'Habitat Construction', icon: 'tower', eras: ERAS, description: 'Build **2 habitat modules** (**+1** per later Era).', goal: (s) => 2 + s.run.era, progress: (ev, _s, p) => ev.type === 'buildingBuilt' && ev.player === p && ev.building !== 'palace' ? 1 : 0, reward: { kind: 'edict' }, rewardText: SALVAGE_REWARD },
+  { id: 'wonder_for_the_ages', name: 'Leave a Marker', icon: 'star', eras: ERAS, description: 'Complete a Megaproject.', goal: 1, progress: (ev, _s, p) => ev.type === 'wonderBuilt' && ev.player === p ? 1 : 0, reward: { kind: 'doctrine', rarity: 'rare' }, rewardText: crewReward('rare') },
+  { id: 'heavenly_accord', name: 'Raise the Memorial', icon: 'sun', eras: LATER, description: 'Complete **2 Megaprojects**.', goal: 2, progress: (ev, _s, p) => ev.type === 'wonderBuilt' && ev.player === p ? 1 : 0, reward: { kind: 'mandate' }, rewardText: '**+1** {mandate}' },
+  { id: 'font_of_knowledge', name: 'Research Breakthroughs', icon: 'flask', eras: ERAS, description: 'Complete **2 research projects**.', goal: 2, progress: (ev, _s, p) => ev.type === 'techResearched' && ev.player === p ? 1 : 0, reward: { kind: 'scroll' }, rewardText: BLUEPRINT_REWARD },
+  { id: 'beyond_the_edge', name: 'Chart the Dust', icon: 'compass', eras: [0, 1, 2], description: 'Reveal **30 unexplored tiles**.', goal: 30, progress: (ev, _s, p) => ev.type === 'tilesRevealed' && ev.player === p ? ev.tiles.length : 0, reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}' },
+  { id: 'relics_of_the_ancients', name: 'Survey the Crash Sites', icon: 'key', eras: [0, 1], description: 'Explore Crash Sites or find Landmarks: **2 total**.', goal: 2, progress: (ev, _s, p) => (ev.type === 'ruinExplored' || ev.type === 'naturalWonderFound') && ev.player === p ? 1 : 0, reward: { kind: 'edict' }, rewardText: SALVAGE_REWARD },
+  { id: 'word_of_law', name: 'Use the Salvage', icon: 'edict', eras: ERAS, description: 'Use **2 Salvage** cards.', goal: 2, progress: (ev, _s, p) => ev.type === 'edictUsed' && p === HUMAN ? 1 : 0, reward: { kind: 'edict' }, rewardText: SALVAGE_REWARD },
+  { id: 'days_of_revelry', name: 'Publish the Sol Report', icon: 'book', eras: ERAS, description: 'Bank **40 {renown} × Era²** from live report bonuses.', goal: (s) => 40 * (s.run.era + 1) ** 2, progress: (ev, _s, p) => ev.type === 'renownGained' && p === HUMAN ? Math.max(0, ev.amount) : 0, reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}' },
+  { id: 'drop_two_colonies', name: 'Two More Landing Sites', icon: 'drop', eras: ERAS, description: 'Complete **2 Orbital Drops** this chapter.', goal: 2, progress: (ev, _s, p) => ev.type === 'podLanded' && ev.player === p ? 1 : 0, reward: { kind: 'influence', amount: 4 }, rewardText: '**+4** {influence}' },
+  { id: 'weather_three_hits', name: 'Storm Watch', icon: 'storm', eras: ERAS, description: 'Your units or colonies survive **3 dust-storm hits**.', goal: 3, progress: (ev, _s, p) => ev.type === 'stormDamage' && ev.player === p && ev.amount > 0 && !ev.killed ? 1 : 0, reward: { kind: 'edict' }, rewardText: SALVAGE_REWARD },
+  { id: 'thaw_four_colonists', name: 'Wake Four Colonists', icon: 'cryo', eras: ERAS, description: 'Thaw **4 colonists** into your colonies.', goal: 4, progress: (ev, _s, p) => ev.type === 'colonistsThawed' && ev.player === p ? ev.pop : 0, reward: { kind: 'scroll' }, rewardText: BLUEPRINT_REWARD },
+  { id: 'reroll_research_twice', name: 'Second Opinion', icon: 'reroll', eras: ERAS, description: 'Reroll your Breakthrough offer **twice**.', goal: 2, progress: (ev, _s, p) => ev.type === 'researchOffered' && !!ev.reroll && ev.player === p ? 1 : 0, reward: { kind: 'influence', amount: 5 }, rewardText: '**+5** {influence}' },
 ];
 
-export const OMENS: Record<string, OmenDef> = Object.fromEntries(LIST.map((o) => [o.id, o]));
+export const OMENS: Record<string, OmenDef> = Object.fromEntries(LIST.map((directive) => [directive.id, directive]));

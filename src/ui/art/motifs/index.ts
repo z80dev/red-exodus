@@ -5,6 +5,7 @@ import type { Glyph } from '../../icons/glyph';
 import { MOTIFS_A } from './motifsA';
 import { MOTIFS_B } from './motifsB';
 
+import { MARS_MOTIFS } from './mars';
 /** The 40 motif values allowed in `art.motif`, `portrait.motif`, `portrait.crest` (docs/ARCHITECTURE.md). */
 export const MOTIF_IDS = [
   'sun', 'moon', 'star', 'river', 'wave', 'mountain', 'tree', 'wheat', 'coin', 'scroll',
@@ -14,7 +15,7 @@ export const MOTIF_IDS = [
 ] as const;
 export type MotifId = (typeof MOTIF_IDS)[number];
 
-const ALL: Record<string, Glyph> = { ...MOTIFS_A, ...MOTIFS_B };
+const ALL: Record<string, Glyph> = { ...MOTIFS_A, ...MOTIFS_B, ...MARS_MOTIFS };
 
 export function isMotif(id: string): id is MotifId {
   return Object.hasOwn(ALL, id);

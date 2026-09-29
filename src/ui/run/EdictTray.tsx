@@ -1,10 +1,11 @@
-// Edict tray: consumable edict cards + empty sockets. Tap → detail with Use / Choose target / Discard.
-// Targeted edicts enter the HUD's edictTarget map mode (UI-HUD resolves the tap and dispatches useEdict).
+// Salvage tray: consumable Salvage cards + empty sockets. Tap → Use / Choose target / Discard.
+// Targeted Salvage enters the HUD's edictTarget map mode before dispatching useEdict.
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { EDICTS } from '../../content';
 import { useGame, useSim } from '../../game/store';
 import type { Uid } from '../../sim/types';
+import { T } from '../terms';
 import { Button } from '../kit';
 import { Icon } from '../icons/Icon';
 import { Card, CardZoom } from './Card';
@@ -109,7 +110,7 @@ export function EdictTray({ compact = true, cardWidth, className = '', style }: 
               >
                 Discard
               </Button>
-              {!playing && <div className="ret-note">Edicts can be used on the map during your turn.</div>}
+              {!playing && <div className="ret-note">{T.edicts} can be used on the map during your turn.</div>}
             </>
           }
         />

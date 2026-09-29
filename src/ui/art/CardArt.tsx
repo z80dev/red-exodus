@@ -133,9 +133,9 @@ function ProceduralArt({ hue, motif, id, seed, rarity, aspect = 'card', animate 
     <svg className="aeons-cardart__svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" aria-hidden focusable="false">
       <defs>
         <linearGradient id={k('sky')} x1="0" y1="0" x2="0.25" y2="1">
-          <stop offset="0" stopColor={hsl(h + 12, 46, 38)} />
-          <stop offset="0.5" stopColor={hsl(h, 50, 21)} />
-          <stop offset="1" stopColor={hsl(h - 10, 58, 9)} />
+          <stop offset="0" stopColor={hsl(24 + h * 0.04, 55, 54)} />
+          <stop offset="0.46" stopColor={hsl(17 + h * 0.035, 50, 31)} />
+          <stop offset="1" stopColor={hsl(7 + h * 0.025, 48, 13)} />
         </linearGradient>
         <radialGradient id={k('glow')} cx={cx / W} cy={cy / H} r={0.5} gradientTransform={`translate(${cx / W} ${cy / H}) scale(1 ${W / H}) translate(${-cx / W} ${-cy / H})`}>
           <stop offset="0" stopColor={hsl(h + 25, 95, 78)} stopOpacity="0.75" />
@@ -174,7 +174,7 @@ function ProceduralArt({ hue, motif, id, seed, rarity, aspect = 'card', animate 
         <rect width={W} height={H} fill={u('sky')} />
         {/* pattern */}
         <g className={animate ? 'aeons-cardart__spin' : undefined} style={{ transformOrigin: `${cx}px ${cy}px` }}>
-          <path d={sc.rays} fill={hsl(h + 30, 90, 82)} opacity={sc.pattern === 'rays' ? 0.1 : 0.045} />
+          <path d={sc.rays} fill={hsl(34 + h * 0.025, 78, 84)} opacity={sc.pattern === 'rays' ? 0.12 : 0.05} />
         </g>
         {sc.pattern === 'rings' && (
           <g fill="none" stroke={hsl(h + 30, 70, 78)}>
@@ -190,7 +190,21 @@ function ProceduralArt({ hue, motif, id, seed, rarity, aspect = 'card', animate 
             ))}
           </g>
         )}
+        {/* dusty atmosphere and a distant orbital track */}
+        <g fill="none" stroke="#f0c092" opacity="0.2">
+          <path d={`M-15 ${cy - 17}Q${cx} ${cy - 39} 116 ${cy - 9}`} strokeWidth="0.55" />
+          <path d={`M-10 ${cy - 12}Q${cx} ${cy - 31} 112 ${cy - 4}`} strokeWidth="0.25" strokeDasharray="1.5 2.2" />
+        </g>
+        <g stroke="#e8a878" strokeWidth="0.45" opacity="0.24">
+          <path d={`M0 ${H * 0.25}h18M6 ${H * 0.29}h26M70 ${H * 0.23}h28M78 ${H * 0.27}h22`} />
+        </g>
         <rect width={W} height={H} fill={u('glow')} />
+        <defs>
+          <pattern id={k('hazard')} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="3" height="8" fill="#f28c28" opacity="0.24" />
+          </pattern>
+        </defs>
+        <rect x="0" y="0" width="12" height="12" fill={u('hazard')} opacity="0.5" />
         {/* starfield */}
         {sc.stars.map((st, i) =>
           st.sparkle ? (
@@ -205,9 +219,9 @@ function ProceduralArt({ hue, motif, id, seed, rarity, aspect = 'card', animate 
           ),
         )}
         {/* ground */}
-        <path d={sc.hillBack} fill={hsl(h - 6, 40, 15)} />
-        <path d={sc.hillFront} fill={hsl(h - 12, 46, 7)} />
-        <path d={sc.hillRim} fill="none" stroke="var(--gold-400)" strokeWidth="0.45" opacity="0.35" />
+        <path d={sc.hillBack} fill="#8e4d32" />
+        <path d={sc.hillFront} fill="#382923" />
+        <path d={sc.hillRim} fill="none" stroke="#d78c58" strokeWidth="0.55" opacity="0.55" />
         <ellipse cx={cx} cy={cy + sc.size * 0.5} rx={sc.size * 0.36} ry={sc.size * 0.045} fill="#000" opacity="0.35" />
         {/* motif */}
         <FitGlyph

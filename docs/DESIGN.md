@@ -1,172 +1,212 @@
-# AEONS — A Roguelike Civilization
+# RED EXODUS — A Roguelike Colony Game on a Dying World's Last Hope
 
-> "Every empire is a story. Make yours worth telling."
+> "Earth went dark on a Tuesday. Twelve Arks made it out. This is what landed."
 
-Mobile-first, pause-anywhere, 1–4 hour runs. Civilization's build-an-empire depth, compressed like
-Polytopia, wrapped in a Balatro engine-building roguelike loop, with Against the Storm's escalating
-pressure and per-run "cornerstone" drafting. Target: feels like a premium AAA-studio mobile title.
+Mobile-first, pause-anywhere, **45–75 minute runs**. A fast, tactical colony builder on Mars wrapped in
+a Balatro engine-building loop. You are not building a civilization over 6,000 years: you are one of
+twelve national Arks that escaped Earth's collapse, racing the dust, the cold, the other survivors and
+your own dwindling cryo-sleeping passengers to prove your colony is *viable*.
 
-## 1. Pillars (design north stars)
+Code name stays `aeons` (package, ids, save keys). Display title is **RED EXODUS**.
 
-1. **Weighty decisions, zero friction.** Civ-grade choices (where to settle, what to build, war or
-   peace) with Polytopia's frictionless mobile UX: no worker units, no micro, one-thumb play.
-2. **The Chronicle is the dopamine machine.** Every ~6 turns your empire is *scored*. Numbers fly,
-   Doctrines fire one-by-one left-to-right, multipliers stack, the score bar smashes the target.
-   This is Balatro's chips × mult moment, fed by how well you played the map.
-3. **Every run has its own logic.** Random Doctrine drafts, Crises, Omens, leaders and maps mean a
-   "river-farming culture engine" one run and a "conquest snowball" the next.
-4. **Hard, fair, rewarding.** Escalating targets and era Crises create real tension. Losing teaches.
-   Winning feels earned. Ascension levels for mastery. No IAP, no energy, no timers.
-5. **Pause and resume anytime.** Autosave every action. Chapters are natural ~8–12 min sessions.
+## 1. Pillars
 
-## 2. Comparable games & what we steal
+1. **Fast. Every turn something lands, finishes or breaks.** ~78 turns per run (not 120+). Builds finish
+   in 2–4 turns. The capital is already down on turn 1. No walking settlers across the map: colonies
+   arrive by **Orbital Drop**.
+2. **The Sol Report is the dopamine machine.** Every chapter your colony is scored:
+   **Viability = Output × Hope** (Balatro chips × mult). Crew fire left-to-right, numbers fly.
+3. **Crew are the jokers.** You collect named survivors from all twelve nations — a disgraced oligarch,
+   a Svalbard seed-vault keeper, a K-pop idol, an ex-NASA flight director. Each bends a rule or feeds
+   the report. Order matters. Synergies make each run its own logic.
+4. **Mars is the boss.** Telegraphed **dust storms** sweep the map every turn; eras end in Crises (solar
+   flares, Phobos debris, Earth's final broadcast). Hard, fair, readable.
+5. **Your nation is your deck.** Twelve Arks, each an asymmetric rule-breaker (Balatro decks), not a
+   +10% bonus.
 
-| Game | Steal | Avoid |
-|---|---|---|
-| Civilization III–VI | Tile yields, city growth, tech tree, wonders race, 1UPT hex combat, borders, "one more turn" | 500-turn games, worker micro, late-game slog, diplomacy spreadsheet |
-| Battle of Polytopia | Tiny map, ~16–30 turn arcs, instant improvements bought from city, one-tap interactions, cute readable low-poly art | Shallow economy |
-| Balatro | Chips×Mult scoring, sequential joker triggers with juicy feedback, shop with rerolls, editions, packs, vouchers, boss blinds, stakes, seeded runs | — |
-| Slay the Spire | Readable intent (Crisis revealed ahead), elites/boss rhythm, ascension ladder, card rarity | — |
-| Against the Storm | Cornerstone draft each "year", escalating storm pressure, orders (optional objectives) | — |
-| Hexarchy / Rogue Hex | Proof that 4X fits in ~1 hour | Card-hand abstraction replacing the map |
-| Old World / Humankind | Era transitions as dramatic moments, leader identity | Complexity |
-| Thronefall / Dorfromantik | Diorama beauty, satisfying placement feedback | — |
+## 2. What makes it *not* Civilization
+
+| Civ habit | RED EXODUS answer |
+|---|---|
+| Walk a settler 6 turns, found a city | **Orbital Drop**: spend a Cryo pod, a colony lands anywhere explored within 8 hexes, *this turn*. |
+| Static tech tree, pick anything | **Breakthrough Draft**: each time research completes, choose 1 of 3 random available techs (reroll for Credits). |
+| Weather-less map | **Dust storms**: cells with a truthful 2-turn forecast drift across the map; tiles inside lose half their Food/Industry, units caught in the open take damage. Plan around them, or build for them. |
+| Pop grows from food only | **Cryo pods** are a finite, per-nation pool: Drop a new colony **or** Thaw 2 colonists into an existing one. Expand vs. grow is the central economic tension. |
+| 6,000-year eras | 6 Mars eras, 3 short chapters each ([4, 4, 5] turns). |
+| Culture, faith, great people | One scoring loop (Sol Report) + Crew cards. Everything feeds it. |
 
 ## 3. Run structure
 
 ```
-RUN (~120 turns, 1.5–3h)
- └ 6 ERAS: Ancient · Classical · Medieval · Renaissance · Industrial · Modern   (+ Endless after victory)
-    └ 3 CHAPTERS per era: I "Rise" (6 turns) · II "Trial" (6 turns) · III "Crisis" (8 turns)
-       ├ Chapter start: choose FOCUS PILLAR; optionally accept 1 of 2 OMENS (optional objective)
-       ├ Play turns on the map (normal 4X)
-       ├ Chapter end: THE CHRONICLE scores the chapter → Legacy vs target
-       └ THE COUNCIL (shop): spend Influence on Doctrines / Edicts / Scrolls / Packs / Reform
+RUN (~78 turns, 45–75 min)
+ └ 6 ERAS: Landfall · Foothold · Frontier · Industry · Terraform · New Earth   (+ Endless "Beyond")
+    └ 3 CHAPTERS per era: I "Dawn" (4 turns) · II "Dusk" (4 turns) · III "Crisis" (5 turns)
+       ├ Chapter start: choose PRIORITY (focus pillar); optionally accept 1 of 2 DIRECTIVES (omens)
+       ├ Play turns on the map
+       ├ Chapter end: the SOL REPORT scores the chapter → Viability vs target
+       └ THE UPLINK (shop): the Ark passes overhead; spend Scrip on Crew / Salvage / Blueprints / Supply Drops / Ark Modules
 ```
-- Chapter III of every era is under a **Crisis** (boss blind), revealed at the *start* of the era so the
-  player can prepare for ~12 turns. Crisis modifies rules for its chapter (and sometimes spawns threats).
-- **Mandate** = lives (3). Failing a chapter target costs 1 Mandate (Crisis chapter: 2) and inflicts a
-  *Dark Age* debuff next chapter (−15% yields). 0 Mandate → civilization collapses → run lost.
-  Losing your capital city → immediate collapse (unless a Doctrine prevents it).
-- **Victory**: pass Era 6 Chapter III. Then optional Endless mode (targets keep scaling) for high score.
-- Rivals: 3 AI civilizations + barbarian camps share the map. AIs can be eliminated; eliminating a
-  rival is a huge Might moment. The player does NOT need to conquer to win — score is the win condition.
+- Each era's Crisis is revealed at era start. **Charter** = lives (the Ark Council's backing). Missing a target
+  costs Charter and triggers a **Blackout** (−15% yields) next chapter. 0 Charter → the Ark cuts you off → run lost.
+  Losing the Ark Hab (capital) → immediate collapse.
+- Every new era the Ark thaws **+1 Cryo pod** for you.
+- Victory: survive New Earth's Crisis. Endless "Beyond" after.
 
-## 4. The Chronicle (scoring) — the core hook
+## 4. Vocabulary (display names; internal ids unchanged)
 
-**Legacy = Renown × Splendor** (Renown = Balatro chips, Splendor = Balatro mult).
+| Internal | Display | Notes |
+|---|---|---|
+| Legacy (score) | **Viability** | Output × Hope |
+| Renown (`renown`) | **Output** | chips |
+| Splendor (`splendor`) | **Hope** | mult; ×Hope moments are the big ones |
+| Chronicle | **Sol Report** | |
+| Pillars | Heritage `arts` · Science `discovery` · Trade `commerce` · Warfare `conquest` · Growth `prosperity` · Monuments `glory` | |
+| Focus pillar | **Priority** | |
+| Mandate (lives) | **Charter** | |
+| Influence (◈) | **Scrip** | shop currency |
+| Council | **The Uplink** | |
+| Doctrines | **Crew** | jokers; 5 slots = "bunks" |
+| Edicts | **Salvage** | consumables |
+| Scrolls | **Blueprints** | pillar level-ups |
+| Packs | **Supply Drops**: Crew Capsule · Blueprint Cache · Salvage Crate | |
+| Reforms | **Ark Modules** | vouchers |
+| Omens | **Directives** | |
+| Crises | **Crises** | |
+| Ascension | **Hazard** 1–8 | |
+| Dark Age | **Blackout** | |
+| Leaders / civs | **Nations** (an Ark + its commander) | |
+| Cities / capital | **Colonies** / **Ark Hab** | |
+| Settler | **Hab Crawler** | the slow way to expand |
+| Barbarians / camps / ruins | **Ferals** / **Feral Dens** / **Crash Sites** | Ferals = the crew of a private colony ship that landed 11 years early and went feral |
+| Yields | Food · **Industry** · **Credits** · **Data** · **Morale** | `food prod gold sci cul` |
+| Happiness | **Stability** | |
+| Techs | **Research**; completion = **Breakthrough** | |
+| Wonders | **Megaprojects** | |
+| Natural wonders | **Landmarks** | Olympus Mons, Valles Marineris, … |
+| Improvements | **Installations** | |
+| Eras | Landfall · Foothold · Frontier · Industry · Terraform · New Earth | |
+| Chapters | Dawn · Dusk · Crisis | |
 
-Six **Pillars** (Balatro hand types). During each chapter the sim tallies `ChapterStats`:
+`src/ui/terms.ts` is the single source for UI vocabulary strings.
 
-| Pillar | Icon | Stats feeding it (per chapter) | Base renown per unit (L1) |
-|---|---|---|---|
-| Arts | lyre | culture generated | 1 / culture |
-| Discovery | flask | science generated, techs completed | 0.6 / science, +30 / tech |
-| Commerce | coin | gold earned (gross), trade routes | 0.6 / gold |
-| Conquest | sword | enemy units killed, cities captured, camps cleared | 25 / kill, 150 / city, 60 / camp |
-| Prosperity | wheat | population grown, cities founded, improvements built | 15 / pop, 80 / city, 10 / improvement |
-| Glory | pillar | buildings built, wonders built, natural wonders discovered | 20 / building, 200 / wonder, 50 / nat.wonder |
+### Map reskin (ids stay; names/looks change)
+| id | Mars |
+|---|---|
+| ocean | **Dust Sea** — deep basin of ultrafine dust; crossing needs hover tech (`cartography`) |
+| coast | **Dust Shallows** — crossable after `sailing` (dust skiffs) |
+| lake | **Brine Lake** — rare liquid water, precious |
+| grassland | **Clay Basin** — hydrated clays, best greenhouse ground |
+| plains | **Regolith Plain** |
+| desert | **Dune Sea** |
+| tundra | **Frost Flats** (permafrost) |
+| snow | **Polar Ice** |
+| hills / mountain | **Ridges** / **Massif** |
+| forest | **Hoodoo Field** (wind-carved spires: cover + Industry) |
+| jungle | **Lava Tubes** (shelter: defense, Food via tube farms) |
+| marsh | **Perchlorate Bog** |
+| oasis | **Geyser Vent** |
+| floodplains | **Ancient Delta** |
+| reef | **Mineral Shoal** |
+| ice | **Dry-Ice Sheet** |
+| rivers | **Ancient Channels** (subsurface ice) |
 
-Chronicle sequence (order matters, animated step-by-step):
-1. Each pillar contributes Renown (stat × per-unit × pillar-level factor). The **Focus Pillar**'s renown ×2.
-2. Base Splendor = Focus Pillar splendor (L1 = 2, +1 per level via Scrolls).
-3. Cities scored left-to-right (by founding order): each city adds +1 Splendor per 5 pop... (city step
-   gives the map-play a visible presence in the ceremony; capital first).
-4. Doctrines fire left-to-right: `+Renown`, `+Splendor`, `×Splendor` effects, then editions.
-5. Crisis / Dark Age modifiers apply. Final = floor(Renown × Splendor).
-6. Pass if ≥ target. Overflow ≥ 2× target grants bonus Influence ("Triumph").
+Resources, units, buildings, megaprojects, techs, promotions, landmarks get full Mars names and
+descriptions (see content files). Unit lines keep their ids and roles: melee = armored infantry
+(Militia → Exo-Trooper → Power Armor → Titan Frame), ranged = rifles/rails, mounted = rovers/buggies →
+hovertanks, siege = mortars → mass drivers, naval = dust skiffs.
 
-Pillar levels are raised by **Scrolls** (Balatro planets): each level +renown factor and +1 splendor.
+## 5. The Sol Report (scoring)
 
-**Targets** (base per era, ×1 / ×1.5 / ×2 for chapters I/II/III). Starting values, tuned by the
-balance pass via headless simulation:
-Era1 300 · Era2 1,200 · Era3 4,000 · Era4 12,000 · Era5 35,000 · Era6 100,000 · Endless ×3/era.
-Ascension multiplies targets.
+Unchanged math, reskinned: pillar Output → Priority ×2 → Hope base → colonies left-to-right → Crew
+left-to-right → editions → Crisis/Blackout → Viability = floor(Output × Hope). Pass ≥ target;
+≥2× = Triumph (+Scrip). Blueprints level pillars. Targets retuned for the 78-turn pace by headless sim.
 
-## 5. The Council (shop) — after every chronicle
+## 6. The Uplink (shop)
 
-Currency: **Influence (◈)**. Income per chapter: +3 base (+1 Rise, +2 Trial, +3 Crisis bonus), +1 per
-5 unspent (interest, cap +5), Triumph +3, some buildings/doctrines add more.
+Unchanged Balatro economy (2 Crew, 1 Salvage/Blueprint, 2 Supply Drops, 1 Ark Module per era, reroll,
+sell, drag to reorder). Crew editions: **Gilded → "Decorated"**, **Radiant → "Inspired"**,
+**Prismatic → "Legendary Tale"**, **Ethereal → "Ghost"** (+1 bunk).
 
-Shop contents (rerollable; reroll 2◈, +1 per reroll this visit):
-- 2 **Doctrine** cards (rarity Common 60% / Uncommon 30% / Rare 9% / Legendary 1% in packs only).
-- 1 **Edict or Scroll** card.
-- 2 **Packs**: Doctrine Pack (choose 1 of 3), Archive Pack (Scrolls, choose 1 of 3), Edict Pack (1 of 3).
-- 1 **Reform** per era (voucher; permanent run upgrade, e.g. +1 Doctrine slot, +1 shop card).
-- Sell doctrines for half cost. **Drag to reorder doctrines** (order matters in the Chronicle).
-- Doctrine **editions** (rare roll): Gilded (+50 Renown), Radiant (+4 Splendor), Prismatic (×1.5
-  Splendor), Ethereal (+1 Doctrine slot).
-- Slots: 5 Doctrines, 2 Edicts (expandable).
+### Crew (jokers, ~170)
+Named people or small groups, each with a nationality badge (`DoctrineDef.nation`). Kinds:
+- Map-play buffs ("**The Hydrologist** — Ancient Channel tiles +1 Food; colonies on channels +2 Hope").
+- Scoring engines ("**Flight Director Okafor** — +3 Output per Science building; ×1.5 Hope if Priority is Science").
+- Scaling ("**The Storm Chaser** — gains +0.5 Hope every time a storm touches your territory").
+- Rule-benders ("**Cryo Tech** — Thaws grant +1 extra pop"; "**Orbital Bookie** — Drops cost 1 Scrip instead of a pod once per era").
+- Economy, risk/reward, nation synergies ("**Diaspora** — +1 Hope per distinct nationality among your Crew").
 
-**Doctrines** (Balatro jokers, ~120): permanent run effects, spanning:
-- Map-play buffs ("Riverfolk: river tiles +1 food; cities on rivers +2 Splendor in Chronicle").
-- Scoring engines ("Chronicler: +3 Renown per culture building, ×1.5 Splendor if Focus is Arts").
-- Scaling ("Legend of the Steppe: gains +0.5 Splendor permanently every time a unit kills").
-- Rule-benders ("Nomad Court: can found cities adjacent to others; −1 pop cap").
-- Economy ("Tax Farmers: +1◈ per chapter per 3 cities").
-- Risk/reward ("Iron Oath: ×3 Splendor, but lose 1 Mandate if you make peace").
+### Salvage (tarots), Blueprints (planets), Ark Modules (vouchers), Directives (orders), Crises (bosses)
+All reskinned to Mars. Crises draw on real Mars hazards and the apocalypse: Global Dust Storm (storm
+count ×3, great storms), Solar Particle Event, Phobos Debris Shower, Earth's Last Broadcast, Reactor
+Scram, Cryo Bay Failure, Feral Uprising, Perchlorate Bloom, Ark Orbit Decay, Comms Blackout, Rival
+Landing, Martian Winter…
 
-**Edicts** (Balatro tarots, ~30): consumables, usable any time on the map (Golden Harvest: +3 pop,
-Levy: spawn 2 era units, Revelation: finish current tech, Terraform, Grand Festival: +200 Renown now...).
+## 7. Mars mechanics (sim contract in `src/sim/mars.ts`)
 
-**Omens** (Against the Storm orders): at chapter start, pick 1 of 2 optional objectives or decline.
-Complete within the chapter for a reward (rare doctrine, influence, scroll).
+### Dust storms
+- 1–3 cells active (more in later eras / Crisis chapters / Global Dust Storm). Each cell spawns at the
+  map edge, rolls its full path (1 hex/turn, gentle wobble), radius 1–2 (great storms 3), power 1–3,
+  lives 4–8 turns. Forecast of the next 2 eye positions is always visible.
+- Inside a storm: tile Food and Industry ×0.5 (floor), vision −1, no Orbital Drops.
+- End of round: every unit inside takes `STORM_DAMAGE × power` HP (fortified/in a colony: half; a
+  colony takes damage to its HP instead). Units can die ("lost in the storm" — counts as unitsLost).
+- Hooks: `storm` (modify damage; runs for victim and territory owner), content uses `stormPowerAt`.
+- Mars buildings play with it: Wind Farm (+Industry per storm power), Storm Shelter, Dust Scrubbers.
 
-**Crises** (boss blinds, ~18; 3 candidates per era, 1 rolled): e.g. *The Long Winter* (tundra/snow
-yield nothing, food −25%), *Horde from the Steppe* (barbarian waves each 2 turns), *Plague* (cities ≥8
-pop lose 1 pop every 3 turns unless Aqueduct), *Schism* (culture halved in cities without a temple),
-*Rival Ascendant* (strongest AI declares war, +30% strength), *The Great Flood*, *Iconoclasm* (the
-leftmost Doctrine is disabled), *Debt Crisis* (gold income −50%, interest disabled), *Dark Prophecy*
-(target +50% but Crisis rewards doubled)...
+### The Ark: Cryo pods
+- Each nation starts with `START_CRYO` = 3 pods (nation overrides); +1 per era start.
+- **Orbital Drop** (`orbitalDrop {tile}`): tile explored, valid colony site, not in a storm, within
+  `DROP_RANGE` = 8 of one of your colonies. Costs `dropPrice` (default 1 pod). A colony lands this turn
+  (`podLanded` → `cityFounded`) with a burst of fire from the sky.
+- **Thaw** (`thawColonists {cityId}`): 1 pod → +2 pop.
+- Hab Crawlers (settler unit) still exist as the slow, pod-free expansion.
+- Game start = **Landfall**: every nation's Ark Hab (capital) is already founded on its start tile;
+  starting units: Militia (`warrior`) + Scout Rover (`scout`).
 
-**Leaders** (Balatro decks, 8): distinct starting bonus + unique unit or building + starting doctrine.
-Unlocked via meta progression. Fictional civs (no real-world IP).
+### Breakthrough Draft
+- The human researches only from `player.researchOffer` (3 random available techs, era-weighted toward
+  the oldest available). Completing research redraws. `rerollResearch` costs Credits (15, +10 each
+  reroll of the same offer). AIs research freely.
 
-**Ascension** (stakes, 8 levels): +target, stronger AIs, fewer rerolls, Mandate 2, harsher crises...
+### Pacing
+- Chapter lengths [4, 4, 5]. Production, growth, border and tech costs scaled so a colony finishes
+  something every 2–4 turns and a healthy run researches ~24 of 36 techs by the end.
+- Default map: small; 3 rivals.
 
-## 6. The map (civ layer)
+## 8. The twelve Arks (nations = Balatro decks)
 
-- Hex map, pointy-top, odd-r offset. Default 28×20 (Small 22×16, Large 34×24). Continents + islands,
-  rivers, lakes, hills, mountains, forests, jungle, marsh, desert, tundra, snow. 1–2 Natural Wonders.
-- Yields: **Food, Production, Gold, Science, Culture**.
-- Cities: founded by Settlers (pop cost 1 from the building city). Territory grows with culture. Pop
-  auto-works best tiles by **city focus** (Balanced / Food / Production / Gold / Science / Culture).
-- **Improvements bought instantly** (Polytopia-style) on owned tiles with Gold: Farm, Mine, Pasture,
-  Plantation, Lumber Mill, Quarry, Fishing Boats, Camp, Trading Post... No worker units. Roads auto
-  between connected cities (optional).
-- Buildings (~30) and Wonders (18, 3 per era, race against AIs).
-- Happiness (empire-wide, Civ5-like): luxuries/buildings/wonders add, cities & pop subtract. Negative
-  → growth halts; ≤ −10 → yields −20% and rebels may spawn.
-- Tech tree: 6 techs per era (36), each unlocks units/buildings/improvements/wonders. Era is driven by
-  the Chronicle clock, not by tech: falling behind in tech is a real threat.
-- Combat: 1 unit per tile, Civ5 formula (strength ratio → damage, HP 100), ranged units, terrain
-  defense, rivers, flanking +10%/adjacent ally, fortify, cities have HP + ranged strike. Units gain XP
-  → **promotion choice of 1 of 2 random perks** (roguelite flavor in tactics too).
-- ~4 unit types per era, plus Settler, Scout. Embark on water after *Sailing*.
-- Barbarian camps spawn in fog; clearing grants gold + Conquest renown.
-- Rivals: 3 AIs with personalities (Expansionist, Warmonger, Builder, Scientist). Simple diplomacy:
-  war/peace, AI can declare war, player can offer peace (gold tribute). No diplomacy screens beyond
-  that.
+Six open from the start, six unlocked by meta progression. Commanders are fictional people.
+Rivals are drawn from the other eleven.
 
-## 7. Session & UX
+| id | Nation · Ark | Commander | Rule-breaker | UU / UB | Start Crew | AI |
+|---|---|---|---|---|---|---|
+| `usa` | United States · **Liberty Ark** | Harlan Price, Designated Survivor (was Secretary of the Interior) | **Everything's For Sale**: the Uplink stocks +1 Crew card; selling Crew refunds full price; +10% Credits. | Marine Raider (melee era1) · Liberty Exchange (market) | The Astronaut | expansionist |
+| `china` | China · **Tiangong Ark** | Chief Engineer Lin Weiqi | **Five-Year Plan**: Megaprojects −25% Industry; +2 Hope per Megaproject owned in every Sol Report; +2 Cryo pods. | Jade Rabbit Crawler (mounted era0) · Harmony Hab Block (granary) | The Foreman | builder |
+| `russia` | Russia · **Novaya Zarya** | Cosmonaut-Colonel Valentina Sokolova | **General Dust**: your units and colonies take no storm damage; enemy units in your territory take double; Frost Flats & Polar Ice +1 Industry. Starts with *Tsar Charge* Salvage. | Frostguard Spetsnaz (melee era0) · RBMK Reactor (workshop) | The Veteran Cosmonaut | warmonger |
+| `india` | India · **Mangalyaan Collective** | Mission Director Dr. Anjali Rao | **Frugal Engineering**: Breakthrough offers 4 techs and the first reroll of each offer is free; Installations −30% Credits; +10% Data. | Pragyan Rover (scout) · Orbiter Relay (library) | The Jugaad Mechanic | scientist |
+| `japan` | Japan · **Yamato Ark** | Director Kenji Arakawa | **Kaizen Robotics**: every new unit arrives with a free promotion; buildings −15% Industry. | Mecha Frame (melee era3) · Robotics Lab (workshop-tier) | The Roboticist | scientist |
+| `france` | France · **Arche Lumière** | Curator Élodie Marchand (she smuggled the Louvre aboard) | **The Louvre in the Hold**: start with *La Joconde* (Legendary Crew: +1 Hope per chapter passed, permanent); Heritage starts at level 2; +20% Morale. | Légion Étrangère (melee era2) · Salon (amphitheater) | La Joconde | builder |
+| `brazil` | Brazil · **Arca Amazônia** | Seed-Keeper Dr. Thaís Oliveira | **Living Seedbank**: Clay Basin & Ancient Delta +1 Food; colonies need 20% less Food to grow; the Carnival project (festival) converts at double rate. | Jaguar Rover (mounted era1) · Biodome | The Botanist | expansionist |
+| `uae` | UAE · **Al-Amal (Hope)** | Minister Rashid Al-Falasi | **Sovereign Fund**: start +100 Credits; +3% interest on banked Credits per turn (cap 15); with no pods left, Orbital Drops can be bought for Credits. | Falcon Drone (ranged era1) · Sky Souk (bank-tier) | The Wealth Manager | builder |
+| `nigeria` | Nigeria · **Naija Ark** | Governor Chidinma Okafor | **Hustle**: Crash Sites also grant a random Salvage; Feral Dens pay double; colonies grow 15% faster. | Okada Rider (mounted era0 fast) · Nollywood Studio (Morale + Scrip) | The Nollywood Star | expansionist |
+| `switzerland` | Switzerland · **Helvetia Vault** | Federal Councillor Anna Brunner | **Armed Neutrality**: rival nations can never declare war on you and you can never declare war; colonies +50% defense; Scrip interest cap doubled. | Alpine Guard (anti-cavalry) · Bunker Bank (bank) | The Private Banker | builder |
+| `north_korea` | North Korea · **Juche Ark** (challenge deck) | Marshal Ri Song-hwa, "the Dear Commander" | **Hermit Kingdom**: the Uplink cannot be rerolled; military units −30% Industry and +15% strength; −25% Morale. Start with *Eternal Leader* (×2 Hope; cannot be sold). | Songun Trooper (melee era1) · Mass Games Arena (stadium) | Eternal Leader | warmonger |
+| `vatican` | Holy See · **The Last Conclave** | Pope Innocent XIV | **Faith Beyond Earth**: +2 Hope in every Sol Report; Salvage has a 1-in-3 chance not to be consumed ("Miracle"); +1 Charter. | Swiss Guard (anti-cavalry) · Basilica of the Red Planet (cathedral) | The Cardinal | builder |
 
-- Portrait-first, landscape supported. One-thumb: tap to select, tap to move/attack, pinch zoom,
-  drag pan, long-press for tile info. Bottom sheet panels; top bar with yields.
-- **Next** button cycles idle units/cities; becomes **End Turn** when nothing needs orders.
-- Autosave to IndexedDB after every action. "Continue" from main menu restores exactly.
-- Seeds: every run has a shareable seed; Daily Chronicle (same seed for everyone per day).
-- Tutorial: the first run's Era 1 has contextual coach marks (skippable).
-- Codex/Collection: all doctrines/edicts/leaders discovered, with win stats.
+## 9. Presentation
 
-## 8. Presentation targets ("AAA feel")
-
-- 3D diorama map (Three.js): smooth stylized terrain (not blocky prisms), soft shadows, animated
-  water with shoreline foam, drifting cloud fog-of-war, tilt-shift depth feel, warm lighting that shifts
-  palette per era (Ancient golden dawn → Modern crisp daylight).
-- Low-poly hand-modeled assets built in Blender (trees, mountains, cities that visually evolve per
-  era, wonders, units with team colors).
-- Juice everywhere: unit hop animations, city founding burst, building completion sparkle, numbers
-  popping during Chronicle with rising pitch ticks, screen shake on ×Splendor, card flips in Council.
-- Typography: Cinzel (display) + Inter (UI). Palette: deep navy/ink, parchment, gold leaf accents,
-  per-pillar colors. UI panels are dark glass with gold filigree edges.
-- Procedural adaptive music per era + rich SFX (WebAudio).
+- **Diorama Mars**: rust/ochre/butterscotch terrain, dark basalt ridges, white polar ice, rolling dust
+  seas instead of water (animated dune-like swells, no specular), brine lakes teal and glassy.
+  Butterscotch sky, blue sunset at dusk. Fog of war = drifting dust haze.
+- **Terraforming arc**: each era the palette shifts — Landfall is harsh, dim, dusty; by New Earth the
+  sky tints blue, lichen/moss greens creep into basins, lakes widen visually. The map literally comes
+  alive as you progress.
+- Colonies: pressurized domes, hab modules, solar arrays, antenna masts, evolving per era from landers
+  and inflatable habs to arcologies and glass-domed towns.
+- Units: chunky low-poly spacesuited troops, rovers, mechs, hovertanks, dust skiffs; team colors on
+  shoulder panels.
+- Storms: towering rust-brown walls of dust with lightning flickers; the forecast shows as a dashed
+  hex outline 1–2 turns ahead.
+- Orbital Drop: fiery streak from the sky, retro-rocket flare, dust shockwave, hab unfolds.
+- UI: dark hazard-glass panels, rust/amber accents, cryo-cyan highlights, stencil display font.
+- Audio: sparse analog-synth ambience, wind, Geiger-ish ticks, a hopeful piano motif that grows per era.

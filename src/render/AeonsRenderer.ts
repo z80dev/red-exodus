@@ -1,6 +1,7 @@
-// The AEONS map renderer (implements game/bridge.ts `Renderer`). Owns the Three.js scene: terrain, water,
-// rivers, cloud fog, instanced props & cities, units, fx, highlights, camera rig, lighting per era,
-// post-processing and the DOM overlay model. Event animation lives in director.ts.
+// The RED EXODUS map renderer (implements game/bridge.ts `Renderer`). Owns the Three.js scene: Mars terrain, dust
+// seas & brine lakes, ancient channels, dust-haze fog of war, sky dome, instanced props & colonies, units, dust
+// storms, orbital drop pods, fx, highlights, camera rig, terraforming era lighting, post-processing and the DOM
+// overlay model. Event animation lives in director.ts.
 import {
   ACESFilmicToneMapping, AmbientLight, BufferAttribute, BufferGeometry, Color, DirectionalLight, DoubleSide, Fog, Group,
   HemisphereLight, Mesh, MeshStandardMaterial, PCFShadowMap, Scene, ShaderMaterial, SRGBColorSpace,
@@ -23,9 +24,12 @@ import { WATER_TERRAIN, colX, mapBounds, rowZ } from './hexgeo';
 import type { BannerData, FlagData } from './overlayStore';
 import { OverlayStore } from './overlayStore';
 import { type EraLight, eraLight } from './palette';
+import { DropPods } from './pods';
 import { PostPipeline } from './post';
 import { PropLayer } from './props';
 import { buildRiverMesh, buildRiverNetwork } from './rivers';
+import { createSky } from './sky';
+import { StormLayer } from './storms';
 import { HI, MAX_OWNERS, U, patchModelMaterial } from './shaders';
 import {
   type TerrainField, buildHeightTexture, buildTerrainField, buildTerrainMeshes, createTerrainMaterial, groundAt,
@@ -70,8 +74,12 @@ export class AeonsRenderer implements Renderer {
   private fog = new Fog(0xdddddd, 20, 60);
   private post = new PostPipeline();
   private modelMat: MeshStandardMaterial;
-  private swayMat: MeshStandardMaterial;
   private terrainMat: MeshStandardMaterial;
+  readonly storms: StormLayer;
+  readonly pods: DropPods;
+  private sky = createSky();
+  /** colony tiles whose drop pod is still in the air (colony props + banner held back until touchdown) */
+  private hiddenCities = new Set<TileIdx>();
   private nature: PropLayer;
   private cities: PropLayer;
   private mapRef: GameMap | null = null;
@@ -122,12 +130,12 @@ export class AeonsRenderer implements Renderer {
     this.overlay.onTap = (tile) => this.cb.onTileTap(tile);
     this.modelMat = new MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0 });
     patchModelMaterial(this.modelMat, {});
-    this.swayMat = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0 });
-    patchModelMaterial(this.swayMat, { sway: true });
     this.terrainMat = createTerrainMaterial();
-    this.nature = new PropLayer('nature', this.lib, this.modelMat, this.swayMat);
-    this.cities = new PropLayer('cities', this.lib, this.modelMat, this.swayMat);
+    this.nature = new PropLayer('nature', this.lib, this.modelMat);
+    this.cities = new PropLayer('cities', this.lib, this.modelMat);
     this.units = new UnitLayer(this.lib);
+    this.storms = new StormLayer(this.fx);
+    this.pods = new DropPods(this.lib, this.fx);
     this.pathMat = new ShaderMaterial({
       vertexShader: 'attribute float aAlong; varying float vA; varying float vS; attribute float aSide; void main(){ vA = aAlong; vS = aSide; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: `uniform float uTime; varying float vA; varying float vS;
@@ -143,7 +151,7 @@ export class AeonsRenderer implements Renderer {
       depthWrite: false,
       side: DoubleSide,
     });
-    this.scene.add(this.world, this.units.group, this.fx.group);
+    this.scene.add(this.sky, this.world, this.units.group, this.pods.group, this.storms.group, this.fx.group);
     this.scene.add(this.sun, this.sun.target, this.hemi, this.ambient);
     this.scene.fog = this.fog;
     this.sun.castShadow = true;
@@ -222,7 +230,7 @@ export class AeonsRenderer implements Renderer {
   /** shader simplifications for battery saver; materials recompile when shadow/quality defines flip */
   private applyQualityDefines(): void {
     const low = this.quality === 'low';
-    const mats: MeshStandardMaterial[] = [this.modelMat, this.swayMat, this.terrainMat];
+    const mats: MeshStandardMaterial[] = [this.modelMat, this.terrainMat];
     if (this.water) mats.push(this.water.material as MeshStandardMaterial);
     for (const m of mats) {
       const d = { ...(m.defines ?? {}) };
@@ -232,6 +240,7 @@ export class AeonsRenderer implements Renderer {
       m.needsUpdate = true;
     }
     if (this.clouds) setCloudDetail(this.clouds, low);
+    this.storms.setQuality(low);
   }
 
   /** profile `fastAnimations` */
@@ -283,6 +292,10 @@ export class AeonsRenderer implements Renderer {
     this.cities.dispose();
     this.units.dispose();
     this.fx.clear();
+    this.pods.dispose();
+    this.storms.dispose();
+    this.sky.geometry.dispose();
+    (this.sky.material as ShaderMaterial).dispose();
     this.post.dispose();
     this.lib.dispose();
     this.tiles?.dispose();
@@ -347,6 +360,9 @@ export class AeonsRenderer implements Renderer {
     this.citySig = '';
     this.units.dispose();
     this.fx.clear();
+    this.pods.clear();
+    this.hiddenCities.clear();
+    this.storms.reset(map, f, this.tiles);
     const start = map.starts?.[HUMAN] ?? Math.floor(map.tiles.length / 2);
     const st = map.tiles[start];
     if (st && !this.rig.attract) this.rig.focus(colX(st.col, st.row), rowZ(st.row) + 0.5, ZOOM_PRESETS.mid * this.rig.aspectK, false);
@@ -367,6 +383,7 @@ export class AeonsRenderer implements Renderer {
     this.applyOwners(state, null);
     this.refreshProps(state);
     this.units.sync(state);
+    this.storms.sync(state);
     this.refreshOverlay(state);
     const era = Math.min(5, Math.max(0, state.run?.era ?? 0));
     if (era !== this.era || first) this.setEra(era, first);
@@ -396,7 +413,7 @@ export class AeonsRenderer implements Renderer {
   refreshProps(state: GameState, force = false): void {
     if (!this.field) return;
     const human = state.players[HUMAN];
-    let nsig = `${this.reveal ? 1 : 0}|${human?.techs.length ?? 0}|`;
+    let nsig = `${this.reveal ? 1 : 0}|${human?.techs.length ?? 0}|${state.run?.era ?? 0}|`;
     for (const t of state.map.tiles) {
       const e = this.reveal || (human?.vis[t.idx] ?? 0) > 0 ? 1 : 0;
       nsig += `${e}${t.feature ?? ''}${t.improvement ?? ''}${t.pillaged ? 'p' : ''}${t.resource ?? ''}${t.camp ? 'c' : ''}${t.ruin ? 'r' : ''}${t.owner ?? ''},`;
@@ -404,7 +421,7 @@ export class AeonsRenderer implements Renderer {
     let csig = '';
     for (const c of Object.values(state.cities)) csig += `${c.id}:${c.owner}:${c.pop}:${c.buildings.join('.')}:${c.wonders.join('.')}:${c.tile}|`;
     for (const p of state.players) csig += `${p.techs.length},`;
-    csig += state.run?.era ?? 0;
+    csig += `${state.run?.era ?? 0}|${[...this.hiddenCities].join(',')}`;
     const plan = planCities(state);
     const planSig = [...plan.reserved].join(',');
     nsig += planSig;
@@ -414,8 +431,16 @@ export class AeonsRenderer implements Renderer {
     }
     if (force || csig + nsig !== this.citySig) {
       this.citySig = csig + nsig;
-      composeCities(state, this.field, this.cities, plan, this.reveal);
+      composeCities(state, this.field, this.cities, plan, this.reveal, this.hiddenCities);
     }
+  }
+
+  /** hold a colony back while its drop pod is falling (`held: false` lands it) */
+  holdCity(state: GameState, tile: TileIdx, held: boolean): void {
+    if (held) this.hiddenCities.add(tile);
+    else this.hiddenCities.delete(tile);
+    this.refreshProps(state);
+    this.refreshOverlay(state);
   }
 
   refreshOverlay(state: GameState): void {
@@ -423,7 +448,7 @@ export class AeonsRenderer implements Renderer {
     const banners: BannerData[] = [];
     for (const c of Object.values(state.cities)) {
       const v = this.reveal ? 2 : (human?.vis[c.tile] ?? 0);
-      if (v === 0) continue;
+      if (v === 0 || this.hiddenCities.has(c.tile)) continue;
       const owner = playerById(state, c.owner);
       const item = c.queue[0];
       let progress = 0;
@@ -605,30 +630,36 @@ export class AeonsRenderer implements Renderer {
     this.scene.background = this.fog.color;
     this.gl.toneMappingExposure = l.exposure;
     U.uSky.value.set(l.sky);
-    U.uShallow.value.set(l.shallow);
-    U.uDeep.value.set(l.deep);
+    U.uSkyTop.value.set(l.skyTop);
+    U.uSunset.value.set(l.sunset);
+    U.uDustHi.value.set(l.dustHi);
+    U.uDustLo.value.set(l.dustLo);
+    U.uBrine.value.set(l.brine);
+    U.uTerraform.value = l.terraform;
     U.uCloud.value.set(l.cloud);
     U.uCloudShadow.value.set(l.cloudShadow);
+    U.uStormLit.value.set(l.stormLit);
+    U.uStormDark.value.set(l.stormDark);
     U.uFogVoid.value.set(l.cloudShadow).multiplyScalar(0.55);
     const el = (l.elevation * Math.PI) / 180;
     const az = (l.azimuth * Math.PI) / 180;
     U.uSunDir.value.set(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)).normalize();
   }
 
+  /** cross-fade between era lights over 3 s: the terraforming arc visibly advances */
   private blendLight(dt: number): void {
     if (this.lightT >= 1) return;
     this.lightT = Math.min(1, this.lightT + dt / 3);
     const t = this.lightT;
     const a = this.lightFrom;
     const b = this.light;
-    const mixC = (x: string, y: string) => `#${new Color(x).lerp(new Color(y), t).getHexString()}`;
-    const mixN = (x: number, y: number) => x + (y - x) * t;
-    this.applyLight({
-      sun: mixC(a.sun, b.sun), sunIntensity: mixN(a.sunIntensity, b.sunIntensity), elevation: mixN(a.elevation, b.elevation),
-      azimuth: mixN(a.azimuth, b.azimuth), sky: mixC(a.sky, b.sky), ground: mixC(a.ground, b.ground),
-      hemiIntensity: mixN(a.hemiIntensity, b.hemiIntensity), haze: mixC(a.haze, b.haze), exposure: mixN(a.exposure, b.exposure),
-      shallow: mixC(a.shallow, b.shallow), deep: mixC(a.deep, b.deep), cloud: mixC(a.cloud, b.cloud), cloudShadow: mixC(a.cloudShadow, b.cloudShadow),
-    });
+    const mixed: Record<string, string | number> = {};
+    for (const k of Object.keys(b) as (keyof EraLight)[]) {
+      const x = a[k];
+      const y = b[k];
+      mixed[k] = typeof x === 'number' && typeof y === 'number' ? x + (y - x) * t : `#${new Color(x).lerp(new Color(y), t).getHexString()}`;
+    }
+    this.applyLight(mixed as unknown as EraLight);
   }
 
   // ───────────────────────── picking / projection ─────────────────────────
@@ -697,6 +728,8 @@ export class AeonsRenderer implements Renderer {
     this.rig.update(dt);
     this.fx.update(dt * this.director.timeScale);
     this.units.update(dt, this.time, this.state);
+    this.storms.update(dt, this.rig.camera);
+    this.sky.position.copy(this.rig.camera.position);
     this.blendLight(dt);
     this.updateShadowCamera();
     this.updateFog();

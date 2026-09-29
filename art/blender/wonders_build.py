@@ -1,7 +1,7 @@
 """Build AEONS wonder models: export GLBs, merge manifest, render previews.
 
 /Applications/Blender.app/Contents/MacOS/Blender -b --python art/blender/wonders_build.py -- [options]
-  --only w_pyramids,nw_sky_arch   build a subset (default: all 24)
+  --only w_pyramids,nw_sky_arch   build a subset (default: all wonders + Mars props)
   --no-render                     skip hero + contact-sheet tile renders
   --sheet                         (re)compose art/previews/wonders_contact_sheet.png from cached tiles
   --fast                          low-sample renders for quick iteration
@@ -22,13 +22,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import wonders_lib as L  # noqa: E402
 
 GROUPS = {
-    'wonders_ancient': ['w_pyramids', 'w_stonehenge', 'w_hanging_gardens', 'w_colossus', 'w_great_library',
-                        'w_oracle'],
-    'wonders_medieval': ['w_great_wall', 'w_hagia_sophia', 'w_angkor_wat', 'w_taj_mahal', 'w_leaning_tower',
-                         'w_himeji'],
-    'wonders_modern': ['w_big_ben', 'w_eiffel', 'w_liberty', 'w_opera_house', 'w_cristo', 'w_launch_pad'],
-    'wonders_natural': ['nw_sky_arch', 'nw_ember_peak', 'nw_crystal_falls', 'nw_elder_tree', 'nw_titan_bones',
-                        'nw_mirror_lake'],
+    'wonders_natural': ['nw_sky_arch', 'nw_ember_peak', 'nw_crystal_falls', 'nw_mirror_lake'],
+    'wonders_props': [
+        'w_pyramids', 'w_stonehenge', 'w_hanging_gardens', 'w_colossus', 'w_great_library', 'w_oracle',
+        'w_great_wall', 'w_hagia_sophia', 'w_angkor_wat', 'w_taj_mahal', 'w_leaning_tower', 'w_himeji',
+        'w_big_ben', 'w_eiffel', 'w_liberty', 'w_opera_house', 'w_cristo', 'w_launch_pad',
+        'nw_elder_tree', 'nw_titan_bones', 'camp_barbarian', 'ruin_ancient', 'drop_pod',
+    ],
 }
 ORDER = [k for keys in GROUPS.values() for k in keys]
 MODULE_OF = {k: mod for mod, keys in GROUPS.items() for k in keys}
@@ -40,9 +40,21 @@ def builder_for(key):
     return importlib.import_module(MODULE_OF[key]).MODELS[key]
 
 
-TITLES = {k: k.split('_', 1)[1].replace('_', ' ').title() for k in ORDER}
-TITLES.update({'w_hagia_sophia': 'Hagia Sophia', 'w_taj_mahal': 'Taj Mahal', 'w_big_ben': 'Big Ben',
-               'w_launch_pad': 'Launch Pad', 'w_opera_house': 'Opera House'})
+TITLES = {
+    'w_pyramids': 'Sintered Citadel', 'w_stonehenge': 'Solar Henge',
+    'w_hanging_gardens': 'Hanging Greenhouses', 'w_colossus': 'Beacon Colossus',
+    'w_great_library': 'Library of Earth', 'w_oracle': 'The Deep Ear',
+    'w_great_wall': 'Storm Wall', 'w_hagia_sophia': 'Dome of Remembrance',
+    'w_angkor_wat': 'Lava Tube Temple City', 'w_taj_mahal': 'Monument to the Lost',
+    'w_leaning_tower': 'Tilted Spire', 'w_himeji': 'Olympus Observatory',
+    'w_big_ben': 'Clocktower of Sols', 'w_eiffel': 'Skyhook Pylon',
+    'w_liberty': 'Statue of Tomorrow', 'w_opera_house': 'Biodome Opera',
+    'w_cristo': 'Guardian of Mars', 'w_launch_pad': 'Space Elevator',
+    'nw_sky_arch': 'Valles Marineris', 'nw_ember_peak': 'Olympus Mons',
+    'nw_crystal_falls': 'Korolev Ice Crater', 'nw_elder_tree': 'Jezero Delta',
+    'nw_titan_bones': 'Face of Cydonia', 'nw_mirror_lake': 'Hellas Brine Sea',
+    'camp_barbarian': 'Feral Den', 'ruin_ancient': 'Crash Site', 'drop_pod': 'Orbital Drop Pod',
+}
 
 TILES = Path('/tmp/aeons_wonder_tiles')
 

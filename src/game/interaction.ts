@@ -14,6 +14,7 @@ import { findPath, reachableTiles, turnsToReach } from '../sim/pathfinding';
 import { nextAttention } from '../sim/selectors';
 import { isCivilian } from '../sim/units';
 import { HUMAN } from '../sim/types';
+import { canOrbitalDrop } from '../sim/mars';
 import type { Action, ActionResult, City, CityId, GameState, SimEvent, TileIdx, Unit, UnitId } from '../sim/types';
 import { toast } from '../ui/hud/toast';
 import { EMPTY_HIGHLIGHTS, getRenderer } from './bridge';
@@ -34,20 +35,24 @@ export interface InteractionState {
   preview: Preview | null;
   /** city whose ranged strike is being aimed */
   strikeCity: CityId | null;
+  /** Orbital Drop targeting is independent from the store's existing action modes. */
+  dropTargeting: boolean;
   /** desktop hover path for the selected unit */
   hoverPath: TileIdx[];
   /** end-turn processing (AI turns + playback) in progress */
   endingTurn: boolean;
   turnBanner: TurnBanner | null;
-}
 
+}
 export const useInteraction = create<InteractionState>(() => ({
   preview: null,
   strikeCity: null,
+  dropTargeting: false,
   hoverPath: [],
   endingTurn: false,
   turnBanner: null,
 }));
+
 
 const setUi = (p: Partial<InteractionState>) => useInteraction.setState(p);
 
@@ -128,17 +133,53 @@ export function cancelPreview(): void {
   setUi({ preview: null });
 }
 
-/** leave edict targeting / improve mode / strike aiming */
+/** leave edict targeting / improve mode / strike aiming / orbital drop targeting */
 export function cancelMode(): void {
   const g = useGame.getState();
   if (g.mode.kind !== 'normal') g.setMode({ kind: 'normal' });
-  setUi({ strikeCity: null, preview: null });
+  setUi({ strikeCity: null, preview: null, dropTargeting: false });
   audio.sfx('close');
+}
+
+/** Count clear Orbital Drop sites in range of a human colony. */
+export function orbitalDropSiteCount(s: GameState): number {
+  let count = 0;
+  for (const tile of s.map.tiles) if (canOrbitalDrop(s, HUMAN, tile.idx) === null) count++;
+  return count;
+}
+
+/** Enter Orbital Drop aiming only when at least one valid site exists. */
+export function startOrbitalDrop(): void {
+  const s = game();
+  if (!s || inputBlocked()) return;
+  if (orbitalDropSiteCount(s) === 0) {
+    toast('No landing site yet — explore within 8 hexes of a colony; sites must be clear of storms and other colonies.', 'bad', 'cryo');
+    audio.sfx('error');
+    return;
+  }
+  setUi({ dropTargeting: true, strikeCity: null, preview: null, hoverPath: [] });
+  useGame.getState().setMode({ kind: 'normal' });
+  useGame.getState().setPanel('none');
+  audio.sfx('open');
 }
 
 function showTile(idx: TileIdx, keepSelection: boolean): void {
   if (!keepSelection) useGame.getState().select({ kind: 'tile', idx });
   setUi({ preview: { kind: 'tile', idx }, hoverPath: [] });
+}
+
+function tapOrbitalDrop(s: GameState, idx: TileIdx): void {
+  const error = canOrbitalDrop(s, HUMAN, idx);
+  if (error) {
+    toast(error, 'bad');
+    audio.sfx('error');
+    return;
+  }
+  const result = act({ type: 'orbitalDrop', tile: idx }, 'podImpact');
+  if (result.ok) {
+    setUi({ dropTargeting: false, preview: null });
+    useGame.getState().setMode({ kind: 'normal' });
+  }
 }
 
 // ───────────────────────────── taps ─────────────────────────────
@@ -147,11 +188,12 @@ export function onTileTap(idx: TileIdx): void {
   if (!s || inputBlocked()) return;
   if (idx < 0 || idx >= s.map.tiles.length) {
     const g = useGame.getState();
-    if (g.mode.kind !== 'normal' || useInteraction.getState().strikeCity != null) cancelMode();
+    if (g.mode.kind !== 'normal' || useInteraction.getState().strikeCity != null || useInteraction.getState().dropTargeting) cancelMode();
     else deselect();
     return;
   }
   const g = useGame.getState();
+  if (useInteraction.getState().dropTargeting) return tapOrbitalDrop(s, idx);
   if (g.mode.kind === 'edictTarget') return tapEdict(s, g.mode.uid, idx);
   if (g.mode.kind === 'improve') return tapImprove(s, idx);
   const strike = useInteraction.getState().strikeCity;
@@ -177,7 +219,7 @@ export function onTileHover(idx: TileIdx | null): void {
   const s = game();
   const ui = useInteraction.getState();
   const g = useGame.getState();
-  if (!s || ui.preview?.kind === 'path' || g.mode.kind !== 'normal' || ui.strikeCity != null) return;
+  if (!s || ui.dropTargeting || ui.preview?.kind === 'path' || g.mode.kind !== 'normal' || ui.strikeCity != null) return;
   const sel = g.selection;
   const unit = sel?.kind === 'unit' ? s.units[sel.id] : undefined;
   if (idx == null || !unit || unit.owner !== HUMAN || idx === unit.tile || inputBlocked()) {
@@ -488,6 +530,10 @@ export function computeHighlights(): Highlights {
   const ui = useInteraction.getState();
   if (s.run.phase !== 'playing' || ui.endingTurn) return EMPTY_HIGHLIGHTS;
   const h: Highlights = { selected: null, move: [], attack: [], path: [], cityTiles: [], improve: [], target: [] };
+  if (ui.dropTargeting) {
+    h.target = s.map.tiles.filter((tile) => canOrbitalDrop(s, HUMAN, tile.idx) === null).map((tile) => tile.idx);
+    return h;
+  }
 
   if (g.mode.kind === 'edictTarget') {
     h.target = edictTargets(s, g.mode.uid);
@@ -552,9 +598,9 @@ function validate(): void {
   if (p && ((p.kind === 'combat' || p.kind === 'path') && !s.units[p.unitId])) setUi({ preview: null });
   if (ui.strikeCity != null && (!s.cities[ui.strikeCity] || s.cities[ui.strikeCity].hasStruck)) setUi({ strikeCity: null });
   if (g.mode.kind === 'edictTarget' && !s.run.edicts.some((e) => g.mode.kind === 'edictTarget' && e.uid === g.mode.uid)) g.setMode({ kind: 'normal' });
-  if (s.run.phase !== 'playing' && (g.mode.kind !== 'normal' || ui.preview)) {
+  if (s.run.phase !== 'playing' && (g.mode.kind !== 'normal' || ui.preview || ui.dropTargeting)) {
     g.setMode({ kind: 'normal' });
-    setUi({ preview: null, strikeCity: null });
+    setUi({ preview: null, strikeCity: null, dropTargeting: false });
   }
 }
 
@@ -576,7 +622,7 @@ export function bindInteraction(): () => void {
     }
   });
   const unUi = useInteraction.subscribe((u, prev) => {
-    if (u.preview !== prev.preview || u.strikeCity !== prev.strikeCity || u.hoverPath !== prev.hoverPath || u.endingTurn !== prev.endingTurn) schedule();
+    if (u.preview !== prev.preview || u.strikeCity !== prev.strikeCity || u.dropTargeting !== prev.dropTargeting || u.hoverPath !== prev.hoverPath || u.endingTurn !== prev.endingTurn) schedule();
   });
   validate();
   schedule();
@@ -585,6 +631,6 @@ export function bindInteraction(): () => void {
     unGame();
     unUi();
     getRenderer()?.setHighlights(EMPTY_HIGHLIGHTS);
-    setUi({ preview: null, strikeCity: null, hoverPath: [], endingTurn: false, turnBanner: null });
+    setUi({ preview: null, strikeCity: null, dropTargeting: false, hoverPath: [], endingTurn: false, turnBanner: null });
   };
 }

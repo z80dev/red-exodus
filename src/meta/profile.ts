@@ -1,8 +1,8 @@
-// OWNER: Roguelite. Persistent player profile (meta progression) in localStorage.
+// OWNER: SimMechanics. Persistent player profile (meta progression) in localStorage.
 import type { GameState } from '../sim/types';
 import { HUMAN } from '../sim/types';
 import { CRISES, DOCTRINES, EDICTS, LEADERS, WONDERS } from '../content';
-import { CRISIS_CHAPTER, FINAL_ERA } from '../sim/roguelite/constants';
+import { CRISIS_CHAPTER, ERA_NAMES, FINAL_ERA } from '../sim/roguelite/constants';
 
 export interface RunUnlock { kind: string; id: string; name: string }
 
@@ -194,38 +194,38 @@ export interface RunEndCtx {
 export interface UnlockRule { text: string; test(c: RunEndCtx): boolean }
 
 const humanCityCount = (s: GameState) => Object.values(s.cities).filter((c) => c.owner === HUMAN).length;
-const reachEra = (era: number, name: string): UnlockRule => ({ text: `Reach the ${name} Era`, test: (c) => c.state.run.era >= era });
+const reachEra = (era: number): UnlockRule => ({ text: `Reach the ${ERA_NAMES[era]} era`, test: (c) => c.state.run.era >= era });
 
 /** keys referenced by content `unlock.rule`; `winWith:<leaderId>` is resolved dynamically */
 export const UNLOCK_RULES: Record<string, UnlockRule> = {
-  reachEra2: reachEra(1, 'Classical'),
-  reachEra3: reachEra(2, 'Medieval'),
-  reachEra4: reachEra(3, 'Renaissance'),
-  reachEra5: reachEra(4, 'Industrial'),
-  win: { text: 'Win a run', test: (c) => c.won },
-  winAsc2: { text: 'Win a run at Ascension 2+', test: (c) => c.won && c.state.config.ascension >= 2 },
-  winAsc4: { text: 'Win a run at Ascension 4+', test: (c) => c.won && c.state.config.ascension >= 4 },
-  winAsc8: { text: 'Win a run at Ascension 8', test: (c) => c.won && c.state.config.ascension >= 8 },
-  capture5: { text: 'Capture 5 cities in one run', test: (c) => c.state.run.totals.citiesCaptured >= 5 },
-  kills40: { text: 'Slay 40 enemy units in one run', test: (c) => c.state.run.totals.kills >= 40 },
-  wonders4: { text: 'Build 4 wonders in one run', test: (c) => c.state.run.totals.wonders >= 4 },
-  wonders8: { text: 'Build 8 wonders in one run', test: (c) => c.state.run.totals.wonders >= 8 },
-  techs24: { text: 'Discover 24 techs in one run', test: (c) => c.state.run.totals.techs >= 24 },
-  cities8: { text: 'Rule 8 cities at once', test: (c) => humanCityCount(c.state) >= 8 },
-  score100k: { text: 'Score 100,000 Legacy in one Chronicle', test: (c) => c.state.run.bestScore >= 100_000 },
-  score1m: { text: 'Score 1,000,000 Legacy in one Chronicle', test: (c) => c.state.run.bestScore >= 1_000_000 },
+  reachEra2: reachEra(1),
+  reachEra3: reachEra(2),
+  reachEra4: reachEra(3),
+  reachEra5: reachEra(4),
+  win: { text: 'Survive to New Earth (win a run)', test: (c) => c.won },
+  winAsc2: { text: 'Win a run at Hazard 2+', test: (c) => c.won && c.state.config.ascension >= 2 },
+  winAsc4: { text: 'Win a run at Hazard 4+', test: (c) => c.won && c.state.config.ascension >= 4 },
+  winAsc8: { text: 'Win a run at Hazard 8', test: (c) => c.won && c.state.config.ascension >= 8 },
+  capture5: { text: 'Seize 5 colonies in one run', test: (c) => c.state.run.totals.citiesCaptured >= 5 },
+  kills40: { text: 'Neutralize 40 hostile units in one run', test: (c) => c.state.run.totals.kills >= 40 },
+  wonders4: { text: 'Complete 4 Megaprojects in one run', test: (c) => c.state.run.totals.wonders >= 4 },
+  wonders8: { text: 'Complete 8 Megaprojects in one run', test: (c) => c.state.run.totals.wonders >= 8 },
+  techs24: { text: 'Make 24 Breakthroughs in one run', test: (c) => c.state.run.totals.techs >= 24 },
+  cities8: { text: 'Run 8 colonies at once', test: (c) => humanCityCount(c.state) >= 8 },
+  score100k: { text: 'Score 100,000 Viability in one Sol Report', test: (c) => c.state.run.bestScore >= 100_000 },
+  score1m: { text: 'Score 1,000,000 Viability in one Sol Report', test: (c) => c.state.run.bestScore >= 1_000_000 },
   triumphs5: { text: 'Earn 5 Triumphs in one run', test: (c) => (c.state.run.totals.extra.triumphs ?? 0) >= 5 },
   legendary: {
-    text: 'Hold a Legendary doctrine',
+    text: 'Bunk a Legendary Crew member',
     test: (c) => c.state.run.doctrines.some((d) => DOCTRINES[d.id]?.rarity === 'legendary'),
   },
-  noMandateLost: { text: 'Win without losing any Mandate', test: (c) => c.won && !(c.state.run.totals.extra.mandateLost ?? 0) },
+  noMandateLost: { text: 'Win without losing any Charter', test: (c) => c.won && !(c.state.run.totals.extra.mandateLost ?? 0) },
   runs3: { text: 'Complete 3 runs', test: (c) => c.profile.stats.runs >= 3 },
   runs10: { text: 'Complete 10 runs', test: (c) => c.profile.stats.runs >= 10 },
-  crises6: { text: 'Overcome 6 Crises in one run', test: (c) => (c.state.run.totals.extra.crisesSurvived ?? 0) >= 6 },
-  omens5: { text: 'Fulfil 5 Omens in one run', test: (c) => (c.state.run.totals.extra.omensCompleted ?? 0) >= 5 },
+  crises6: { text: 'Survive 6 Crises in one run', test: (c) => (c.state.run.totals.extra.crisesSurvived ?? 0) >= 6 },
+  omens5: { text: 'Complete 5 Directives in one run', test: (c) => (c.state.run.totals.extra.omensCompleted ?? 0) >= 5 },
   festival2000: {
-    text: 'Generate 2,000 culture in one run',
+    text: 'Generate 2,000 Morale in one run',
     test: (c) => c.state.run.totals.culture + (c.state.run.totals.extra.festival ?? 0) >= 2000,
   },
 };
@@ -233,7 +233,7 @@ export const UNLOCK_RULES: Record<string, UnlockRule> = {
 export function resolveRule(key: string | undefined): UnlockRule {
   if (key?.startsWith('winWith:')) {
     const leaderId = key.slice('winWith:'.length);
-    const name = LEADERS[leaderId]?.name ?? leaderId;
+    const name = LEADERS[leaderId]?.country ?? leaderId;
     return { text: `Win a run as ${name}`, test: (c) => c.won && c.state.config.leaderId === leaderId };
   }
   return (key && UNLOCK_RULES[key]) || UNLOCK_RULES.win;

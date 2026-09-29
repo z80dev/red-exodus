@@ -19,8 +19,8 @@ PALETTE.setdefault('med_khmer', ('#9a927e', .9, 0))         # weathered Khmer sa
 PALETTE.setdefault('med_khmer_dk', ('#7a7465', .9, 0))
 PALETTE.setdefault('med_arcade', ('#bdb5a5', .8, 0))         # shaded marble behind loggia columns
 PALETTE.setdefault('med_kawara', ('#59616e', .8, 0))         # Japanese grey roof tiles
-PALETTE.setdefault('med_hill', ('#8cb84e', .9, 0))          # a touch brighter than the map grass
-PALETTE.setdefault('med_hill_dark', ('#76a043', .9, 0))
+PALETTE.setdefault('med_hill', ('#b5552b', .9, 0))          # wind-scoured regolith
+PALETTE.setdefault('med_hill_dark', ('#6e3219', .9, 0))
 
 
 # ---------------------------------------------------------------------------------------------- geometry helpers
@@ -900,7 +900,7 @@ def _battered_base(b, cx, cy, w, d, h, mat='stone_dark'):
 
 
 def himeji(b):
-    PALETTE.setdefault('med_sakura_lt', ('#f6bfd0', .85, 0))
+    PALETTE.setdefault('med_sakura_lt', ('#c77b2c', .85, 0))
     b.base_hex(.8, .03, mat='grass', rim='stone_dark')
     z0 = .036
     # gravel courtyard + stepped approach

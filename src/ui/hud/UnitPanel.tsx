@@ -13,6 +13,9 @@ import { Icon } from '../icons/Icon';
 import { Bar, ConfirmDialog, IconButton, Modal, Ornament } from '../kit';
 import { toast } from './toast';
 import { playerColor, unitName } from './format';
+import { stormPowerAt } from '../../sim/mars';
+import { hexDistance } from '../../sim/hex';
+import { T } from '../terms';
 
 const CLASS_LABEL: Record<string, string> = {
   civilian: 'Civilian', recon: 'Recon', melee: 'Melee', antiCavalry: 'Anti-Cavalry', ranged: 'Ranged', mounted: 'Mounted',
@@ -105,6 +108,14 @@ export function UnitPanel() {
     }
   }, [unit]);
 
+  const stormReadout = useSim((state) => {
+    if (!unit) return null;
+    const power = stormPowerAt(state, unit.tile);
+    if (power) return { power, forecast: false };
+    const forecast = state.storms.some((storm) => storm.path.slice(storm.step + 1, storm.step + 3)
+      .some((eye) => eye != null && hexDistance(state.map, eye, unit.tile) <= storm.radius));
+    return forecast ? { power: 0, forecast: true } : null;
+  });
   if (!s || !unit || unit.owner !== HUMAN) return null;
   const def = UNITS[unit.type];
   const mm = maxMoves(s, unit);
@@ -133,6 +144,11 @@ export function UnitPanel() {
               </span>
             )}
           </div>
+          {stormReadout && <div className={`up__storm ${stormReadout.forecast ? 'is-forecast' : 'is-active'}`} role="status">
+            <Icon name="storm" size={14} /> {stormReadout.forecast
+              ? `${T.storm} forecast: this unit is in the path.`
+              : `${T.storm} · power ${stormReadout.power}`}
+          </div>}
           <div className="up__stats">
             {def && def.strength > 0 && <Stat icon="strength" value={def.strength} label="Strength" />}
             {def?.rangedStrength ? <Stat icon="ranged" value={`${def.rangedStrength}`} sub={def.range ? `r${def.range}` : undefined} label="Ranged strength" /> : null}

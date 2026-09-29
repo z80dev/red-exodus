@@ -2,6 +2,57 @@
 
 Read `docs/DESIGN.md` first. This file is the binding contract between parallel workstreams.
 
+## Mars redesign contract (phase 2 — supersedes the fantasy-history theme)
+- **Ids are frozen, looks and names change.** Every content id, model key, icon name and sfx name listed
+  below stays; its display name, description, glyph, mesh and palette become Mars (docs/DESIGN.md §4).
+  Player-facing vocabulary comes from `src/ui/terms.ts` (UI) — never hard-code "Legacy/Renown/Doctrine".
+  Fixed Mars names/looks for every resource, installation, unit, building, megaproject, landmark and prop
+  key: `docs/RESKIN.md` (binding).
+- Nations replace leaders: `LEADERS` keys = `usa china russia india japan france brazil uae nigeria
+  switzerland north_korea vatican`. `LeaderDef` gained `country`, `code`, `flagColors`, `cryo?`.
+  `DoctrineDef.nation?` = crew nationality; `DoctrineDef.noSell?` = can't be sold.
+- Crew registry: `DOCTRINES` lives in the dependency-free leaf `content/doctrineRegistry.ts`; every crew file
+  (`crewCommon/crewUncommon/crewRare/crewMars/nationCrew`) ends with `registerCrew(LIST)` so registration is
+  immune to import-cycle order. `content/doctrines.ts` is the shared hook-helper kit and re-exports `DOCTRINES`.
+- New sim module `src/sim/mars.ts` (SimMechanics): storms (`stormAt`, `stormPowerAt`, `advanceStorms`,
+  `spawnStorm`), Ark (`changeCryo`, `dropPrice`, `canOrbitalDrop`, `orbitalDrop`, `canThaw`,
+  `thawColonists`), Breakthrough draft (`rollResearchOffer`, `researchRerollCost`, `rerollResearch`),
+  `canDeclareWar`. Constants `START_CRYO ERA_CRYO THAW_POP DROP_RANGE RESEARCH_OFFER_SIZE`.
+- State: `GameState.storms/nextStormId`, `Player.cryo/researchOffer/researchRerolls`, `StormCell`.
+- Actions: `orbitalDrop {tile}`, `thawColonists {cityId}`, `rerollResearch`. `setResearch` (human) must
+  pick from `researchOffer` when it is non-empty.
+- Events: `stormSpawned stormMoved stormEnded stormDamage podLanded colonistsThawed cryoChanged researchOffered`.
+- Hooks (`EffectHooks`): `storm`, `dropPrice`, `researchOffers`, `researchReroll`, `warDeclaration`,
+  `interestCap`, `sellValue`. `CouncilState.rerollLocked` forbids Uplink rerolls for the visit.
+- Storm shelter: `player.counters.stormShelter = state.turn` spares that player's units/colonies this round.
+- `ChapterStats.extra` keys written by the sim: `stormHits stormKills drops thaws rerolls`.
+- Pace: sim-side multipliers `TECH_PACE PRODUCTION_PACE GROWTH_PACE BORDER_PACE` (≈1/1.6); content costs stay
+  as authored. Targets in `roguelite/constants.ts` tuned with `bun scripts/sim.ts --runs 24 --size small`
+  (bot win rate ≈33%).
+- Game start = Landfall: capitals pre-founded; start units `warrior` + `scout`. `settler` = Hab Crawler.
+- Renderer draws storms from `state.storms` (eye = `path[step]`, forecast = next 2 path entries) and plays
+  `podLanded` (orbital streak → impact) before `cityFounded`. New model key: `drop_pod`.
+- New sfx names: `stormHowl stormHit podStreak podImpact thaw breakthrough cryo`.
+- New icon names: `cryo drop thaw storm breakthrough` + one crest per nation id (`nation_<id>`).
+
+### Phase-2 ownership
+| Workstream | Owns |
+|---|---|
+| SimMechanics | `sim/**` except `sim/ai/**` (engine, cities, economy, units, combat, mars, roguelite, tests, testkit) |
+| AI | `sim/ai/**`, `scripts/sim.ts` |
+| Nations | `content/leaders.ts`, `content/uniques.ts`, `content/nationCrew.ts` |
+| Crew | `content/doctrines.ts`, `content/crewMars.ts` |
+| RogueContent | `content/{edicts,scrolls,crises,omens,reforms,ascension,pillars}.ts`, `content/rogue.test.ts` |
+| CivContent | `content/{terrain,resources,improvements,units,buildings,wonders,techs,promotions,naturalWonders}.ts`, `content/civ.test.ts` |
+| Renderer | `render/**` |
+| Blender-Units / -City / -Nature / -Wonders | `art/blender/{units,city,nature,wonders}_*.py`, their GLBs/manifests/previews |
+| UI-HUD | `ui/hud/**`, `ui/kit/**`, `ui/theme.css`, `game/interaction.ts` |
+| UI-Run | `ui/run/**` |
+| UI-Meta+2D | `ui/menu/**`, `ui/art/**` (not artManifest), `ui/icons/**`, `public/icons/*`, `index.html` title |
+| Audio | `audio/**` |
+| Illustration | `art/gen/**`, `scripts/art_*.{ts,py}`, `public/art/**`, `ui/art/artManifest.ts` |
+| Integrator | `docs/**`, `sim/types.ts`, `sim/defs.ts`, `ui/terms.ts`, `content/index.ts`, `App.tsx`, `game/*` (not interaction) |
+
 ## Stack
 Vite 8 + React 19 + TypeScript 6 (strict-ish: `verbatimModuleSyntax` → use `import type`; `erasableSyntaxOnly` → **no enums, no namespaces, no parameter properties**; `noUnusedLocals/Parameters`).
 Three.js (imperative, no r3f) · zustand · idb-keyval · vitest · bun as package manager (`bun add`).

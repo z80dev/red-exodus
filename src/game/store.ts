@@ -87,3 +87,7 @@ export function useSim<T>(fn: (s: GameState) => T): T | null {
   const s = useGame.getState().state;
   return s ? fn(s) : null;
 }
+
+// Dev-only handle for browser QA scripts (module URLs are HMR-versioned, so importing the store from the
+// console yields a different instance). Stripped from production builds.
+if (import.meta.env.DEV) (globalThis as { __redExodus?: typeof useGame }).__redExodus = useGame;

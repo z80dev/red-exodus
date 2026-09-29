@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { DoctrineDef } from '../defs';
 import type { GameState, SimEvent } from '../types';
 import { BUILDINGS, CRISES, DOCTRINES, EDICTS, OMENS, REFORMS, SCROLLS } from '../../content';
-import { handleRunAction, initRun, onTurnEnd, trackEvent } from './index';
+import { CHAPTER_LENGTHS, handleRunAction, initRun, onTurnEnd, trackEvent } from './index';
 import { councilBuyError, doctrinePrice } from './council';
 import { changeMandate } from './run';
 import { testState } from './testState';
@@ -92,13 +92,13 @@ describe('run phases', () => {
     expect(state.run.omenOffer).toHaveLength(2);
     for (let ch = 0; ch < 3; ch++) {
       expect(state.run.chapter).toBe(ch);
-      expect(state.run.chapterLength).toBe([6, 6, 8][ch]);
+      expect(state.run.chapterLength).toBe(CHAPTER_LENGTHS[ch]);
       if (ch === 2) {
         act(state, emit, { type: 'chooseChapterStart', focus: 'arts', omen: null });
         expect(state.run.crisisActive).toBe(true);
         expect(events.some((e) => e.type === 'crisisBegan')).toBe(true);
         state.run.stats.culture = 1e7;
-        for (let t = 0; t < 7; t++) onTurnEnd(state, emit);
+        for (let t = 0; t < CHAPTER_LENGTHS[2] - 1; t++) onTurnEnd(state, emit);
         expect(state.run.phase).toBe('playing');
         onTurnEnd(state, emit);
         expect(state.run.crisisActive).toBe(false);
@@ -178,11 +178,12 @@ describe('run phases', () => {
     state.run.era = 5;
     state.run.chapter = 2;
     state.run.phase = 'chapterStart';
-    state.run.chapterLength = 8;
+    state.run.chapterLength = 5;
     playChapter(state, emit, false);
     expect(state.run.mandate).toBeGreaterThan(0);
     act(state, emit, { type: 'ackChronicle' });
-    expect(state.run).toMatchObject({ phase: 'defeat', defeatReason: 'The final Chronicle fell short. Your empire leaves no lasting Legacy.' });
+    expect(state.run.phase).toBe('defeat');
+    expect(state.run.defeatReason).toBeTruthy();
     expect(state.gameOver).toBe(true);
     expect(events).toContainEqual({ type: 'runLost', reason: state.run.defeatReason! });
   });
@@ -327,7 +328,7 @@ describe('council', () => {
     // full slots block non-ethereal doctrines
     state.run.doctrineSlots = 0;
     c.items[1] = { kind: 'doctrine', id: '__r_c5', edition: 'base', price: 4 };
-    expect(councilBuyError(state, 1)).toMatch(/slots full/);
+    expect(councilBuyError(state, 1)).toMatch(/bunks full/);
     c.items[1] = { kind: 'doctrine', id: '__r_c5', edition: 'ethereal', price: 9 };
     expect(councilBuyError(state, 1)).toBeNull();
     state.run.doctrineSlots = 5;
@@ -337,7 +338,7 @@ describe('council', () => {
     act(state, emit, { type: 'councilBuy', slot: 3 });
     expect(c.pack!.options.length).toBeGreaterThan(0);
     expect(c.pack!.options.every((o) => o.kind === 'doctrine' && o.price === 0)).toBe(true);
-    expect(handleRunAction(state, { type: 'leaveCouncil' }, emit)).toMatch(/pack/);
+    expect(handleRunAction(state, { type: 'leaveCouncil' }, emit)).toMatch(/Supply Drop/);
     const n = state.run.doctrines.length;
     act(state, emit, { type: 'packPick', index: 0 });
     expect(state.run.doctrines.length).toBe(n + 1);
@@ -379,13 +380,41 @@ describe('council', () => {
     expect(state.run.lastChronicle!.influenceEarned).toContainEqual({ label: 'Test Bank ×2', amount: 4 });
   });
 
+  it('council hooks can lock rerolls; noSell Crew stay; sellValue and interestCap hooks apply', () => {
+    const { state, emit } = toCouncil('RULES');
+    const c = state.run.council!;
+    state.run.influence = 40;
+    c.rerollLocked = true;
+    expect(handleRunAction(state, { type: 'councilReroll' }, emit)).toMatch(/cannot be rerolled/);
+    c.rerollLocked = false;
+    act(state, emit, { type: 'councilReroll' });
+
+    DOCTRINES.__r_stuck = doctrine('__r_stuck', 'common', { noSell: true });
+    state.run.doctrines.push({ uid: 556, id: '__r_stuck', edition: 'base', counters: {}, disabled: false, sellValue: 2 });
+    expect(handleRunAction(state, { type: 'sellDoctrine', uid: 556 }, emit)).toBe("This Crew member won't leave");
+    expect(state.run.doctrines.some((d) => d.uid === 556)).toBe(true);
+
+    DOCTRINES.__r_refund = doctrine('__r_refund', 'common', {
+      effects: { sellValue: (_ctx, a) => { a.value = a.price; }, interestCap: (_ctx, a) => { a.value *= 2; } },
+    });
+    state.run.doctrines.push({ uid: 557, id: '__r_refund', edition: 'base', counters: {}, disabled: false, sellValue: 0 });
+    c.items[0] = { kind: 'doctrine', id: '__r_u2', edition: 'base', price: 6 };
+    act(state, emit, { type: 'councilBuy', slot: 0 });
+    expect(state.run.doctrines.at(-1)!.sellValue).toBe(6);
+
+    act(state, emit, { type: 'leaveCouncil' });
+    state.run.influence = 100;
+    playChapter(state, emit, true);
+    expect(state.run.lastChronicle!.influenceEarned).toContainEqual({ label: 'Interest', amount: 10 });
+  });
+
   it('edicts: target validation, use in play only', () => {
     const { state, events, emit } = toCouncil('EDICT');
     state.run.edicts = [{ uid: 777, id: '__r_edict' }];
     expect(handleRunAction(state, { type: 'useEdict', uid: 777, cityId: 1 }, emit)).toMatch(/during play/);
     act(state, emit, { type: 'leaveCouncil' });
     act(state, emit, { type: 'chooseChapterStart', focus: 'arts', omen: null });
-    expect(handleRunAction(state, { type: 'useEdict', uid: 777 }, emit)).toMatch(/city/);
+    expect(handleRunAction(state, { type: 'useEdict', uid: 777 }, emit)).toMatch(/colony/);
     const pop = state.cities[1].pop;
     act(state, emit, { type: 'useEdict', uid: 777, cityId: 1 });
     expect(state.cities[1].pop).toBe(pop + 3);

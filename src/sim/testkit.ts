@@ -1,9 +1,10 @@
-// OWNER: SimCore. Shared helpers for sim tests (not imported by game code).
+// OWNER: SimMechanics. Shared helpers for sim tests (not imported by game code).
 import type { Action, GameState } from './types';
 import { HUMAN } from './types';
 import { LEADERS } from '../content';
 import { applyAction, createGame } from './engine';
 import { autoplayNextAction } from './ai';
+import { refreshAllCities } from './cities';
 
 export function newGame(seed: string, rivals = 3): GameState {
   const leaderId = Object.keys(LEADERS).sort()[0];
@@ -16,20 +17,9 @@ export function startPlaying(state: GameState): void {
   if (state.run.phase === 'chapterStart') applyAction(state, { type: 'chooseChapterStart', focus: 'prosperity', omen: null });
 }
 
-/** found the human's first city with the starting settler; returns the city id */
-export function foundFirstCity(state: GameState): number {
-  const settler = Object.values(state.units).find((u) => u.owner === HUMAN && u.type === 'settler');
-  if (!settler) throw new Error('no settler');
-  const r = applyAction(state, { type: 'foundCity', unitId: settler.id });
-  if (!r.ok) throw new Error(r.error);
-  const ev = r.events.find((e) => e.type === 'cityFounded');
-  if (!ev || ev.type !== 'cityFounded') throw new Error('no cityFounded event');
-  return ev.cityId;
-}
-
 /**
  * A playing game whose human has no rule-bending effects (no leader hooks, doctrines, crisis, ascension),
- * so formulas can be checked against their raw tunables. Returns the state and the human's first city id.
+ * so formulas can be checked against their raw tunables. Returns the state and the human's Ark Hab (capital) id.
  */
 export function plainGame(seed: string): { state: GameState; cityId: number } {
   const state = newGame(seed);
@@ -41,7 +31,10 @@ export function plainGame(seed: string): { state: GameState; cityId: number } {
   state.run.crisisActive = false;
   state.run.darkAge = false;
   state.run.ascension = -1;
-  const cityId = foundFirstCity(state);
+  state.storms = [];
+  refreshAllCities(state, HUMAN);
+  const cityId = state.players[HUMAN].capitalId;
+  if (cityId == null) throw new Error('no Ark Hab at landfall');
   return { state, cityId };
 }
 

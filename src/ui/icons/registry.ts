@@ -7,19 +7,21 @@ import { MOTIF_GLYPHS } from './glyphs/motifs';
 import { RESOURCE_GLYPHS } from './glyphs/resources';
 import { BUILDING_GLYPHS } from './glyphs/buildings';
 import { WONDER_GLYPHS } from './glyphs/wonders';
+import { MARS_GLYPHS } from './glyphs/mars';
 import {
   BUILDINGS, CRISES, DOCTRINES, EDICTS, IMPROVEMENTS, LEADERS, NATURAL_WONDERS, OMENS, PROMOTIONS, REFORMS,
   RESOURCES, SCROLLS, TECHS, UNITS, WONDERS,
 } from '../../content';
 
 const BASE = {
-  ...CORE_GLYPHS,
   ...GAME_GLYPHS,
   ...UNIT_GLYPHS,
   ...MOTIF_GLYPHS,
   ...RESOURCE_GLYPHS,
   ...BUILDING_GLYPHS,
   ...WONDER_GLYPHS,
+  ...CORE_GLYPHS,
+  ...MARS_GLYPHS,
 };
 
 const ANY: Record<string, Glyph> = BASE;
@@ -66,7 +68,7 @@ function named(name: string | undefined): Glyph | undefined {
 
 /** Category glyph for a content id found in one of the registries (or undefined). */
 function fromContent(id: string): Glyph | undefined {
-  if (RESOURCES[id]) return named(RESOURCES[id].icon) ?? NAMED.resource;
+  if (RESOURCES[id]) return named(`res_${id}`) ?? named(RESOURCES[id].icon) ?? NAMED.resource;
   if (IMPROVEMENTS[id]) return named(IMPROVEMENTS[id].icon) ?? NAMED.improvement;
   const b = BUILDINGS[id];
   if (b) return named(b.icon) ?? named(b.replaces) ?? NAMED.building;
@@ -94,7 +96,8 @@ export function resolveGlyph(name: string): Glyph {
   if (direct) return direct;
   const m = /^([a-z]+)[:_/](.+)$/.exec(name);
   if (m && PREFIX_CATEGORY[m[1]]) {
-    return named(m[2]) ?? fromContent(m[2]) ?? NAMED[PREFIX_CATEGORY[m[1]]];
+    const resource = m[1] === 'res' || m[1] === 'resource' ? named(`res_${m[2]}`) : undefined;
+    return resource ?? named(m[2]) ?? fromContent(m[2]) ?? NAMED[PREFIX_CATEGORY[m[1]]];
   }
   const c = fromContent(name);
   if (c) return c;

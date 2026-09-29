@@ -15,14 +15,19 @@ ROOT = Path(__file__).resolve().parents[2]
 MODELS = ROOT / 'public/models'
 PREVIEWS = ROOT / 'art/previews'
 PALETTE = {
-    'leaf': '5b8c3a', 'leaf_dark': '3f6e2a', 'leaf_light': '86b04a',
-    'trunk': '6b4a2f', 'rock': '8a8177', 'rock_dark': '6e665e',
-    'snow': 'f2f4f7', 'sand': 'e3cf9a', 'roof': 'b5523b',
-    'stone': 'c9bfae', 'timber': '7a5534', 'gold': 'e0b84a',
-    'steel': 'b8bcc2', 'water': '6fa8c9', 'earth': '9b754e',
-    'cream': 'f3dfb0', 'ink': '293c44', 'berry': '885a97',
-    'coral': 'db846a', 'pink': 'eea8a0', 'teal': '55a89c',
-    'coal': '3c444c', 'iron': 'ad6e50', 'red': 'af5442',
+    'leaf': '8a9a3b', 'leaf_dark': '68752f', 'leaf_light': 'b0a64a',
+    'trunk': '6b4a36', 'rock': '8f6755', 'rock_dark': '57463d',
+    'snow': 'eef3f6', 'sand': 'd9a066', 'roof': 'b5552b',
+    'stone': 'b56b4b', 'timber': '80513a', 'gold': 'd9a066',
+    'steel': '8d9097', 'water': '3f8f8a', 'earth': '9b4424',
+    'cream': 'e7e3dc', 'ink': '392d29', 'berry': '714875',
+    'coral': 'c77b2c', 'pink': 'eea8a0', 'teal': '3f8f8a',
+    'coal': '3b2f2a', 'iron': 'a45b3b', 'red': 'b5552b',
+    'rust': 'b5552b', 'basalt': '3b2f2a', 'glass': '6fa8c9',
+    'cryo': '5fd4e8', 'lichen': '8a9a3b', 'ochre': 'c8693a',
+    'platinum': 'd6d8d6', 'opal': '73b8ba', 'aerogel': 'a9d6e8',
+    'jarosite': 'd4aa42', 'brine': '3f8f8a', 'soil': '49352e',
+    'dryice': 'dce8ed', 'hazard': 'f28c28', 'solar': '1d2a44',
 }
 MATS = {}
 

@@ -43,6 +43,7 @@ let samples: Float32Array<ArrayBuffer> | null = null;
 let nodes: AudioNode[] = [];
 let unsubscribeBus: (() => void) | null = null;
 let unsubscribeStore: (() => void) | null = null;
+let podImpactTimer: number | undefined;
 let era = 0;
 let mood: Mood = 'menu';
 let volumes: Required<AudioVolumes> = { master: 0.8, music: 0.5, sfx: 0.8 };
@@ -80,12 +81,21 @@ function setMood(value: Mood): void {
 function syncState(): void {
   const store = useGame.getState();
   const state = store.state;
-  if (!state || store.screen !== 'game') { setMood('menu'); return; }
+  if (!state || store.screen !== 'game') { score?.setStormIntensity(0); setMood('menu'); return; }
   setEra(state.run.era);
   const phase = state.run.phase;
   if (phase === 'chronicle' || phase === 'victory' || phase === 'defeat') { setMood(phase); return; }
-  if (state.run.crisisActive) { setMood('crisis'); return; }
   const human = state.players.find(player => player.isHuman);
+  let nearbyStorms = 0;
+  if (human) {
+    const owned = state.map.tiles.filter(tile => tile.owner === human.id);
+    for (const storm of state.storms) {
+      const eye = state.map.tiles[storm.path[storm.step]];
+      if (eye && owned.some(tile => Math.abs(tile.col - eye.col) + Math.abs(tile.row - eye.row) <= storm.radius + 3)) nearbyStorms++;
+    }
+    score?.setStormIntensity(Math.min(1, nearbyStorms / 3));
+  } else score?.setStormIntensity(0);
+  if (state.run.crisisActive || state.run.chapter === 2) { setMood('crisis'); return; }
   if (human && state.players.some(p => !p.isHuman && p.id !== BARBARIAN && p.alive && human.relations[p.id] === 'war')) { setMood('war'); return; }
   // Only visible enemies count: audio must not reveal fog-of-war information.
   if (human) {
@@ -100,6 +110,7 @@ function syncState(): void {
     });
     if (near) { setMood('tension'); return; }
   }
+  if (nearbyStorms > 0) { setMood('tension'); return; }
   setMood('calm');
 }
 function setVolumes(value: AudioVolumes): void {
@@ -138,6 +149,10 @@ function audible(state: GameState | null, event: SimEvent): boolean {
   const human = state.players.find(player => player.isHuman);
   if (!human) return true;
   if ('player' in event && event.player === human.id) return true;
+  if (event.type === 'stormSpawned') {
+    const eye = state.map.tiles[event.storm.path[event.storm.step]];
+    return !!eye && state.map.tiles.some(tile => tile.owner === human.id && Math.abs(tile.col - eye.col) + Math.abs(tile.row - eye.row) <= event.storm.radius + 3);
+  }
   if (event.type === 'combat') return event.attacker.player === human.id || event.defender.player === human.id || human.vis[event.defender.tile] === 2;
   if (event.type === 'unitMoved') return event.path.some(tile => human.vis[tile] === 2);
   if ('tile' in event && event.tile !== undefined) return human.vis[event.tile] === 2;
@@ -179,6 +194,12 @@ function handleBatch(events: SimEvent[]): void {
       case 'cityFounded': sound = 'found'; break;
       case 'buildingBuilt': case 'improvementBuilt': sound = 'build'; break;
       case 'techResearched': sound = 'research'; break;
+      case 'stormSpawned': sound = 'stormHowl'; break;
+      case 'stormDamage': sound = 'stormHit'; break;
+      case 'podLanded': sound = 'podStreak'; break;
+      case 'colonistsThawed': sound = 'thaw'; break;
+      case 'researchOffered': sound = 'breakthrough'; break;
+      case 'cryoChanged': sound = 'cryo'; break;
       case 'unitLevelUp': case 'unitPromoted': sound = 'levelUp'; break;
       case 'warDeclared': if (event.by === 0 || event.target === 0) sound = 'warDeclared'; break;
       case 'crisisBegan': sound = 'crisisReveal'; break;
@@ -191,11 +212,15 @@ function handleBatch(events: SimEvent[]): void {
     const now = context?.currentTime ?? 0;
     const ai = 'player' in event ? event.player !== 0 : event.type === 'combat' && event.attacker.player !== 0;
     if (now - aiWindow > 1) { aiWindow = now; aiCount = 0; }
-    const interval = sound === 'doctrineTriggered' ? 0.12 : ai ? 0.2 : 0.055;
+    const interval = sound === 'doctrineTriggered' ? 0.12 : sound === 'stormHit' ? 0.24 : sound === 'stormHowl' ? 0.6 : ai ? 0.2 : 0.055;
     if (now - (eventTimes.get(sound) ?? -Infinity) < interval || (ai && aiCount >= 4)) { droppedEvents++; continue; }
     eventTimes.set(sound, now);
     if (ai) aiCount++;
     sfx(sound, { volume: ai ? 0.55 : 1 });
+    if (sound === 'podStreak') {
+      if (podImpactTimer !== undefined) window.clearTimeout(podImpactTimer);
+      podImpactTimer = window.setTimeout(() => { podImpactTimer = undefined; sfx('podImpact'); }, 520);
+    }
   }
   if (state) syncState();
 }
@@ -244,6 +269,8 @@ function init(): void {
 }
 function dispose(): void {
   unsubscribeBus?.(); unsubscribeStore?.(); unsubscribeBus = null; unsubscribeStore = null;
+  if (podImpactTimer !== undefined && typeof window !== 'undefined') window.clearTimeout(podImpactTimer);
+  podImpactTimer = undefined;
   if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', visibility);
   if (typeof window !== 'undefined') { window.removeEventListener('pointerdown', resume); window.removeEventListener('keydown', resume); }
   score?.stop(); synth?.stop();

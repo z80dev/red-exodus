@@ -28,10 +28,10 @@ function makeState(width = 7, height = 5): GameState {
     map: { width, height, tiles, starts: [] },
     players: [{ id: BARBARIAN, name: '', civName: '', leaderId: '', colors: { primary: '', secondary: '' }, isHuman: false, alive: true,
       gold: 0, techs: [], researching: null, researchProgress: {}, vis: Array(tiles.length).fill(1), relations: { 0: 'war' }, happiness: 0, ai: null,
-      capitalId: null, citiesFounded: 0, counters: {}, effectCounters: {} }],
+      capitalId: null, citiesFounded: 0, counters: {}, effectCounters: {}, cryo: 0, researchOffer: [], researchRerolls: 0 }],
     cities: {}, units: {}, nextId: 1,
     run: { era: 0, ascension: 0, doctrines: [], reforms: [], crisisActive: false, crisis: null },
-    wonderOwners: {}, naturalWondersSeen: {}, log: [], gameOver: false,
+    wonderOwners: {}, naturalWondersSeen: {}, log: [], gameOver: false, storms: [], nextStormId: 1,
   } as unknown as GameState;
 }
 

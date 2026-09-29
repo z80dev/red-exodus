@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Emit, SimEvent } from './types';
 import { HUMAN } from './types';
-import { BUILDINGS, IMPROVEMENTS, WONDERS } from '../content';
+import { BUILDINGS, IMPROVEMENTS, UNITS, WONDERS } from '../content';
 import {
-  BORDER_BASE, BUY_EXP, BUY_LINEAR, CAPTURE_HP_FRACTION, CENTER_MIN_YIELDS, FOOD_PER_POP, GROWTH_BASE, GROWTH_EXP,
-  GROWTH_PER, IMPROVEMENT_SCALING, borderThreshold, buildImprovement, buyCost, canFoundCity, canProduce, captureCity,
-  cityTerritory, completeItem, computeCityYields, foundCity, growthThreshold, improvementCost, processCity,
-  productionCost, refreshCity, tileYields,
+  BORDER_BASE, BORDER_PACE, BUY_EXP, BUY_LINEAR, CAPTURE_HP_FRACTION, CENTER_MIN_YIELDS, FOOD_PER_POP, GROWTH_BASE,
+  GROWTH_EXP, GROWTH_PACE, GROWTH_PER, IMPROVEMENT_SCALING, PRODUCTION_PACE, borderThreshold, buildImprovement, buyCost,
+  canFoundCity, canProduce, captureCity, cityTerritory, completeItem, computeCityYields, growthThreshold, improvementCost,
+  processCity, productionCost, refreshCity, tileYields,
 } from './cities';
 import { collectEffects } from './effects';
 import { hexDistance, neighbors, tilesInRadius } from './hex';
@@ -18,13 +18,13 @@ function recorder(): { emit: Emit; events: SimEvent[] } {
 }
 
 describe('thresholds', () => {
-  it('growth threshold follows 15 + 6(p−1) + (p−1)^1.8', () => {
+  it('growth threshold follows (15 + 6(p−1) + (p−1)^1.8) × pace', () => {
     const { state, cityId } = plainGame('CITY-GROWTH');
     const city = state.cities[cityId];
     for (const pop of [1, 2, 5, 10]) {
       city.pop = pop;
       const n = pop - 1;
-      expect(growthThreshold(state, city)).toBe(Math.round(GROWTH_BASE + GROWTH_PER * n + Math.pow(n, GROWTH_EXP)));
+      expect(growthThreshold(state, city)).toBe(Math.round((GROWTH_BASE + GROWTH_PER * n + Math.pow(n, GROWTH_EXP)) * GROWTH_PACE));
     }
   });
 
@@ -32,7 +32,7 @@ describe('thresholds', () => {
     const { state, cityId } = plainGame('CITY-BORDER');
     const city = state.cities[cityId];
     const ring = tilesInRadius(state.map, city.tile, 1).length;
-    if (cityTerritory(state, city).length === ring) expect(borderThreshold(state, city)).toBe(BORDER_BASE);
+    if (cityTerritory(state, city).length === ring) expect(borderThreshold(state, city)).toBe(Math.round(BORDER_BASE * BORDER_PACE));
     const before = borderThreshold(state, city);
     const extra = tilesInRadius(state.map, city.tile, 2).find((i) => state.map.tiles[i].owner == null)!;
     state.map.tiles[extra].owner = HUMAN;
@@ -150,11 +150,12 @@ describe('production', () => {
     expect(city.pop).toBe(2);
   });
 
-  it('buy cost is 2×remaining + remaining^1.15 and wonders/projects are not buyable', () => {
+  it('production cost is the authored cost × pace; buy cost is 2×remaining + remaining^1.15; wonders/projects are not buyable', () => {
     const { state, cityId } = plainGame('CITY-BUY');
     const city = state.cities[cityId];
     const item = { kind: 'unit' as const, id: 'warrior' };
     const c = productionCost(state, city, item);
+    expect(c).toBe(Math.round(UNITS.warrior.cost * PRODUCTION_PACE));
     expect(buyCost(state, city, item)).toBe(Math.round(BUY_LINEAR * c + Math.pow(c, BUY_EXP)));
     city.queue = [item];
     city.prodStored = Math.floor(c / 2);
@@ -178,10 +179,8 @@ describe('production', () => {
   it('wonder race: the first finisher claims it, others lose it but keep their production', () => {
     const { state, cityId } = plainGame('CITY-WONDER');
     const mine = state.cities[cityId];
-    const rivalSettler = Object.values(state.units).find((u) => u.owner === 1 && u.type === 'settler')!;
-    expect(canFoundCity(state, 1, rivalSettler.tile)).toBeNull();
+    const theirs = state.cities[state.players[1].capitalId!];
     const { emit, events } = recorder();
-    const theirs = foundCity(state, 1, rivalSettler.tile, emit);
     const wonder = Object.values(WONDERS).find((w) => !w.requiresCoastal && !w.requiresRiver && !w.requiresTerrain)!;
     state.players[HUMAN].techs.push(wonder.tech);
     state.players[1].techs.push(wonder.tech);
@@ -199,11 +198,11 @@ describe('production', () => {
 });
 
 describe('founding', () => {
-  it('rejects sites too close to another city and claims the founding ring', () => {
+  it('rejects sites too close to another colony and claims the founding ring', () => {
     const { state, cityId } = plainGame('CITY-FOUND');
     const city = state.cities[cityId];
     const near = neighbors(state.map, city.tile)[0];
-    expect(canFoundCity(state, HUMAN, near)).toMatch(/Too close|territory|water|mountain|natural/i);
+    expect(canFoundCity(state, HUMAN, near)).toMatch(/Too close|territory|dust sea|massif|landmark/i);
     for (const i of tilesInRadius(state.map, city.tile, 1)) {
       const t = state.map.tiles[i];
       if (t.cityId === city.id) expect(t.owner).toBe(HUMAN);
@@ -244,8 +243,7 @@ describe('capture', () => {
     city.pop = 7;
     const territory = cityTerritory(state, city);
     const { emit, events } = recorder();
-    const rivalSettler = Object.values(state.units).find((u) => u.owner === 1 && u.type === 'settler')!;
-    const rivalCapital = foundCity(state, 1, rivalSettler.tile, emit);
+    const rivalCapital = state.cities[state.players[1].capitalId!];
     captureCity(state, city, 1, emit);
     expect(state.players[1].capitalId).toBe(rivalCapital.id);
     expect(city.isCapital).toBe(false);

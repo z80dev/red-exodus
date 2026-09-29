@@ -1,4 +1,4 @@
-// Renders the AEONS emblem to the PWA / home-screen icons and the SVG favicon.
+// Renders the RED EXODUS emblem to the PWA / home-screen icons and the SVG favicon.
 // Run: bun scripts/art2d_icons.tsx
 //   public/favicon.svg                      emblem, transparent
 //   public/icons/icon-{192,512}.png         "any": emblem on a rounded ink tile
@@ -21,7 +21,7 @@ function emblem(uid: string): string {
   ).replace(/^<svg>|<\/svg>$/g, '');
 }
 
-/** Ink tile background (100×100 space): radial navy, soft gold sunburst, star specks. */
+/** Rust-dusk tile background: dusty red gradients, orbital rays and mineral specks. */
 function tile(rounded: boolean): string {
   const rays = Array.from({ length: 24 }, (_, i) => {
     const a = (i * Math.PI * 2) / 24;
@@ -39,16 +39,16 @@ function tile(rounded: boolean): string {
   return `
     <defs>
       <radialGradient id="bg" cx="0.5" cy="0.42" r="0.75">
-        <stop offset="0" stop-color="#26355a"/><stop offset="0.55" stop-color="#111a2c"/><stop offset="1" stop-color="#06080e"/>
+        <stop offset="0" stop-color="#914b38"/><stop offset="0.55" stop-color="#482b29"/><stop offset="1" stop-color="#171819"/>
       </radialGradient>
       <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0" stop-color="#f6d77c" stop-opacity="0.45"/><stop offset="1" stop-color="#f6d77c" stop-opacity="0"/>
+        <stop offset="0" stop-color="#ffac68" stop-opacity="0.42"/><stop offset="1" stop-color="#ffac68" stop-opacity="0"/>
       </radialGradient>
       <clipPath id="tile">${shape}</clipPath>
     </defs>
     <g clip-path="url(#tile)">
       <rect width="100" height="100" fill="url(#bg)"/>
-      <path d="${rays}" fill="#f6d77c" opacity="0.07"/>
+      <path d="${rays}" fill="#ef9a62" opacity="0.08"/>
       <circle cx="50" cy="50" r="46" fill="url(#glow)"/>
       ${specks}
     </g>

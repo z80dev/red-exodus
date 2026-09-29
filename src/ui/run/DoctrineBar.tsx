@@ -2,6 +2,8 @@
 // (FLIP), drag onto the sell zone → sell (Council). Pulses + floating text on `doctrineTriggered`.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as RPointerEvent } from 'react';
+import { T } from '../terms';
+import { DOCTRINES, LEADERS } from '../../content';
 import { bus } from '../../game/bus';
 import { useGame, useSim } from '../../game/store';
 import { doctrineSlotsUsed } from '../../sim/roguelite';
@@ -206,6 +208,18 @@ export function DoctrineBar({ compact = true, cardWidth, sellable = false, slots
             onPointerDown={(e) => onPointerDown(e, d, i)}
           >
             <Card card={doctrineCard(d.id, d.edition, d, state)} width={width} tilt={!compact && dragging == null} zoomable={false} disabled={d.disabled} />
+            {(() => {
+              const nationId = DOCTRINES[d.id]?.nation;
+              const nation = nationId ? LEADERS[nationId] : undefined;
+              return nation ? (
+                <span
+                  className="rdb-nation"
+                  title={nation.country}
+                  aria-label={`${nation.country} Crew`}
+                  style={{ '--flag': `linear-gradient(90deg, ${nation.flagColors.join(', ')})` } as CSSProperties}
+                >{nation.code}</span>
+              ) : null;
+            })()}
             {d.disabled && <div className="rdb-chain" title="Disabled"><Icon name="lock" size={compact ? 14 : 18} /></div>}
             {!compact && <div className="rdb-index num">{i + 1}</div>}
           </div>
@@ -217,14 +231,14 @@ export function DoctrineBar({ compact = true, cardWidth, sellable = false, slots
         ))}
       </div>
       {slotsBadge && (
-        <div className="rdb-meta num" aria-label="Doctrine slots">
+        <div className="rdb-meta num" aria-label={`${T.doctrine} bunks`}>
           <Icon name="doctrine" size={13} /> {used}/{slots}
         </div>
       )}
       {sellable && (
         <div ref={sellRef} className={`rdb-sell ${dragging != null ? 'is-visible' : ''} ${overSell ? 'is-over' : ''}`}>
           <Icon name="influence" size={18} />
-          <span className="display">Sell</span>
+          <span className="display">Sell for Scrip</span>
           {dragging != null && <span className="num">+{doctrines.find((d) => d.uid === dragging)?.sellValue ?? 0}</span>}
         </div>
       )}

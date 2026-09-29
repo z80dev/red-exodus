@@ -6,7 +6,6 @@ import {
 } from 'three';
 import type { ModelLibrary } from './assets/models';
 
-const SWAY_KEYS = /^(tree_|bush|reeds|flowers)/;
 const WHITE = new Color(1, 1, 1);
 const GREY = new Color(0.35, 0.35, 0.35);
 
@@ -28,14 +27,12 @@ export class PropLayer {
   private slots = new Map<string, Slot>();
   private lib: ModelLibrary;
   private mat: MeshStandardMaterial;
-  private swayMat: MeshStandardMaterial;
   castShadow = true;
 
-  constructor(name: string, lib: ModelLibrary, mat: MeshStandardMaterial, swayMat: MeshStandardMaterial) {
+  constructor(name: string, lib: ModelLibrary, mat: MeshStandardMaterial) {
     this.group.name = name;
     this.lib = lib;
     this.mat = mat;
-    this.swayMat = swayMat;
   }
 
   begin(): void {
@@ -86,7 +83,7 @@ export class PropLayer {
         tb.setUsage(DynamicDrawUsage);
         geo.setAttribute('iTeamA', ta);
         geo.setAttribute('iTeamB', tb);
-        const mesh = new InstancedMesh(geo, SWAY_KEYS.test(key) ? this.swayMat : this.mat, capacity);
+        const mesh = new InstancedMesh(geo, this.mat, capacity);
         mesh.instanceMatrix.setUsage(DynamicDrawUsage);
         mesh.name = key;
         slot = { mesh, capacity, geoSource: asset.geometry };

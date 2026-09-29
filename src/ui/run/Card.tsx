@@ -11,6 +11,7 @@ import { RichText } from '../icons/RichText';
 import type { CardModel } from './cards';
 import { EDITION_LABEL, EDITION_TEXT } from './cards';
 import { haptic, sfx } from './runUtil';
+import { T, TITLE } from '../terms';
 import './card.css';
 
 export type { CardModel } from './cards';
@@ -168,7 +169,7 @@ export function Card(props: CardProps) {
           </div>
         </div>
         {card.price != null && !faceDown && (
-          <div className="rc-price" aria-label={`Costs ${card.price} influence`}>
+          <div className="rc-price" aria-label={`Costs ${card.price} ${T.influence}`}>
             <Icon name="influence" size={12} />
             <span className="num">{card.price}</span>
           </div>
@@ -248,7 +249,7 @@ function CardBack() {
         <path d="M30 50 L50 44 L70 50 L50 56 Z" fill="url(#rcBackGold)" opacity="0.75" />
         <circle cx="50" cy="50" r="4" fill="#0c111b" stroke="url(#rcBackGold)" strokeWidth="1" />
       </svg>
-      <div className="rc-back-word display">AEONS</div>
+      <div className="rc-back-word display">{TITLE}</div>
     </div>
   );
 }

@@ -109,8 +109,8 @@ describe('computeChronicle', () => {
     const r = computeChronicle(state, () => {});
     expect(r.triumph).toBe(true);
     expect(r.influenceEarned).toEqual([
-      { label: 'Chapter stipend', amount: 3 },
-      { label: 'Rise bonus', amount: 1 },
+      { label: 'Ark stipend', amount: 3 },
+      { label: 'Dawn bonus', amount: 1 },
       { label: 'Interest', amount: 5 },
       { label: 'Triumph', amount: 3 },
     ]);

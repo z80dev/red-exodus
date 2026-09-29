@@ -1,196 +1,187 @@
-// OWNER: ContentRogue. The eight fictional civilizations (Balatro decks). Leader effects apply to every
-// player led by that leader (AIs included), so hooks always act on ctx.player, never on HUMAN directly.
+// OWNER: Nations. Leader effects apply to every player led by that nation (AIs included): hooks always use ctx.player.
 import type { LeaderDef } from '../sim/defs';
-import { RESOURCES } from './resources';
 import { addGold } from '../sim/economy';
-import { changeMandate } from '../sim/roguelite';
-import {
-  countWonders, isCoastalCity, isNextToMountain, isRiverTile, isWoodland, ownMod, ownTile, ownUnit,
-  unitClassOf, unitKillBy,
-} from './doctrines';
+import { chance, randInt } from '../sim/rng';
+import { changeMandate, addExtraStat } from '../sim/roguelite';
+import { addEdict } from '../sim/roguelite/council';
+import { EDICTS } from './edicts';
+import { UNITS } from './units';
+import { pushDoctrineCard } from './doctrines';
 
 export const LEADERS: Record<string, LeaderDef> = {
-  aurelian: {
-    id: 'aurelian', name: 'Solenne the Radiant', title: 'Sun-Queen of the Aurelian Dominion',
-    civName: 'Aurelian Dominion', adjective: 'Aurelian',
-    colors: { primary: '#e3b53c', secondary: '#6b3a10' },
-    description: 'A golden dynasty of builders who raise wonders to outshine the sun.',
-    bonus: 'Capital +2 {prod} and +2 {cul}. Wonders cost **20%** less {prod}. **+1** {happy} per Wonder you own.',
-    startDoctrine: 'solar_dynasty', uniqueBuilding: 'sun_court', aiPersonality: 'builder',
-    cityNames: ['Aurelia', 'Solmere', 'Helion', 'Goldcrest', 'Dawnspire', 'Vesperine', 'Lumenhall', 'Brightwater', 'Castellum Sol', 'Ambergate', 'Radiance', 'Sunhollow', 'Saffronreach', 'Meridia', 'Glimmerford'],
-    portrait: { hue: 44, motif: 'sun', crest: 'crown' },
+  usa: {
+    id: 'usa', name: 'Harlan Price', title: 'Designated Survivor; Former Secretary of the Interior', civName: 'Liberty Ark', adjective: 'American',
+    country: 'United States', code: 'USA', flagColors: ['#b22234', '#ffffff', '#3c3b6e'], colors: { primary: '#2474a6', secondary: '#f0c85a' },
+    description: 'The national emergency plan worked. The person in charge is still arguing about the invoice.',
+    bonus: 'The Uplink stocks **+1** Crew card. Selling Crew refunds its full price. **+10%** {gold}.',
+    startDoctrine: 'astronaut', uniqueUnit: 'marine_raider', uniqueBuilding: 'liberty_exchange', aiPersonality: 'expansionist',
+    cityNames: ['New Houston', 'Cape Canaveral II', 'New Albuquerque', 'Little Rock(et)', 'Phoenix Rising', 'New Detroit', 'Houston, We Have Air', 'New Anchorage', 'Omaha Beachhead', 'Dust Vegas', 'New Cleveland', 'Camp David Dome', 'New Seattle', 'Independence, Mars', 'Last Exit, Texas'],
+    portrait: { hue: 205, motif: 'eagle', crest: 'star' },
     effects: {
-      cityYield(_ctx, a) {
-        if (a.city.isCapital) { a.yields.prod += 2; a.yields.cul += 2; }
-      },
-      cost(_ctx, a) {
-        if (a.currency === 'prod' && a.item.kind === 'wonder') a.cost *= 0.8;
-      },
-      happiness(ctx, a) {
-        a.value += countWonders(ctx.state, ctx.player.id);
-      },
+      council(ctx, a) { pushDoctrineCard(ctx.state, a.council); },
+      cityYield(_ctx, a) { a.pct.gold += 10; },
+      sellValue(_ctx, a) { a.value = a.price; },
     },
   },
-  thalassan: {
-    id: 'thalassan', name: 'Kaelo Tidewarden', title: 'Grand Admiral of the Thalassan League',
-    civName: 'Thalassan League', adjective: 'Thalassan',
-    colors: { primary: '#1aa3b5', secondary: '#0b3a52' },
-    description: 'Island merchant-princes whose fleets bind every shore with silver.',
-    bonus: 'Coast and lake tiles +1 {gold}. Coastal cities +15% {gold} and +1 {prod}. **+1** {influence} per chapter per 3 coastal cities.',
-    startDoctrine: 'tidal_charter', uniqueBuilding: 'tide_market', aiPersonality: 'expansionist',
-    cityNames: ['Thalassa', 'Pearlhaven', 'Coralmouth', 'Saltmere', 'Wavecrest', 'Brineholt', 'Moonharbor', 'Tidewick', 'Azure Quay', 'Seaglass', 'Gullreach', 'Foamspire', 'Anchorfall', 'Driftmoor', 'Nacre'],
-    portrait: { hue: 190, motif: 'wave', crest: 'anchor' },
+  china: {
+    id: 'china', name: 'Lin Weiqi', title: 'Chief Engineer of the Tiangong Mission', civName: 'Tiangong Ark', adjective: 'Chinese',
+    country: 'China', code: 'CHN', flagColors: ['#de2910', '#ffde00'], colors: { primary: '#168f86', secondary: '#f2cf4a' }, cryo: 5,
+    description: 'The habitat arrived ahead of schedule. The schedule was written before Earth went dark.',
+    bonus: 'Megaprojects cost **25%** less {prod}. Gain **+2** {splendor} per Megaproject owned in each Sol Report. Start with **+2** Cryo Pods.',
+    startDoctrine: 'foreman', uniqueUnit: 'jade_rabbit_crawler', uniqueBuilding: 'harmony_hab_block', aiPersonality: 'builder',
+    cityNames: ['New Beijing', 'Chang’e Harbour', 'Jade Rabbit One', 'Dustzhou', 'Red Dragon Bay', 'Xīn Shanghai', 'Tiangong City', 'Long March East', 'Mòhe Crater', 'New Guangzhou', 'Quietly Thriving', 'Plan Ahead Basin', 'Second Shenzhen', 'The Future Is On Time', 'Xiǎo Mars'],
+    portrait: { hue: 12, motif: 'gear', crest: 'lion' },
     effects: {
-      tileYield(_ctx, a) {
-        if (a.tile.terrain === 'coast' || a.tile.terrain === 'lake') a.yields.gold += 1;
-      },
-      cityYield(ctx, a) {
-        if (isCoastalCity(ctx.state, a.city)) { a.pct.gold += 15; a.yields.prod += 1; }
-      },
-      influenceIncome(ctx, a) {
-        if (!ctx.player.isHuman) return;
-        let coastal = 0;
-        for (const c of Object.values(ctx.state.cities)) if (c.owner === ctx.player.id && isCoastalCity(ctx.state, c)) coastal++;
-        const n = Math.floor(coastal / 3);
-        if (n > 0) a.lines.push({ label: 'Thalassan Tolls', amount: n });
-      },
+      cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'wonder') a.cost *= 0.75; },
+      chronicle(ctx, c) { const count = Object.values(ctx.state.cities).filter(city => city.owner === ctx.player.id).reduce((n, city) => n + city.wonders.length, 0); if (count) c.addSplendor(2 * count); },
     },
   },
-  varkhan: {
-    id: 'varkhan', name: 'Ulzai Khagan', title: 'Khagan of the Varkhan Horde',
-    civName: 'Varkhan Horde', adjective: 'Varkhan',
-    colors: { primary: '#b8272c', secondary: '#2e0a0b' },
-    description: 'Thunder on the steppe — a people who measure glory in conquered horizons.',
-    bonus: 'Mounted units +1 movement. Every enemy unit your units kill grants **+10** {gold}. Your units +15% strength when attacking.',
-    startDoctrine: 'hoofbeat_saga', uniqueUnit: 'steppe_rider', aiPersonality: 'warmonger',
-    unlock: { text: 'Slay 40 enemy units in a single run.', rule: 'kills40' },
-    cityNames: ['Kharakum', 'Ordu-Baal', 'Tengriyn', 'Sukhkar', 'Altanbaz', 'Khoridai', 'Irgesh', 'Bayanshar', 'Temurkai', 'Ulaan Tor', 'Jebeh', 'Khasar', 'Borjin', 'Yesugar', 'Chagatur'],
-    portrait: { hue: 356, motif: 'horse', crest: 'sword' },
+  russia: {
+    id: 'russia', name: 'Valentina Sokolova', title: 'Cosmonaut-Colonel of Novaya Zarya', civName: 'Novaya Zarya', adjective: 'Russian',
+    country: 'Russia', code: 'RUS', flagColors: ['#ffffff', '#2455a4', '#d52b1e'], colors: { primary: '#507fc0', secondary: '#394a63' },
+    description: 'She brought the reactor manual, the emergency vodka, and a strict definition of “weather.”',
+    bonus: 'Your units and Colonies take no Dust Storm damage. Enemy units in your territory take **double** storm damage. Frost Flats and Polar Ice yield **+1** {prod}. Start with Tsar Charge Salvage.',
+    startDoctrine: 'veteran_cosmonaut', uniqueUnit: 'frostguard_spetsnaz', uniqueBuilding: 'rbmk_reactor', aiPersonality: 'warmonger',
+    cityNames: ['Novaya Zarya', 'New Baikonur', 'Krasnoyarsk Crater', 'Vostok Dome', 'Sovetskaya Gavan', 'Perm Frost', 'Petropavlovsk-Red', 'New Murmansk', 'Omsk-on-Mars', 'Yekaterinburg East', 'Volga Station', 'New Yakutsk', 'Cold Shoulder', 'Comrade Springs', 'Cosmodrome No. 2'],
+    portrait: { hue: 198, motif: 'moon', crest: 'star' },
     effects: {
-      unitMoves(_ctx, a) {
-        if (unitClassOf(a.unit.type) === 'mounted') a.value += 1;
-      },
-      combat(_ctx, a) {
-        if (a.side === 'attack' && a.attacker) ownMod(a, 'Varkhan Fury', 15);
-      },
+      storm(ctx, a) { if (a.victim === ctx.player.id) a.damage = 0; else if (a.territoryOwner === ctx.player.id) a.damage *= 2; },
+      tileYield(_ctx, a) { if (a.tile.terrain === 'tundra' || a.tile.terrain === 'snow') a.yields.prod += 1; },
+      onGain(ctx) { if (ctx.player.isHuman) addEdict(ctx.state, 'tsar_charge'); },
+    },
+  },
+  india: {
+    id: 'india', name: 'Dr. Anjali Rao', title: 'Mission Director of Mangalyaan Collective', civName: 'Mangalyaan Collective', adjective: 'Indian',
+    country: 'India', code: 'IND', flagColors: ['#ff9933', '#ffffff', '#138808'], colors: { primary: '#a75bd1', secondary: '#62d3c4' },
+    description: 'A launch system assembled from three spare parts and one extremely convincing presentation.',
+    bonus: 'Breakthrough offers **4** Research choices; the first reroll of each offer is free. Installations cost **30%** less {gold}. **+10%** {sci}.',
+    startDoctrine: 'jugaad_mechanic', uniqueUnit: 'pragyan_rover', uniqueBuilding: 'orbiter_relay', aiPersonality: 'scientist',
+    cityNames: ['Naya Delhi', 'Mangalapuram', 'Pragyan Nagar', 'New Bengaluru', 'Chandrayaan Chowk', 'Jaipur Red', 'Kochi Crater', 'Pune Orbit', 'Thiruvananthapuram Two', 'Old Hyderabad', 'Mysuru Dome', 'Ahmedabad East', 'Vikram Landing', 'Jugaad Junction', 'New Varanasi'],
+    portrait: { hue: 276, motif: 'flask', crest: 'book' },
+    effects: {
+      researchOffers(_ctx, a) { a.value = 4; },
+      researchReroll(ctx, a) { if (ctx.player.researchRerolls === 0) a.value = 0; },
+      cost(_ctx, a) { if (a.currency === 'gold' && a.item.kind === 'improvement') a.cost *= 0.7; },
+      cityYield(_ctx, a) { a.pct.sci += 10; },
+    },
+  },
+  japan: {
+    id: 'japan', name: 'Kenji Arakawa', title: 'Director of the Yamato Ark', civName: 'Yamato Ark', adjective: 'Japanese',
+    country: 'Japan', code: 'JPN', flagColors: ['#ffffff', '#bc002d'], colors: { primary: '#394c9f', secondary: '#c3d6ff' },
+    description: 'The robots run the checklist. The humans run the checklist about the robots.',
+    bonus: 'Every new unit arrives with a free promotion. Buildings cost **15%** less {prod}.',
+    startDoctrine: 'roboticist', uniqueUnit: 'mecha_frame', uniqueBuilding: 'robotics_lab', aiPersonality: 'scientist',
+    cityNames: ['New Tokyo', 'Yamato Landing', 'Akihabara Dome', 'Osaka Base', 'Kyoto Crater', 'Sapporo South', 'Naha Station', 'Sendai New Town', 'Hokkaido Habitat', 'Kobe Two', 'Fuji View Estate', 'Shinjuku-Red', 'Nagoya Works', 'Matsumoto Airlock', 'Neo Yokohama'],
+    portrait: { hue: 228, motif: 'gear', crest: 'sun' },
+    effects: { cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'building') a.cost *= 0.85; } },
+  },
+  france: {
+    id: 'france', name: 'Élodie Marchand', title: 'Louvre Curator and Chief of Arche Lumière', civName: 'Arche Lumière', adjective: 'French',
+    country: 'France', code: 'FRA', flagColors: ['#0055a4', '#ffffff', '#ef4135'], colors: { primary: '#72b965', secondary: '#bc78d1' },
+    description: 'The Louvre made it aboard. The Mona Lisa has seen the manifest and is not smiling.',
+    bonus: 'Start with La Joconde (Legendary Crew: **+1** {splendor} per chapter, permanent). Heritage begins at level **2**. **+20%** {happy}.',
+    startDoctrine: 'la_joconde', uniqueUnit: 'legion_etrangere', uniqueBuilding: 'salon', aiPersonality: 'builder',
+    cityNames: ['Nouvelle Paris', 'Lyon-sur-Mars', 'Cité Lumière', 'Bordeaux Rouge', 'Marseille Deux', 'Toulouse Station', 'Dijon Dome', 'Nice Try', 'Avignon-les-Dunes', 'Montpellier B', 'Saint-Étienne', 'Cannes du Cratère', 'Lille Nouvelle', 'Versailles Pressurisée', 'La Rochelle Rouge'],
+    portrait: { hue: 166, motif: 'lyre', crest: 'laurel' },
+    effects: {
+      onGain(ctx) { if (ctx.player.isHuman) ctx.state.run.pillarLevels.arts = Math.max(2, ctx.state.run.pillarLevels.arts); },
+      cityYield(_ctx, a) { a.pct.cul += 20; },
+    },
+  },
+  brazil: {
+    id: 'brazil', name: 'Thaís Oliveira', title: 'Seed-Keeper of Arca Amazônia', civName: 'Arca Amazônia', adjective: 'Brazilian',
+    country: 'Brazil', code: 'BRA', flagColors: ['#009739', '#ffdf00', '#002776'], colors: { primary: '#d68a35', secondary: '#6344a5' },
+    description: 'The seed vault is intact. The planet is a desert. The botanist remains offensively optimistic.',
+    bonus: 'Clay Basin and Ancient Delta tiles yield **+1** {food}. Colonies need **20%** less Food to grow. Carnival converts at **double** rate.',
+    startDoctrine: 'botanist', uniqueUnit: 'jaguar_rover', uniqueBuilding: 'biodome', aiPersonality: 'expansionist',
+    unlock: { text: 'Rule 8 Colonies at once', rule: 'cities8' },
+    cityNames: ['Novo Cuiabá', 'Nova Manaus', 'Brasília Vermelha', 'Santos Dumont', 'Belém do Cráter', 'Porto Alegre II', 'Recife de Marte', 'Salvador da Terra', 'Rio de Janeiro Novo', 'Campinas Orbital', 'Florianópolis Sul', 'Fortaleza Solar', 'Curitiba Pressurizada', 'Natal do Planeta', 'Boa Vista, Literally'],
+    portrait: { hue: 28, motif: 'tree', crest: 'serpent' },
+    effects: {
+      tileYield(_ctx, a) { if (a.tile.terrain === 'grassland' || a.tile.feature === 'floodplains') a.yields.food += 1; },
+      growthThreshold(_ctx, a) { a.value *= 0.8; },
+      onEvent(ctx, ev) { if (ctx.player.isHuman && ev.type === 'renownGained' && ev.label.startsWith('Festival in ')) addExtraStat(ctx.state, 'festival', ev.amount); },
+    },
+  },
+  uae: {
+    id: 'uae', name: 'Rashid Al-Falasi', title: 'Minister of the Al-Amal Mission', civName: 'Al-Amal (Hope)', adjective: 'Emirati',
+    country: 'United Arab Emirates', code: 'UAE', flagColors: ['#00732f', '#ffffff', '#ff0000', '#000000'], colors: { primary: '#35c4d9', secondary: '#e6b84c' },
+    description: 'The Ark runs on sunlight, sovereign wealth, and a very expensive contingency plan.',
+    bonus: 'Start with **100** {gold}. Banked Credits earn **3%** interest per turn, capped at **15** {gold} per turn. If out of pods, Orbital Drops cost Credits.',
+    startDoctrine: 'wealth_manager', uniqueUnit: 'falcon_drone', uniqueBuilding: 'sky_souk', aiPersonality: 'builder',
+    unlock: { text: 'Win a run', rule: 'win' },
+    cityNames: ['Al-Amal City', 'New Abu Dhabi', 'Dubai Next Door', 'Sharjah Station', 'Al Ain on Mars', 'Fujairah Dome', 'Ras al-Khaimah Red', 'Ajman Heights', 'Umm al-Quwain Two', 'Masdar Crater', 'The Palm, Regolith Edition', 'Jebel Hafeet Base', 'Hope, With Valet', 'New Liwa', 'Falcon Heights'],
+    portrait: { hue: 190, motif: 'sun', crest: 'eagle' },
+    effects: {
+      onGain(ctx) { addGold(ctx.state, ctx.player.id, 100, 'Sovereign fund', ctx.emit); },
+      turnStart(ctx) { const amount = Math.min(Math.floor(ctx.player.gold * 0.03), 15); if (amount > 0) addGold(ctx.state, ctx.player.id, amount, 'Sovereign fund interest', ctx.emit); },
+      dropPrice(_ctx, a) { if (a.cryoLeft <= 0) { a.cryo = 0; a.gold = 50; } },
+    },
+  },
+  nigeria: {
+    id: 'nigeria', name: 'Chidinma Okafor', title: 'Governor of the Naija Ark', civName: 'Naija Ark', adjective: 'Nigerian',
+    country: 'Nigeria', code: 'NGA', flagColors: ['#008751', '#ffffff'], colors: { primary: '#c5c93f', secondary: '#6b57bd' },
+    description: 'If the crash site has anything useful, the crew will find it. If it does not, they will make a business.',
+    bonus: 'Crash Sites grant a random Salvage. Feral Dens pay **double**. Colonies grow **15%** faster.',
+    startDoctrine: 'nollywood_star', uniqueUnit: 'okada_rider', uniqueBuilding: 'nollywood_studio', aiPersonality: 'expansionist',
+    unlock: { text: 'Complete 3 runs', rule: 'runs3' },
+    cityNames: ['New Lagos', 'Abuja Station', 'Kano Crater', 'Port Harcourt Two', 'Ibadan Red', 'Enugu Heights', 'Benin-on-Mars', 'Jos Plateau Base', 'Warri Airlock', 'Akure Dome', 'Calabar Crossing', 'Kaduna Junction', 'Onitsha Market', 'Abeokuta New Town', 'No Wahala Colony'],
+    portrait: { hue: 47, motif: 'flame', crest: 'eagle' },
+    effects: {
+      growthThreshold(_ctx, a) { a.value *= 0.85; },
       onEvent(ctx, ev) {
-        if (unitKillBy(ev, ctx.player.id)) addGold(ctx.state, ctx.player.id, 10, 'Varkhan plunder', ctx.emit);
+        if (ev.type === 'campCleared' && ev.player === ctx.player.id) addGold(ctx.state, ctx.player.id, ev.gold, 'Feral Den double payout', ctx.emit);
+        if (ev.type === 'ruinExplored' && ev.player === ctx.player.id && ctx.player.isHuman) {
+          const ids = Object.keys(EDICTS);
+          if (ids.length && ctx.state.run.edicts.length < ctx.state.run.edictSlots) addEdict(ctx.state, ids[randInt(ctx.state.rng, ids.length)]);
+        }
       },
     },
   },
-  sylvaran: {
-    id: 'sylvaran', name: 'Myrrh of the Thousand Boughs', title: 'Elder Warden of Sylvara',
-    civName: 'Sylvaran Wilds', adjective: 'Sylvaran',
-    colors: { primary: '#3e9b3f', secondary: '#15361a' },
-    description: 'Ancient forest-keepers who sing their cities out of living wood.',
-    bonus: 'Forest and jungle tiles +1 {cul} and +1 {prod}. Your units +20% defense in forest or jungle. Thornwardens +25% strength there.',
-    startDoctrine: 'heartwood_rites', uniqueUnit: 'thornwarden', aiPersonality: 'builder',
-    unlock: { text: 'Reach the Medieval era.', rule: 'reachEra3' },
-    cityNames: ['Sylvaris', 'Elderholt', 'Mossgrave', 'Fernwhisper', 'Oakenhearth', 'Thornmere', 'Willowreach', 'Ashgrove', 'Briarlight', 'Canopy', 'Rootsong', 'Lichenfall', 'Hollowbough', 'Greenveil', 'Amberleaf'],
-    portrait: { hue: 120, motif: 'tree', crest: 'owl' },
+  switzerland: {
+    id: 'switzerland', name: 'Anna Brunner', title: 'Federal Councillor of the Helvetia Vault', civName: 'Helvetia Vault', adjective: 'Swiss',
+    country: 'Switzerland', code: 'CHE', flagColors: ['#ff0000', '#ffffff'], colors: { primary: '#c0c9d2', secondary: '#3d628c' },
+    description: 'A nation-sized bunker with immaculate accounts and absolutely no opinion about your war.',
+    bonus: 'Rivals can never declare war on you and you can never declare war. Colonies gain **+50%** defense. Scrip interest cap is doubled.',
+    startDoctrine: 'private_banker', uniqueUnit: 'alpine_guard', uniqueBuilding: 'bunker_bank', aiPersonality: 'builder',
+    unlock: { text: 'Win without losing Charter', rule: 'noMandateLost' },
+    cityNames: ['New Zürich', 'Genève Rouge', 'Bern Base', 'Lausanne-les-Dunes', 'Basel Habitat', 'Luzern Crater', 'Lugano Nuovo', 'Neuchâtel North', 'Sion Station', 'Winterthur Dome', 'Interlaken East', 'Fribourg Airlock', 'St. Gallen Two', 'Davos Downhill', 'Neutrality, Incorporated'],
+    portrait: { hue: 205, motif: 'shield', crest: 'key' },
     effects: {
-      tileYield(_ctx, a) {
-        if (isWoodland(a.tile)) { a.yields.cul += 1; a.yields.prod += 1; }
-      },
-      combat(_ctx, a) {
-        const u = ownUnit(a);
-        if (!u || !isWoodland(ownTile(a))) return;
-        if (a.side === 'defense') ownMod(a, 'Sylvan Cover', 20);
-        if (u.type === 'thornwarden') ownMod(a, 'Thornwarden Grove', 25);
-      },
+      warDeclaration(_ctx, a) { a.allowed = false; a.reason = 'Swiss neutrality forbids declaring war in either direction.'; },
+      combat(ctx, a) { const city = a.side === 'attack' ? a.attackerCity : a.defenderCity; if (a.side === 'defense' && city?.owner === ctx.player.id) a.defenseMods.push({ label: 'Armed Neutrality', pct: 50 }); },
+      interestCap(_ctx, a) { a.value *= 2; },
     },
   },
-  ashkari: {
-    id: 'ashkari', name: 'Zahirah Sunveil', title: 'Sultana of the Ashkari Sands',
-    civName: 'Ashkari Sultanate', adjective: 'Ashkari',
-    colors: { primary: '#e0752d', secondary: '#4a1f06' },
-    description: 'Caravan-queens of the burning dunes, rich in spice, silk and starlit secrets.',
-    bonus: 'Desert tiles +1 {prod} and +1 {gold}; oases and floodplains +2 {food}. Dune Chariots +20% strength on desert. Luxury tiles +1 {gold}.',
-    startDoctrine: 'caravan_of_stars', uniqueUnit: 'dune_chariot', aiPersonality: 'expansionist',
-    unlock: { text: 'Reach the Renaissance era.', rule: 'reachEra4' },
-    cityNames: ['Ashkar', 'Qasr al-Nur', 'Zafira', 'Mirabad', 'Sahriyan', 'Dunehold', 'Kharesh', 'Oasis of Tears', 'Almira', 'Samarind', 'Taj Ruhan', 'Nahrzan', 'Soukara', 'Faridun', 'Emberdune'],
-    portrait: { hue: 26, motif: 'pyramid', crest: 'serpent' },
+  north_korea: {
+    id: 'north_korea', name: 'Ri Song-hwa', title: 'Marshal and Dear Commander of the Juche Ark', civName: 'Juche Ark', adjective: 'North Korean',
+    country: 'North Korea', code: 'PRK', flagColors: ['#024fa2', '#ed1c27', '#ffffff'], colors: { primary: '#829d37', secondary: '#3b4b1d' },
+    description: 'The Ark has one channel, one approved portrait, and a reroll policy of zero.',
+    bonus: 'The Uplink cannot be rerolled. Military units cost **30%** less {prod} and gain **+15%** strength. **−25%** {happy}. Start with Eternal Leader (×2 Hope; cannot be sold).',
+    startDoctrine: 'eternal_leader', uniqueUnit: 'songun_trooper', uniqueBuilding: 'mass_games_arena', aiPersonality: 'warmonger',
+    unlock: { text: 'Win a run at Hazard 4+', rule: 'winAsc4' },
+    cityNames: ['Juche City', 'Pyongyang Red', 'New Hamhung', 'Kaesong Dome', 'Wonsan Landing', 'Sinuiju Station', 'Chongjin Heights', 'Hyesan Habitat', 'Nampo Basin', 'The Glorious Crater', 'One Channel Town', 'People’s Paradise 2', 'Songun Square', 'Dear Leader Heights', 'No Questions Colony'],
+    portrait: { hue: 265, motif: 'crown', crest: 'shield' },
     effects: {
-      tileYield(_ctx, a) {
-        const t = a.tile;
-        if (t.terrain === 'desert') { a.yields.prod += 1; a.yields.gold += 1; }
-        if (t.feature === 'oasis' || t.feature === 'floodplains') a.yields.food += 2;
-        if (t.resource && RESOURCES[t.resource]?.kind === 'luxury') a.yields.gold += 1;
-      },
-      combat(_ctx, a) {
-        const u = ownUnit(a);
-        if (u?.type === 'dune_chariot' && ownTile(a).terrain === 'desert') ownMod(a, 'Dune Charge', 20);
-      },
+      council(_ctx, a) { a.council.rerollLocked = true; },
+      cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'unit' && UNITS[a.item.id] && UNITS[a.item.id].class !== 'civilian' && UNITS[a.item.id].class !== 'recon') a.cost *= 0.7; },
+      combat(_ctx, a) { if (a.side === 'attack' && a.attacker) a.attackMods.push({ label: 'Songun Strength', pct: 15 }); if (a.side === 'defense' && a.defender) a.defenseMods.push({ label: 'Songun Strength', pct: 15 }); },
+      happiness(_ctx, a) { a.value -= 25; },
     },
   },
-  kethran: {
-    id: 'kethran', name: 'Ilven Starquill', title: 'Archmagister of the Kethran Archive',
-    civName: 'Kethran Archive', adjective: 'Kethran',
-    colors: { primary: '#8e5bd6', secondary: '#24124a' },
-    description: 'Scholar-mages who chart the heavens and bind knowledge into towers of glass.',
-    bonus: 'Techs cost **10%** less {sci}. Cities next to a mountain +3 {sci}. Each tech you discover grants **+15** {gold}.',
-    startDoctrine: 'infinite_codex', uniqueBuilding: 'athenaeum', aiPersonality: 'scientist',
-    unlock: { text: 'Discover 24 techs in a single run.', rule: 'techs24' },
-    cityNames: ['Kethra', 'Quillspire', 'Astrolabe', 'Glassmere', 'Runeholm', 'Starwell', 'Inkhaven', 'Lumina Arcana', 'Orrery', 'Sagecrest', 'Vellum', 'Prism Hall', 'Cogitara', 'Nightlamp', 'Aethermoor'],
-    portrait: { hue: 268, motif: 'flask', crest: 'book' },
+  vatican: {
+    id: 'vatican', name: 'Pope Innocent XIV', title: 'Pontiff of the Last Conclave', civName: 'The Last Conclave', adjective: 'Vatican',
+    country: 'Holy See', code: 'VAT', flagColors: ['#ffcc00', '#ffffff'], colors: { primary: '#c6a84b', secondary: '#f0eee4' },
+    description: 'The last Conclave landed on Mars with one relic, one plan, and a truly impressive airlock blessing.',
+    bonus: '**+2** {splendor} in every Sol Report. Salvage has a **1-in-3** chance to be returned after use. Start with **+1** Charter.',
+    startDoctrine: 'cardinal', uniqueUnit: 'swiss_guard', uniqueBuilding: 'basilica_red_planet', aiPersonality: 'builder',
+    unlock: { text: 'Overcome 6 Crises in one run', rule: 'crises6' },
+    cityNames: ['Città del Redentore', 'Nuova Roma', 'San Pietro Base', 'Assisi Crater', 'Loreto Station', 'Benedictine Heights', 'New Castel Gandolfo', 'Via della Speranza', 'Civitas Vaticana', 'Monte Cassino Two', 'Piazza del Sole', 'Orvieto Dome', 'Santa Maria Nuova', 'Conclave Heights', 'Urbi et Orbiti'],
+    portrait: { hue: 44, motif: 'chalice', crest: 'shield' },
     effects: {
-      cost(_ctx, a) {
-        if (a.currency === 'sci' && a.item.kind === 'tech') a.cost *= 0.9;
-      },
-      cityYield(ctx, a) {
-        if (isNextToMountain(ctx.state, a.city.tile)) a.yields.sci += 3;
-      },
-      onEvent(ctx, ev) {
-        if (ev.type === 'techResearched' && ev.player === ctx.player.id) addGold(ctx.state, ctx.player.id, 15, 'Kethran patents', ctx.emit);
-      },
-    },
-  },
-  morvane: {
-    id: 'morvane', name: 'Brask Ironhand', title: 'Iron Duke of the Morvane Forgeholds',
-    civName: 'Morvane Forgeholds', adjective: 'Morvane',
-    colors: { primary: '#56708c', secondary: '#d98c3a' },
-    description: 'Mountain smiths whose hammers never rest and whose legions never kneel.',
-    bonus: 'Hills tiles +1 {prod}; mines +1 {prod}. Units cost **15%** less {prod}. Forgeguard heal +10 HP when resting on hills.',
-    startDoctrine: 'anvil_oath', uniqueUnit: 'forgeguard', aiPersonality: 'warmonger',
-    unlock: { text: 'Capture 5 cities in a single run.', rule: 'capture5' },
-    cityNames: ['Morvane', 'Anvilgate', 'Ironcrag', 'Slagmoor', 'Hammerfell', 'Coalhearth', 'Bellowmont', 'Rivetholm', 'Cinderpeak', 'Steelwatch', 'Forgebarrow', 'Emberdeep', 'Graniteward', 'Tongsreach', 'Blackvault'],
-    portrait: { hue: 212, motif: 'gear', crest: 'shield' },
-    effects: {
-      tileYield(_ctx, a) {
-        if (a.tile.elevation === 'hills') a.yields.prod += 1;
-        if (a.tile.improvement === 'mine' && !a.tile.pillaged) a.yields.prod += 1;
-      },
-      cost(_ctx, a) {
-        if (a.currency === 'prod' && a.item.kind === 'unit') a.cost *= 0.85;
-      },
-      unitHeal(ctx, a) {
-        if (a.unit.type === 'forgeguard' && ctx.state.map.tiles[a.unit.tile]?.elevation === 'hills') a.value += 10;
-      },
-    },
-  },
-  celestine: {
-    id: 'celestine', name: 'Isara the Veiled', title: 'High Oracle of the Celestine Veil',
-    civName: 'Celestine Veil', adjective: 'Celestine',
-    colors: { primary: '#e05a9c', secondary: '#fbe3f0' },
-    description: 'Prophets who read fate in comets and turn every catastrophe into revelation.',
-    bonus: 'Start with **+1** Edict slot and **+1** {mandate} (max 4). River tiles +1 {sci}. **+2** {influence} after every Crisis chapter.',
-    startDoctrine: 'veil_of_fate', uniqueBuilding: 'seers_spire', aiPersonality: 'scientist',
-    unlock: { text: 'Survive 6 Crisis chapters in a single run.', rule: 'crises6' },
-    cityNames: ['Celestia', 'Veilmoor', 'Starfall', 'Omenreach', 'Halcyon', 'Mirrorwake', 'Cometspire', 'Seraphel', 'Lunara', 'Augury', 'Dreamwell', 'Nocturne', 'Ethervale', 'Silverbrow', 'Prophecy'],
-    portrait: { hue: 322, motif: 'eye', crest: 'star' },
-    effects: {
-      onGain(ctx) {
-        if (!ctx.player.isHuman) return;
-        ctx.state.run.edictSlots += 1;
-        ctx.state.run.maxMandate += 1;
-        changeMandate(ctx.state, 1, 'Celestine Veil', ctx.emit);
-      },
-      tileYield(_ctx, a) {
-        if (isRiverTile(a.tile)) a.yields.sci += 1;
-      },
-      influenceIncome(ctx, a) {
-        if (ctx.player.isHuman && ctx.state.run.chapter === 2) a.lines.push({ label: 'Celestine Revelation', amount: 2 });
-      },
+      chronicle(_ctx, c) { c.addSplendor(2); },
+      onGain(ctx) { if (!ctx.player.isHuman) return; ctx.state.run.maxMandate += 1; changeMandate(ctx.state, 1, 'Faith Beyond Earth', ctx.emit); },
+      onEvent(ctx, ev) { if (ev.type === 'edictUsed' && ctx.player.isHuman && chance(ctx.state.rng, 1 / 3)) addEdict(ctx.state, ev.id); },
     },
   },
 };

@@ -3,10 +3,9 @@ import { createRoot } from 'react-dom/client';
 import '@fontsource/inter/400.css';
 import '@fontsource/inter/600.css';
 import '@fontsource/inter/800.css';
-import '@fontsource/cinzel/600.css';
-import '@fontsource/cinzel/700.css';
-import '@fontsource/cinzel/900.css';
-import '@fontsource/cinzel-decorative/700.css';
+import '@fontsource/rajdhani/500.css';
+import '@fontsource/rajdhani/600.css';
+import '@fontsource/rajdhani/700.css';
 import './ui/theme.css';
 
 // `?dev=<name>` renders src/dev/<name>.tsx (default export) instead of the app — isolated harnesses for

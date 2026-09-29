@@ -13,8 +13,8 @@ function enemyMod(a: CombatArgs, label: string, pct: number): void {
 
 export const ASCENSIONS: AscensionDef[] = [
   {
-    level: 1, name: 'Ambition',
-    description: 'Chronicle targets **+5%**.',
+    level: 1, name: 'Dust in the Gears',
+    description: 'Sol Report targets **+5%**.',
     effects: {
       target(_ctx, a) {
         a.value *= 1.05;
@@ -22,8 +22,8 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 2, name: 'Ambitious Rivals',
-    description: 'Rival cities gain **+20%** {prod} toward units, buildings and wonders each turn.',
+    level: 2, name: 'Rival Overclock',
+    description: 'Rival colonies gain **+20%** {prod} toward units, buildings and megaprojects each turn.',
     effects: {
       turnStart(ctx) {
         for (const c of Object.values(ctx.state.cities)) {
@@ -35,8 +35,8 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 3, name: 'Thin Coffers',
-    description: 'Every Council item costs **+1** {influence}.',
+    level: 3, name: 'Scrip Squeeze',
+    description: 'Every Uplink item costs **+1** {influence}.',
     effects: {
       council(ctx, a) {
         repriceCouncil(ctx.state, a.council);
@@ -44,7 +44,7 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 4, name: 'Gathering Storm',
+    level: 4, name: 'Storm Season',
     description: 'Crisis chapter targets **×1.05**.',
     effects: {
       target(ctx, a) {
@@ -54,8 +54,8 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 5, name: 'Warlords',
-    description: 'Barbarians fight at **+25%** strength and rivals at **+15%** against you.',
+    level: 5, name: 'Hostile Perimeter',
+    description: 'Feral units fight at **+25%** strength and rival units at **+15%** against you.',
     effects: {
       combat(_ctx, a) {
         const enemy = enemyOwnerOf(a);
@@ -65,8 +65,8 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 6, name: 'Fragile Mandate',
-    description: 'Begin the run with **1 less** {mandate} Mandate.',
+    level: 6, name: 'Thin Charter',
+    description: 'Begin the run with **1 less** {mandate} Charter.',
     effects: {
       onGain(ctx) {
         const run = ctx.state.run;
@@ -76,8 +76,8 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 7, name: 'The Long Night',
-    description: 'Dark Ages cost a further **−10%** of every yield, and rivals research **+20%** faster.',
+    level: 7, name: 'Extended Blackout',
+    description: 'Blackout chapters cost a further **−10%** of every yield, and rivals research **+20%** faster.',
     effects: {
       cityYield(ctx, a) {
         if (!ctx.state.run.darkAge) return;
@@ -93,8 +93,8 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 8, name: "Aeon's End",
-    description: 'Triumphs grant no {influence}, and Chronicle targets rise a further **+20%**.',
+    level: 8, name: 'No Return Trajectory',
+    description: 'Triumphs grant no {influence}, and Sol Report targets rise a further **+20%**.',
     effects: {
       target(_ctx, a) {
         a.value *= 1.2;

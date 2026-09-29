@@ -3,7 +3,10 @@ import { useCallback, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { audio } from '../../audio';
 import { CRISES } from '../../content';
+import { HUMAN } from '../../sim/types';
+import { T, YIELD_NAMES } from '../terms';
 import { useGame, useSim } from '../../game/store';
+import { startOrbitalDrop } from '../../game/interaction';
 import {
   DARK_AGE_YIELD_PCT, INCOME_BASE, INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, MANDATE_LOSS_CRISIS_FAIL, MANDATE_LOSS_FAIL,
   TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
@@ -24,6 +27,7 @@ export function TopBar() {
     mandate: s.run.mandate, maxMandate: s.run.maxMandate, influence: s.run.influence, crisisActive: s.run.crisisActive,
     crisis: s.run.crisis, darkAge: s.run.darkAge, turn: s.turn,
   }));
+  const cryo = useSim((s) => s.players[HUMAN].cryo);
   const [pop, setPop] = useState<{ kind: PopKind; el: HTMLElement } | null>(null);
   const close = useCallback(() => setPop(null), []);
   if (!y || !run) return null;
@@ -42,8 +46,8 @@ export function TopBar() {
       <div className="tb__row tb__row--main">
         <IconButton icon="pause" label="Menu" size="sm" onClick={() => { audio.sfx('open'); useGame.getState().setPanel('pause'); }} className="tb__pause" />
         <div className="tb__yields">
-          <YieldPill icon="gold" color="var(--y-gold)" value={fmt(y.treasury, true)} delta={y.gold} onClick={open('gold')} active={pop?.kind === 'gold'} label="Gold" warn={y.treasury + y.gold < 0} />
-          <button type="button" className={`tb-pill tb-pill--sci ${pop?.kind === 'sci' ? 'is-active' : ''} ${!research ? 'is-alert' : ''}`} onClick={open('sci')} data-tutorial="research" aria-label="Science and research">
+          <YieldPill icon="gold" color="var(--y-gold)" value={fmt(y.treasury, true)} delta={y.gold} onClick={open('gold')} active={pop?.kind === 'gold'} label={YIELD_NAMES.gold} warn={y.treasury + y.gold < 0} />
+          <button type="button" className={`tb-pill tb-pill--sci ${pop?.kind === 'sci' ? 'is-active' : ''} ${!research ? 'is-alert' : ''}`} onClick={open('sci')} data-tutorial="research" aria-label={YIELD_NAMES.sci}>
             <span className="tb-ring" style={{ '--ring': ringPct } as CSSProperties}>
               <svg viewBox="0 0 36 36" aria-hidden>
                 <circle cx="18" cy="18" r="15.5" className="tb-ring__track" />
@@ -56,13 +60,16 @@ export function TopBar() {
               <span className="tb-pill__sub num">{research ? (research.turns != null ? `${research.turns}t` : '—') : 'Pick!'}</span>
             </span>
           </button>
-          <YieldPill icon="cul" color="var(--y-cul)" value={signed(y.cul)} onClick={open('cul')} active={pop?.kind === 'cul'} label="Culture" />
-          <YieldPill icon={y.happiness < 0 ? 'unhappy' : 'happy'} color={y.happiness < 0 ? 'var(--unhappy)' : 'var(--happy)'} value={String(y.happiness)} onClick={open('happy')} active={pop?.kind === 'happy'} label="Happiness" warn={y.happiness < 0} />
-          <YieldPill icon="influence" color="var(--influence)" value={String(run.influence)} onClick={open('influence')} active={pop?.kind === 'influence'} label="Influence" />
+          <YieldPill icon="cul" color="var(--y-cul)" value={signed(y.cul)} onClick={open('cul')} active={pop?.kind === 'cul'} label={YIELD_NAMES.cul} />
+          <YieldPill icon={y.happiness < 0 ? 'unhappy' : 'happy'} color={y.happiness < 0 ? 'var(--unhappy)' : 'var(--happy)'} value={String(y.happiness)} onClick={open('happy')} active={pop?.kind === 'happy'} label={T.happiness} warn={y.happiness < 0} />
+          <YieldPill icon="influence" color="var(--influence)" value={String(run.influence)} onClick={open('influence')} active={pop?.kind === 'influence'} label={T.influence} />
+          <button type="button" className="tb-cryo" aria-label={`${T.drop}, ${cryo ?? 0} ${T.cryo}`} title={T.drop} onClick={() => { audio.sfx('tap'); startOrbitalDrop(); }}>
+            <Icon name="cryo" size={17} /><b className="num">{cryo ?? 0}</b><span>{T.drop}</span>
+          </button>
         </div>
       </div>
       <div className="tb__row tb__row--run">
-        <button type="button" className={`tb-clock ${crisisChapter ? 'is-crisis' : ''} ${pop?.kind === 'clock' ? 'is-active' : ''}`} onClick={open('clock')} aria-label="Chapter clock">
+        <button type="button" className={`tb-clock ${crisisChapter ? 'is-crisis' : ''} ${pop?.kind === 'clock' ? 'is-active' : ''}`} onClick={open('clock')} aria-label={`${T.turn} ${run.turn}`}>
           <span className="tb-clock__era display">{eraName(run.era)}</span>
           <span className="tb-clock__sep">·</span>
           <span className="tb-clock__ch display">{ROMAN[run.chapter]} {CHAPTER_NAMES[run.chapter]}</span>
@@ -73,7 +80,7 @@ export function TopBar() {
           </span>
           <span className="tb-clock__count num">{Math.min(run.chapterTurn + 1, run.chapterLength)}/{run.chapterLength}</span>
         </button>
-        <button type="button" className={`tb-mandate ${pop?.kind === 'mandate' ? 'is-active' : ''}`} onClick={open('mandate')} aria-label="Mandate">
+        <button type="button" className={`tb-mandate ${pop?.kind === 'mandate' ? 'is-active' : ''}`} onClick={open('mandate')} aria-label={T.mandate}>
           <Hearts value={run.mandate} max={run.maxMandate} size={15} />
         </button>
         <LegacyMeter />
@@ -130,12 +137,12 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
       const g = data.gold!;
       return (
         <>
-          <PopTitle icon="gold" color="var(--y-gold)" value={fmt(g.treasury)}>Treasury</PopTitle>
+          <PopTitle icon="gold" color="var(--y-gold)" value={fmt(g.treasury)}>{YIELD_NAMES.gold}</PopTitle>
           <Ornament />
           {g.income.map((l, i) => <Line key={`i${i}`} label={l.label} value={signed(l.amount)} tone="good" />)}
           {g.expenses.map((l, i) => <Line key={`e${i}`} label={l.label} value={signed(-Math.abs(l.amount))} tone="bad" />)}
-          <Line label="Net per turn" value={signed(g.net)} strong tone={g.net < 0 ? 'bad' : 'good'} />
-          <p className="pop-note">Units: {g.units} ({g.freeUnits} free of upkeep). Spend gold to buy production and improve tiles.</p>
+          <Line label={`Net per ${T.turn}`} value={signed(g.net)} strong tone={g.net < 0 ? 'bad' : 'good'} />
+          <p className="pop-note">Units: {g.units} ({g.freeUnits} free of upkeep). Spend Credits to buy production and improve tiles.</p>
           {g.treasury + g.net < 0 && <p className="pop-note pop-note--bad">Bankrupt next turn — a unit will be disbanded.</p>}
         </>
       );
@@ -144,7 +151,7 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
       const r = y.research;
       return (
         <>
-          <PopTitle icon="sci" color="var(--y-sci)" value={signed(y.sci)}>Science</PopTitle>
+          <PopTitle icon="sci" color="var(--y-sci)" value={signed(y.sci)}>{YIELD_NAMES.sci}</PopTitle>
           <Ornament />
           {r ? (
             <div className="pop-research">
@@ -152,13 +159,13 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
               <div className="pop-research__body">
                 <div className="pop-research__name display">{r.name}</div>
                 <Bar value={r.progress} max={r.cost} preview={r.progress + y.sci} color="var(--y-sci)" height={7} />
-                <div className="pop-research__meta num">{fmt(r.progress)}/{fmt(r.cost)} · {r.turns != null ? `${r.turns} turns` : 'stalled'}</div>
+                <div className="pop-research__meta num">{fmt(r.progress)}/{fmt(r.cost)} · {r.turns != null ? `${r.turns} ${T.turn}s` : 'stalled'}</div>
               </div>
             </div>
-          ) : <p className="pop-note pop-note--bad">No research selected — science is being wasted.</p>}
+          ) : <p className="pop-note pop-note--bad">No {T.tech.toLowerCase()} selected — {YIELD_NAMES.sci} is being wasted.</p>}
           {data.cities!.map((c) => <Line key={c.id} label={c.name} value={signed(c.v)} icon="city" />)}
           <Button variant="gold" small className="pop-cta" onClick={() => { onClose(); audio.sfx('open'); useGame.getState().setPanel('tech'); }}>
-            <Icon name="tech" size={16} /> Tech Tree
+            <Icon name="tech" size={16} /> {T.breakthrough}
           </Button>
         </>
       );
@@ -166,32 +173,32 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
     case 'cul':
       return (
         <>
-          <PopTitle icon="cul" color="var(--y-cul)" value={signed(y.cul)}>Culture</PopTitle>
+          <PopTitle icon="cul" color="var(--y-cul)" value={signed(y.cul)}>{YIELD_NAMES.cul}</PopTitle>
           <Ornament />
           {data.cities!.map((c) => <Line key={c.id} label={c.name} value={signed(c.v)} icon="city" />)}
-          <p className="pop-note">Culture expands city borders and feeds the <b>Arts</b> pillar of the Chronicle.</p>
+          <p className="pop-note">{YIELD_NAMES.cul} expands colony borders and feeds the <b>Heritage</b> pillar of the {T.report}.</p>
         </>
       );
     case 'happy': {
       const h = data.happy!;
       return (
         <>
-          <PopTitle icon={h.value < 0 ? 'unhappy' : 'happy'} color={h.value < 0 ? 'var(--unhappy)' : 'var(--happy)'} value={h.value}>Happiness</PopTitle>
+          <PopTitle icon={h.value < 0 ? 'unhappy' : 'happy'} color={h.value < 0 ? 'var(--unhappy)' : 'var(--happy)'} value={h.value}>{T.happiness}</PopTitle>
           <Ornament />
           {h.lines.map((l, i) => <Line key={i} label={l.label} value={signed(l.amount)} tone={l.amount < 0 ? 'bad' : 'good'} />)}
           <Line label="Total" value={signed(h.value)} strong tone={h.value < 0 ? 'bad' : 'good'} />
           {h.value <= -10 ? <p className="pop-note pop-note--bad">Unrest: yields suffer and rebels may rise.</p>
-            : h.value < 0 ? <p className="pop-note pop-note--bad">Unhappy: cities have stopped growing.</p>
-            : <p className="pop-note">Luxuries, temples and wonders keep the people content. Each city and citizen costs happiness.</p>}
+            : h.value < 0 ? <p className="pop-note pop-note--bad">{T.happiness} crisis: colonies have stopped growing.</p>
+            : <p className="pop-note">Luxuries, chapels and megaprojects keep the crew steady. Each {T.city.toLowerCase()} and colonist costs {T.happiness.toLowerCase()}.</p>}
         </>
       );
     }
     case 'influence':
       return (
         <>
-          <PopTitle icon="influence" color="var(--influence)" value={`${run.influence}◈`}>Influence</PopTitle>
+          <PopTitle icon="influence" color="var(--influence)" value={`${run.influence}◈`}>{T.influence}</PopTitle>
           <Ornament />
-          <p className="pop-note">Spent at the <b>Council</b> after each Chronicle on Doctrines, Edicts, Scrolls, Packs and Reforms.</p>
+          <p className="pop-note">Spent at {T.council} after each {T.report} on {T.doctrines}, {T.edicts}, {T.scrolls}, Supply Drops and {T.reforms}.</p>
           <Line label="Chapter income" value={`+${INCOME_BASE + (INCOME_CHAPTER_BONUS[run.chapter] ?? 0)}◈`} />
           <Line label={`Interest (1 per ${INTEREST_PER} unspent, max ${INTEREST_CAP})`} value={`+${Math.min(INTEREST_CAP, Math.floor(run.influence / INTEREST_PER))}◈`} />
           <Line label={`Triumph (score ≥ ${TRIUMPH_RATIO}× target)`} value={`+${TRIUMPH_INFLUENCE}◈`} tone="dim" />
@@ -200,11 +207,11 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
     case 'mandate':
       return (
         <>
-          <PopTitle icon="mandate" color="var(--mandate)" value={`${run.mandate}/${run.maxMandate}`}>Mandate</PopTitle>
+          <PopTitle icon="mandate" color="var(--mandate)" value={`${run.mandate}/${run.maxMandate}`}>{T.mandate}</PopTitle>
           <Ornament />
           <div className="pop-hearts"><Hearts value={run.mandate} max={run.maxMandate} size={26} /></div>
-          <p className="pop-note">Missing a chapter's Legacy target costs <b>{MANDATE_LOSS_FAIL} Mandate</b> ({MANDATE_LOSS_CRISIS_FAIL} in a Crisis chapter) and brings a Dark Age. At 0 your civilization collapses.</p>
-          {run.darkAge && <p className="pop-note pop-note--bad">Dark Age: all yields {signed(DARK_AGE_YIELD_PCT)}% this chapter.</p>}
+          <p className="pop-note">Missing a chapter's {T.score} target costs <b>{MANDATE_LOSS_FAIL} {T.mandate}</b> ({MANDATE_LOSS_CRISIS_FAIL} in a Crisis chapter) and brings a {T.darkAge}. At 0, the Ark cuts you off.</p>
+          {run.darkAge && <p className="pop-note pop-note--bad">{T.darkAge}: all yields {signed(DARK_AGE_YIELD_PCT)}% this chapter.</p>}
         </>
       );
     case 'clock': {
@@ -212,7 +219,7 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
       const left = Math.max(0, run.chapterLength - run.chapterTurn);
       return (
         <>
-          <PopTitle icon="hourglass" color="var(--gold-300)">{eraName(run.era)} Era</PopTitle>
+          <PopTitle icon="hourglass" color="var(--gold-300)">{eraName(run.era)}</PopTitle>
           <Ornament />
           <div className="pop-chapters">
             {CHAPTER_NAMES.map((n, i) => (
@@ -222,7 +229,7 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
               </div>
             ))}
           </div>
-          <Line label="Turns until the Chronicle" value={left} strong />
+          <Line label={`${left} ${left === 1 ? T.turn : `${T.turn}s`} until the ${T.report}`} value={left} strong />
           {crisis && (
             <div className={`pop-crisis ${run.crisisActive ? 'is-active' : ''}`}>
               <Icon name={crisis.icon || 'crisis'} size={22} color="var(--bad)" />

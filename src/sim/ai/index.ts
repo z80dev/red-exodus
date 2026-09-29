@@ -9,6 +9,7 @@ import { chooseOmen, councilAction, orderDoctrine, playEdict } from './rogueAuto
 import type { Action, AiPersonality, City, Emit, GameState, PlayerId, ProductionItem, TileIdx, Unit } from '../types';
 import { BARBARIAN, HUMAN, PILLARS } from '../types';
 import { isCivilian, militaryAt, createUnit, unitDef } from '../units';
+import { canDeclareWar, canOrbitalDrop, canThaw, dropPrice, researchRerollCost } from '../mars';
 import { applyPlayerAction } from '../engine';
 // Planning is a read operation for the human: cache only outside serialized GameState.
 const humanSitePlans = new WeakMap<GameState, Record<string, number>>();
@@ -24,9 +25,8 @@ function targetCount(state: GameState, persona: AiPersonality): number {
 }
 function siteValue(state: GameState, pid: PlayerId, tile: TileIdx): number {
   const t = state.map.tiles[tile];
-  if (!t || t.elevation === 'mountain' || ['ocean', 'coast', 'lake'].includes(t.terrain)) return -Infinity;
   const distances = Object.values(state.cities).map(c => hexDistance(state.map, c.tile, tile));
-  if (distances.some(d => d < 3) || canFoundCity(state, pid, tile)) return -Infinity;
+  if (distances.some(d => d < 3) || canFoundCity(state, pid, tile) !== null) return -Infinity;
   let score = t.riverEdges ? 9 : 0;
   if (neighbors(state.map, tile).some(n => ['coast', 'lake'].includes(state.map.tiles[n].terrain))) score += 6;
   for (const n of tilesInRadius(state.map, tile, 2)) {
@@ -83,14 +83,16 @@ function routeStep(state: GameState, unit: Unit, destination: TileIdx): TileIdx 
   let stop: TileIdx | null = null;
   for (const tile of path) {
     if (reachable.some(r => r.tile === tile) && state.map.tiles[tile].elevation !== 'mountain' &&
-      !['ocean', 'coast', 'lake'].includes(state.map.tiles[tile].terrain)) stop = tile;
+      !['ocean', 'coast', 'lake'].includes(state.map.tiles[tile].terrain) && !forecastStorm(state, tile)) stop = tile;
     else if (!Object.values(state.units).some(u => u.tile === tile && u.id !== unit.id && u.owner === unit.owner &&
       isCivilian(u.type) === isCivilian(unit.type))) break;
   }
   return stop;
 }
 function researchChoice(state: GameState, pid: PlayerId, persona: AiPersonality): string | null {
-  const techs = availableTechs(state, pid);
+  const player = state.players.find(p => p.id === pid);
+  if (player?.isHuman && !player.researchOffer.length) return null;
+  const techs = player?.isHuman ? player.researchOffer : availableTechs(state, pid);
   let best: string | null = null;
   let score = -Infinity;
   for (const id of techs) {
@@ -122,9 +124,6 @@ function productionChoice(state: GameState, pid: PlayerId, city: City, persona: 
     const combat = options.filter(o => o.kind === 'unit' && !isCivilian(o.id) && !['scout'].includes(o.id));
     return combat.sort((a, b) => UNITS[b.id].strength - UNITS[a.id].strength)[0] ?? available('unit', 'warrior')!;
   }
-  const settlers = units.filter(u => u.type === 'settler').length + cities.filter(c => c.queue[0]?.kind === 'unit' && c.queue[0].id === 'settler').length;
-  if (cities.length + settlers < targetCount(state, persona) && cities.length < 2 + state.turn / 12 && city.pop >= 2 && available('unit', 'settler'))
-    return available('unit', 'settler')!;
   if (military.length < Math.max(2, Math.ceil(cities.length * (persona === 'warmonger' ? 2.1 : 1.2)))) {
     const types = options.filter(o => o.kind === 'unit' && !isCivilian(o.id) && o.id !== 'scout');
     types.sort((a, b) => (UNITS[b.id].strength + (UNITS[b.id].rangedStrength ?? 0) - UNITS[b.id].cost / 15) -
@@ -139,7 +138,9 @@ function productionChoice(state: GameState, pid: PlayerId, city: City, persona: 
   const desired = persona === 'scientist' ? ['library', 'university', 'granary', 'market', 'workshop'] :
     ['granary', 'workshop', 'market', 'library', 'temple', 'aqueduct'];
   for (const id of desired) if (available('building', id)) return available('building', id)!;
-  return options.find(o => o.kind === 'building') ?? options.find(o => o.kind === 'unit') ?? { kind: 'project', id: persona === 'scientist' ? 'research' : 'wealth' };
+  return options.find(o => o.kind === 'building') ??
+    options.find(o => o.kind === 'unit' && o.id !== 'settler') ??
+    { kind: 'project', id: persona === 'scientist' ? 'research' : 'wealth' };
 }
 function bestAttack(state: GameState, unit: Unit): TileIdx | null {
   let best: TileIdx | null = null;
@@ -155,9 +156,46 @@ function bestAttack(state: GameState, unit: Unit): TileIdx | null {
   }
   return score >= (unit.hp < 35 ? 35 : 3) ? best : null;
 }
+function forecastStorm(state: GameState, tile: TileIdx): boolean {
+  for (const storm of state.storms) {
+    for (let ahead = 0; ahead <= 2; ahead++) {
+      const eye = storm.path[storm.step + ahead];
+      if (eye !== undefined && hexDistance(state.map, eye, tile) <= storm.radius) return true;
+    }
+  }
+  return false;
+}
+function dropSite(state: GameState, pid: PlayerId): TileIdx | null {
+  const player = state.players.find(p => p.id === pid);
+  if (!player) return null;
+  const price = dropPrice(state, pid);
+  if (player.cryo < price.cryo || player.gold < price.gold) return null;
+  let best: { tile: TileIdx; score: number } | null = null;
+  for (const tile of state.map.tiles) {
+    if (player.vis[tile.idx] === 0 || canOrbitalDrop(state, pid, tile.idx) !== null) continue;
+    const score = siteValue(state, pid, tile.idx);
+    if (Number.isFinite(score) && (!best || score > best.score)) best = { tile: tile.idx, score };
+  }
+  return best && best.score >= 22 ? best.tile : null;
+}
+function arkAction(state: GameState, pid: PlayerId): Action | null {
+  const player = state.players.find(p => p.id === pid);
+  if (!player) return null;
+  const site = dropSite(state, pid);
+  if (site !== null) return { type: 'orbitalDrop', tile: site };
+  if (!player.cryo) return null;
+  const cities = ownCities(state, pid).filter(city => canThaw(state, pid, city.id) === null);
+  cities.sort((a, b) => a.pop - b.pop || a.id - b.id);
+  return cities.length ? { type: 'thawColonists', cityId: cities[0].id } : null;
+}
 function unitAction(state: GameState, pid: PlayerId, unit: Unit, persona: AiPersonality): Action | null {
   if (unit.promotionChoices?.length) return { type: 'promote', unitId: unit.id, promotion: unit.promotionChoices[0] };
   if (unit.moves <= 0 || unit.hasAttacked && !unitDef(unit.type).abilities?.includes('moveAfterAttack')) return null;
+  if (forecastStorm(state, unit.tile)) {
+    const escape = reachableTiles(state, unit).filter(t => !forecastStorm(state, t.tile))
+      .sort((a, b) => a.cost - b.cost)[0];
+    if (escape) return { type: 'moveUnit', unitId: unit.id, to: escape.tile };
+  }
   if (unit.type === 'settler') {
     if (!canFoundCity(state, pid, unit.tile) && ownCities(state, pid).length < targetCount(state, persona)) return { type: 'foundCity', unitId: unit.id };
     const site = bestSite(state, pid, unit);
@@ -213,6 +251,9 @@ function unitAction(state: GameState, pid: PlayerId, unit: Unit, persona: AiPers
     const reachable = reachableTiles(state, unit);
     const choices = reachable.filter(t => hexDistance(state.map, t.tile, target!) < hexDistance(state.map, unit.tile, target!));
     choices.sort((a, b) => hexDistance(state.map, a.tile, target!) - hexDistance(state.map, b.tile, target!) || a.cost - b.cost);
+    const safeChoices = choices.filter(t => !forecastStorm(state, t.tile));
+    safeChoices.sort((a, b) => hexDistance(state.map, a.tile, target!) - hexDistance(state.map, b.tile, target!) || a.cost - b.cost);
+    if (safeChoices[0]) return { type: 'moveUnit', unitId: unit.id, to: safeChoices[0].tile };
     if (choices[0]) return { type: 'moveUnit', unitId: unit.id, to: choices[0].tile };
     const detour = routeStep(state, unit, target);
     if (detour != null) return { type: 'moveUnit', unitId: unit.id, to: detour };
@@ -251,7 +292,12 @@ function improveAction(state: GameState, pid: PlayerId): Action | null {
 function decision(state: GameState, pid: PlayerId, persona: AiPersonality): Action | null {
   const player = state.players.find(p => p.id === pid);
   if (!player?.alive) return null;
+  if (player.isHuman && !player.researching && player.researchOffer.length && player.researchRerolls < 2 &&
+    state.turn % 3 === 1 && player.researchOffer.every(id => (TECHS[id]?.cost ?? 0) >= 85) &&
+    player.gold >= researchRerollCost(state, pid)) return { type: 'rerollResearch' };
   if (!player.researching) { const tech = researchChoice(state, pid, persona); if (tech) return { type: 'setResearch', tech }; }
+  const ark = arkAction(state, pid);
+  if (ark) return ark;
   for (const city of ownCities(state, pid)) {
     const action = cityAction(state, pid, city, persona);
     if (action) return action;
@@ -297,7 +343,8 @@ function diplomacy(state: GameState, pid: PlayerId, emit: Emit): void {
     const relativePower = power(state, pid) / Math.max(1, power(state, rival.id));
     if (border && (player.ai?.personality === 'warmonger' && relativePower > 1.2 ||
       pressure && relativePower > 1.4 ||
-      (player.counters[`provoked:${rival.id}`] ?? 0) > 0 && relativePower > 0.85)) {
+      (player.counters[`provoked:${rival.id}`] ?? 0) > 0 && relativePower > 0.85) &&
+      canDeclareWar(state, pid, rival.id) === null) {
       applyPlayerAction(state, pid, { type: 'declareWar', target: rival.id }, emit);
     }
   }
@@ -349,6 +396,14 @@ export function runBarbarians(state: GameState, emit: Emit): void {
   }
   for (const unit of ownUnits(state, BARBARIAN)) {
     if (unit.moves <= 0) continue;
+    if (forecastStorm(state, unit.tile)) {
+      const escape = reachableTiles(state, unit).filter(t => !forecastStorm(state, t.tile))
+        .sort((a, b) => a.cost - b.cost)[0];
+      if (escape) {
+        applyPlayerAction(state, BARBARIAN, { type: 'moveUnit', unitId: unit.id, to: escape.tile }, emit);
+        continue;
+      }
+    }
     const foes = Object.values(state.units).filter(u => u.owner !== BARBARIAN);
     const immediate = foes.filter(u => hexDistance(state.map, u.tile, unit.tile) <= (unitDef(unit.type).range ?? 1));
     if (immediate.length) {
@@ -364,8 +419,9 @@ export function runBarbarians(state: GameState, emit: Emit): void {
       ...state.map.tiles.filter(t => t.improvement && !t.pillaged).map(t => t.idx)]
       .sort((a, b) => hexDistance(state.map, a, unit.tile) - hexDistance(state.map, b, unit.tile))[0];
     if (nearest !== undefined && nearest !== unit.tile) {
-      const move = reachableTiles(state, unit).filter(t => hexDistance(state.map, t.tile, nearest) < hexDistance(state.map, unit.tile, nearest))
-        .sort((a, b) => hexDistance(state.map, a.tile, nearest) - hexDistance(state.map, b.tile, nearest))[0];
+      const moves = reachableTiles(state, unit).filter(t => hexDistance(state.map, t.tile, nearest) < hexDistance(state.map, unit.tile, nearest));
+      moves.sort((a, b) => hexDistance(state.map, a.tile, nearest) - hexDistance(state.map, b.tile, nearest));
+      const move = moves.find(t => !forecastStorm(state, t.tile)) ?? moves[0];
       if (move) applyPlayerAction(state, BARBARIAN, { type: 'moveUnit', unitId: unit.id, to: move.tile }, emit);
     }
   }

@@ -6,6 +6,7 @@ import { PILLARS } from '../sim/types';
 import { pushDoctrineCard, repriceCouncil } from './doctrines';
 import { changeMandate } from '../sim/roguelite';
 import { INTEREST_CAP, INTEREST_PER } from '../sim/roguelite/constants';
+import { changeCryo } from '../sim/mars';
 
 /** interest earned beyond the base cap: +1 per INTEREST_PER banked, for the `band`-th block of 5 above the cap */
 function extraInterest(ctx: HookCtx, band: number): number {
@@ -28,46 +29,52 @@ function councilOpen(ctx: HookCtx): CouncilState | null {
 }
 
 const LIST: ReformDef[] = [
-  // ── doctrine slots ──
+  // ── Crew bunk expansion ──
   {
-    id: 'expanded_council', name: 'Expanded Council', tier: 1, cost: 10, icon: 'doctrine',
-    description: '**+1** Doctrine slot.',
+    id: 'expanded_council', name: 'Expanded Crew Quarters', tier: 1, cost: 10, icon: 'doctrine',
+    description: '**+1** Crew bunk.',
     effects: {
       onGain(ctx) { ctx.state.run.doctrineSlots += 1; },
       onLose(ctx) { ctx.state.run.doctrineSlots = Math.max(0, ctx.state.run.doctrineSlots - 1); },
     },
   },
   {
-    id: 'grand_council', name: 'Grand Council', tier: 2, requires: 'expanded_council', cost: 14, icon: 'crown',
-    description: '**+1** more Doctrine slot.',
+    id: 'grand_council', name: 'Long-Haul Hab Module', tier: 2, requires: 'expanded_council', cost: 14, icon: 'crown',
+    description: '**+1** more Crew bunk.',
     effects: {
       onGain(ctx) { ctx.state.run.doctrineSlots += 1; },
       onLose(ctx) { ctx.state.run.doctrineSlots = Math.max(0, ctx.state.run.doctrineSlots - 1); },
     },
   },
 
-  // ── edict slots ──
+  // ── Salvage capacity ──
   {
-    id: 'royal_archives', name: 'Royal Archives', tier: 1, cost: 10, icon: 'edict',
-    description: '**+1** Edict slot.',
+    id: 'royal_archives', name: 'Expanded Cryo Bay', tier: 1, cost: 10, icon: 'edict',
+    description: 'On installation, recover **2 Cryo pods** and gain **+1** Salvage slot.',
     effects: {
-      onGain(ctx) { ctx.state.run.edictSlots += 1; },
-      onLose(ctx) { ctx.state.run.edictSlots = Math.max(0, ctx.state.run.edictSlots - 1); },
+      onGain(ctx) {
+        ctx.state.run.edictSlots += 1;
+        changeCryo(ctx.state, ctx.player.id, 2, ctx.emit);
+      },
+      onLose(ctx) {
+        ctx.state.run.edictSlots = Math.max(0, ctx.state.run.edictSlots - 1);
+        changeCryo(ctx.state, ctx.player.id, -2, ctx.emit);
+      },
     },
   },
   {
-    id: 'imperial_archives', name: 'Imperial Archives', tier: 2, requires: 'royal_archives', cost: 12, icon: 'book',
-    description: '**+1** more Edict slot.',
+    id: 'imperial_archives', name: 'Deep-Freeze Vault', tier: 2, requires: 'royal_archives', cost: 12, icon: 'book',
+    description: '**+1** more Salvage slot.',
     effects: {
       onGain(ctx) { ctx.state.run.edictSlots += 1; },
       onLose(ctx) { ctx.state.run.edictSlots = Math.max(0, ctx.state.run.edictSlots - 1); },
     },
   },
 
-  // ── council stock ──
+  // ── Uplink stock ──
   {
-    id: 'open_markets', name: 'Open Markets', tier: 1, cost: 10, icon: 'pack',
-    description: '**+1** Doctrine card in every Council, restocked when you reroll.',
+    id: 'open_markets', name: 'Orbital Relay', tier: 1, cost: 10, icon: 'pack',
+    description: '**+1** Crew card in every Uplink, restocked when rerolled.',
     effects: {
       onGain(ctx) {
         const council = councilOpen(ctx);
@@ -77,8 +84,8 @@ const LIST: ReformDef[] = [
     },
   },
   {
-    id: 'grand_bazaar', name: 'Grand Bazaar', tier: 2, requires: 'open_markets', cost: 12, icon: 'coin',
-    description: '**+1** more Doctrine card in every Council, and Packs cost **1** {influence} less.',
+    id: 'grand_bazaar', name: 'Cargo Bay', tier: 2, requires: 'open_markets', cost: 12, icon: 'coin',
+    description: '**+1** more Crew card in every Uplink, and Supply Drops cost **1** {influence} less.',
     effects: {
       onGain(ctx) {
         const council = councilOpen(ctx);
@@ -93,10 +100,10 @@ const LIST: ReformDef[] = [
     },
   },
 
-  // ── rerolls ──
+  // ── Uplink logistics ──
   {
-    id: 'swift_couriers', name: 'Swift Couriers', tier: 1, cost: 10, icon: 'reroll',
-    description: 'Council rerolls cost **1** {influence} less.',
+    id: 'swift_couriers', name: 'Fast Uplink Window', tier: 1, cost: 10, icon: 'reroll',
+    description: 'Uplink rerolls cost **1** {influence} less.',
     effects: {
       onGain(ctx) {
         const council = councilOpen(ctx);
@@ -108,8 +115,8 @@ const LIST: ReformDef[] = [
     },
   },
   {
-    id: 'imperial_post', name: 'Imperial Post', tier: 2, requires: 'swift_couriers', cost: 12, icon: 'horse',
-    description: 'Council rerolls cost a further **1** {influence} less (never below 0).',
+    id: 'imperial_post', name: 'Priority Data Link', tier: 2, requires: 'swift_couriers', cost: 12, icon: 'bolt',
+    description: 'Uplink rerolls cost a further **1** {influence} less (never below 0).',
     effects: {
       onGain(ctx) {
         const council = councilOpen(ctx);
@@ -121,9 +128,9 @@ const LIST: ReformDef[] = [
     },
   },
 
-  // ── interest ──
+  // ── Scrip reserve ──
   {
-    id: 'royal_treasury', name: 'Royal Treasury', tier: 1, cost: 10, icon: 'influence',
+    id: 'royal_treasury', name: 'Scrip Reserve', tier: 1, cost: 10, icon: 'influence',
     description: `Interest cap **+5**: keep earning **+1** {influence} per ${INTEREST_PER} banked, up to **+${INTEREST_CAP + 5}** per chapter.`,
     effects: {
       influenceIncome(ctx, a) {
@@ -133,7 +140,7 @@ const LIST: ReformDef[] = [
     },
   },
   {
-    id: 'sovereign_wealth', name: 'Sovereign Wealth', tier: 2, requires: 'royal_treasury', cost: 14, icon: 'gold',
+    id: 'sovereign_wealth', name: 'Emergency Scrip Reserve', tier: 2, requires: 'royal_treasury', cost: 14, icon: 'gold',
     description: `Interest cap **+5** more: up to **+${INTEREST_CAP + 10}** {influence} interest per chapter.`,
     effects: {
       influenceIncome(ctx, a) {
@@ -143,10 +150,10 @@ const LIST: ReformDef[] = [
     },
   },
 
-  // ── mandate ──
+  // ── Charter reserve ──
   {
-    id: 'heavenly_mandate', name: 'Heavenly Mandate', tier: 1, cost: 10, icon: 'mandate',
-    description: '**+1** maximum {mandate} and **+1** {mandate}.',
+    id: 'heavenly_mandate', name: 'Charter Extension', tier: 1, cost: 10, icon: 'mandate',
+    description: '**+1** maximum {mandate} Charter and **+1** {mandate}.',
     effects: {
       onGain(ctx) {
         ctx.state.run.maxMandate += 1;
@@ -156,8 +163,8 @@ const LIST: ReformDef[] = [
     },
   },
   {
-    id: 'eternal_mandate', name: 'Eternal Mandate', tier: 2, requires: 'heavenly_mandate', cost: 14, icon: 'sun',
-    description: '**+1** maximum {mandate}, then your {mandate} is fully restored.',
+    id: 'eternal_mandate', name: 'Charter Replenishment', tier: 2, requires: 'heavenly_mandate', cost: 14, icon: 'sun',
+    description: '**+1** maximum {mandate}, then your {mandate} Charter is fully restored.',
     effects: {
       onGain(ctx) {
         const run = ctx.state.run;
@@ -168,10 +175,10 @@ const LIST: ReformDef[] = [
     },
   },
 
-  // ── pillars ──
+  // ── Sol Report calibration ──
   {
-    id: 'scholarly_canon', name: 'Scholarly Canon', tier: 1, cost: 10, icon: 'scroll',
-    description: 'Your current Focus Pillar gains **+1** level.',
+    id: 'scholarly_canon', name: 'Priority Calibration', tier: 1, cost: 10, icon: 'scroll',
+    description: 'Your current Priority gains **+1** level.',
     effects: {
       onGain(ctx) {
         const run = ctx.state.run;
@@ -187,8 +194,8 @@ const LIST: ReformDef[] = [
     },
   },
   {
-    id: 'codified_canon', name: 'Codified Canon', tier: 2, requires: 'scholarly_canon', cost: 14, icon: 'book',
-    description: 'Every Pillar gains **+1** level.',
+    id: 'codified_canon', name: 'Report Calibration Matrix', tier: 2, requires: 'scholarly_canon', cost: 14, icon: 'book',
+    description: 'Every pillar gains **+1** level.',
     effects: {
       onGain(ctx) {
         const levels = ctx.state.run.pillarLevels;

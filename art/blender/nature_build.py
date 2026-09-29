@@ -1,4 +1,4 @@
-"""Generate AEONS foliage, geology, all 27 resources and 10 improvements.
+"""Generate RED EXODUS nature props, Mars resources and installations.
 
 /Applications/Blender.app/Contents/MacOS/Blender -b --python-exit-code 1 --python art/blender/nature_build.py
 Optional arguments after --: --only key [key ...], --preview-only.
@@ -14,7 +14,7 @@ from nature_lib import *
 NATURE = 'tree_pine tree_broadleaf tree_palm tree_jungle tree_snowpine bush reeds cactus rock_small rock_large mountain_a mountain_b mountain_c mountain_snow hill_rocks ice_floe reef_coral flowers'.split()
 RESOURCES = 'wheat rice cattle sheep deer fish stone bananas gold gems silk spices wine incense furs pearls marble ivory dyes cotton sugar whales horses iron niter coal oil'.split()
 IMPROVEMENTS = 'farm mine pasture plantation lumbermill quarry fishing_boats camp trading_post oil_well'.split()
-MISC = ['camp_barbarian','ruin_ancient','road_marker']
+MISC = ['road_marker']
 
 def pine(snow=False):
     cone((0,0,.10),.025,.20,'trunk',6,top=.019)
@@ -77,136 +77,134 @@ def knoll(x,y,rx,ry,h,color='leaf'):
         polygon.material_index=2 if polygon.index<13 else (1 if polygon.index%6==0 else 0)
     return obj
 
-def alpine_pine(x,y,z,h=.17):
-    cone((x,y,z+h*.22),h*.048,h*.44,'trunk',5,top=h*.032)
-    for dz,r,depth,color in [(.42,.26,.48,'leaf_dark'),(.65,.20,.43,'leaf'),(.83,.13,.34,'leaf_light')]:
-        cone((x,y,z+h*dz),h*r,h*depth,color,5)
-
-def crag(x,y,r,h,lean=(0,0),snowline=None,phase=0):
-    """A chisel-cut massif: projecting ribs, recessed gullies, strata and a true apex."""
-    n=10
-    ribs=[1,.88,1.04,.81,.93,1.07,.84,.97,.78,.92]
-    levels=[(0,1),(.15,.91),(.31,.69),(.34,.67),(.52,.43),(.55,.41)]
-    if snowline is not None:
-        levels.append((snowline,1-snowline))
-    else:
-        levels.append((.78,.19))
+def massif_shell(rings, material, name):
+    """Low-poly closed shell from (height, radius, center-x, center-y) rings."""
+    n=12
     verts=[]
-    for row,(fraction,width) in enumerate(levels):
+    for z,r,x,y in rings:
         for i in range(n):
-            a=i*math.tau/n+phase
-            # Broken strata follow the ribs rather than forming uniform cone bands.
-            z=fraction*h
-            if row>0:
-                z+=h*(.018*math.sin(i*2.1+row*.7))
-            radial=width
-            if row==len(levels)-1 and snowline is not None:
-                dip=[-.075,.025,-.025,.07,-.09,.03,-.045,.055,-.08,.015][i]
-                z=(fraction+dip)*h
-                radial=(1-fraction-dip)*.96
-            verts.append((x+r*radial*ribs[i]*math.cos(a)+lean[0]*fraction,
-                          y+r*radial*ribs[i]*math.sin(a)+lean[1]*fraction,z))
-    verts.append((x+lean[0],y+lean[1],h))
+            a=i*math.tau/n
+            jitter=1+.035*math.sin(i*4.1)
+            verts.append((x+r*jitter*math.cos(a),y+r*jitter*math.sin(a),z))
     faces=[tuple(range(n-1,-1,-1))]
-    materials=[0]
-    for row in range(len(levels)-1):
+    for row in range(len(rings)-1):
         for i in range(n):
             a=row*n+i; b=row*n+(i+1)%n
             faces.append((a,b,b+n,a+n))
-            # Thin exposed sandstone seams split three substantial rock strata.
-            materials.append(3 if row in [2,4] else (0 if row==0 else (1 if row<4 else 2)))
-    apex=len(verts)-1
-    for i in range(n):
-        faces.append(((len(levels)-1)*n+i,(len(levels)-1)*n+(i+1)%n,apex))
-        materials.append(4 if snowline is not None else 2)
-    obj=mesh('Ribbed alpine summit',verts,faces,'625f55')
-    for color in ['8a8177','b0a58e','c9bfae','snow']:
-        obj.data.materials.append(mat(color))
-    for polygon,material in zip(obj.data.polygons,materials):
-        polygon.material_index=material
-    return obj
+    faces.append(tuple((len(rings)-1)*n+i for i in range(n)))
+    return mesh(name,verts,faces,material)
 
 def mountain(variant):
-    # Each outline has a different summit axis and shoulder rhythm.
-    forms={
-        'a':[(.02,.12,.51,.99,(-.10,.015),None),(-.46,.04,.34,.59,(-.025,.025),None),(.37,.21,.31,.43,(.04,0),None)],
-        'b':[(-.24,.13,.49,.91,(.10,.025),None),(.34,.06,.39,.65,(.07,.02),None),(-.28,-.34,.25,.35,(-.035,0),None)],
-        'c':[(.12,.14,.45,1.0,(.025,-.025),.87),(-.31,.05,.36,.69,(-.09,.04),None),(.39,-.16,.30,.45,(.025,0),None)],
-        'snow':[(0,.10,.52,1.0,(-.025,.025),.64),(-.39,.16,.35,.67,(-.035,.035),.71),(.40,.02,.33,.55,(.04,.03),.76)],
-    }[variant]
-    skirt='leaf' if variant in ['a','b'] else ('rock_dark' if variant=='c' else 'rock')
-    knoll(0,0,.89,.87,.105,skirt)
-    for j,(x,y,r,h,lean,snowline) in enumerate(forms):
-        crag(x,y,r,h,lean,snowline,j*.36+.12)
-    # Low, angular buttresses anchor the spires into the full hex footprint.
-    for x,y,r,h in [(-.49,-.32,.22,.22),(.35,-.40,.27,.25),(.03,-.59,.23,.16)]:
-        crag(x,y,r,h,(.015,.015),None,.2)
-    if variant in ['a','b']:
-        for x,y,z,h in [(-.65,-.22,.055,.22),(-.53,-.43,.065,.28),(-.68,-.39,.035,.18),(.51,-.34,.055,.24),(.64,-.23,.04,.20)]:
-            alpine_pine(x,y,z,h)
-    elif variant=='snow':
-        for x,y in [(-.62,-.27),(.48,-.43)]:
-            knoll(x,y,.15,.11,.035,'snow')
+    if variant=='a':  # shield volcano: broad, gently stepped lava slopes and a caldera
+        massif_shell([(0,.94,0,0),(.15,.84,0,0),(.34,.66,-.02,.01),(.53,.44,-.02,.01),(.69,.30,-.02,.01)],'rust','Olympian shield volcano')
+        cone((-.02,.01,.705),.27,.035,'rock_dark',12,top=.25)
+        torus((-.02,.01,.724),.25,.018,'ochre')
+        cone((-.02,.01,.735),.12,.022,'rock_dark',10,top=.11)
+        for x,y in [(-.62,-.20),(.56,-.34),(.40,.48)]:
+            cone((x,y,.08),.13,.16,'basalt',7,top=.08)
+    elif variant=='b':  # mesa: broad level cap and deeply cut layered escarpment
+        massif_shell([(0,.94,0,0),(.18,.82,0,0),(.43,.65,.02,0),(.57,.64,.02,0),(.62,.59,.02,0)],'rock_dark','Stratified mesa')
+        massif_shell([(.36,.68,.02,0),(.405,.67,.02,0)],'ochre','Mesa iron band')
+        cone((.02,0,.65),.59,.08,'rust',12,top=.55)
+        cone((.02,0,.697),.48,.012,'sand',12,top=.48)
+        for x,y in [(-.48,-.43),(.48,-.40),(.60,.26)]:
+            rock((x,y,.055),(.18,.12,.08),'basalt')
+    elif variant=='c':  # crater rim massif: broken raised rim around a sunken basin
+        massif_shell([(0,.94,0,0),(.13,.85,0,0),(.34,.70,0,0),(.60,.62,0,0),(.64,.51,0,0),(.31,.39,0,0)],'basalt','Crater-rim massif')
+        cone((0,0,.315),.40,.018,'rock_dark',12,top=.40)
+        cone((0,0,.327),.29,.008,'rust',12,top=.29)
+        for i in range(8):
+            a=i*math.tau/8
+            rock((.60*math.cos(a),.60*math.sin(a),.42),(.13,.12,.10),'ochre' if i%2 else 'rock')
+    else:  # frost-capped massif
+        massif_shell([(0,.94,0,0),(.20,.78,0,0),(.45,.55,-.03,.02),(.68,.33,-.04,.02),(.81,.18,-.04,.02)],'rock_dark','Frost-flat massif')
+        cone((-.04,.02,.80),.43,.22,'snow',9,top=.11)
+        for x,y in [(-.30,.08),(.22,.12),(-.16,-.20)]:
+            ico((x,y,.68),(.11,.075,.035),'snow')
+        for x,y in [(-.55,-.25),(.50,-.40),(.56,.34)]:
+            rock((x,y,.055),(.17,.12,.09),'snow')
 
 def reeds():
-    for i in range(7):
-        a=i*2.4; x=.075*math.cos(a); y=.065*math.sin(a); h=.14+(i%3)*.025
-        beam((x,y,0),(x+.015,y,h),.006,'leaf',5)
-        cone((x+.015,y,h),.013,.047,'trunk',5,top=.01)
-        blade((x,y,.015),(x-.045,y+.015,.10),.012,'leaf_light',0)
+    # Perchlorate salt crystals: brittle blades, not vegetation.
+    for i in range(9):
+        a=i*2.4; x=.12*math.cos(a); y=.11*math.sin(a); h=.11+(i%3)*.035
+        cone((x,y,h/2),.018,h,'cream',5,top=.002)
+        crystal(x,y,h,.06+(i%2)*.025,'snow')
 
 def cactus():
-    cone((0,0,.135),.039,.27,'leaf',7,top=.032)
-    ico((0,0,.27),(.032,.032,.025),'leaf_light')
-    for x,z in [(-.07,.10),(.075,.17)]:
-        beam((0,0,z),(x,0,z),.022,'leaf',6)
-        beam((x,0,z),(x,0,z+.08),.023,'leaf',6,end=.019)
-        ico((x,0,z+.08),(.019,.019,.016),'leaf_light')
-    ico((-.002,0,.298),(.027,.021,.019),'coral')
+    # Ventifact: wind-faceted basalt with a sharp, directional ridge.
+    rock((0,0,.14),(.12,.095,.14),'basalt')
+    cone((-.015,0,.26),.052,.19,'rust',5,top=.009)
+    for x,y,h in [(-.10,-.015,.17),(.08,.035,.21),(.01,-.075,.12)]:
+        beam((x,y,.025),(x+.035,y,h),.025,'rock_dark',5,end=.008)
+        beam((x+.035,y,h),(x+.055,y,h+.025),.018,'ochre',5,end=.003)
 
 def flowers():
-    for i in range(5):
-        a=i*2.4; x=.09*math.cos(a); y=.08*math.sin(a); h=.065+(i%2)*.025
-        beam((x,y,0),(x,y,h),.004,'leaf',4)
-        for j in range(4):
-            t=j*math.pi/2
-            ico((x+.012*math.cos(t),y+.012*math.sin(t),h),(.016,.016,.007),'cream' if i%2 else 'coral')
-        ico((x,y,h+.006),(.009,.009,.006),'gold')
+    # Terraforming lichen deliberately reads as a living, spreading crust.
+    for x,y,rx,ry,c in [(-.09,0,.105,.08,'lichen'),(.04,.025,.12,.085,'leaf_light'),(.13,-.045,.07,.065,'coral'),(-.02,-.09,.085,.06,'leaf_dark')]:
+        rock((x,y,.014),(rx,ry,.018),c)
+    for x,y in [(-.14,-.02),(-.06,.04),(.02,-.035),(.10,.04),(.16,-.055)]:
+        for side in [-1,1]:
+            blade((x,y,.025),(x+side*.026,y+.018,.048),.014,'leaf_light' if side>0 else 'leaf')
+    for x,y in [(-.09,0),(.045,.025),(.13,-.045)]:
+        ico((x,y,.038),(.024,.019,.009),'coral')
 
 def nature(key):
-    if key=='tree_pine': pine()
-    elif key=='tree_snowpine': pine(True)
-    elif key=='tree_broadleaf': broadleaf()
-    elif key=='tree_jungle': broadleaf(True)
-    elif key=='tree_palm': palm()
+    if key=='tree_pine':  # basalt spire
+        cone((0,0,.19),.095,.38,'basalt',6,top=.014)
+        cone((.012,0,.29),.047,.18,'rock_dark',5,top=.006)
+        for z in [.10,.21,.32]: rock((0,-.025,z),(.08,.045,.018),'rust')
+    elif key=='tree_broadleaf':  # mushroom-capped hoodoo
+        cone((0,0,.14),.055,.28,'rock',7,top=.045)
+        ico((0,0,.31),(.15,.13,.065),'ochre')
+        ico((0,-.01,.35),(.13,.12,.045),'rust')
+    elif key=='tree_palm':  # mineral geyser chimney, pale steam plume
+        cone((0,0,.13),.095,.26,'basalt',7,top=.055)
+        cone((0,0,.265),.07,.035,'rock_dark',8,top=.06)
+        for x,y,z,s in [(-.02,0,.34,.035),(.012,.008,.40,.029),(.035,.015,.45,.020)]:
+            ico((x,y,z),(s,s,s*1.5),'cream')
+        torus((0,0,.11),.10,.012,'ochre')
+    elif key=='tree_jungle':  # skylight in a collapsed lava tube
+        cone((0,0,.075),.18,.15,'basalt',9,top=.17)
+        cone((0,0,.15),.13,.035,'rock_dark',9,top=.13)
+        torus((0,0,.17),.15,.025,'rust')
+        ico((0,0,.13),(.09,.09,.012),'ink')
+        for x,y in [(-.13,0),(.1,.07),(.02,-.14)]:
+            rock((x,y,.10),(.065,.055,.06),'rock')
+    elif key=='tree_snowpine':  # blue-white ice spire
+        cone((0,0,.19),.09,.38,'dryice',6,top=.006)
+        cone((-.015,-.01,.24),.052,.22,'snow',5,top=.004)
     elif key=='bush':
-        for pos,sz,c in [((-.045,0,.052),(.065,.066,.065),'leaf'),((.04,0,.07),(.075,.065,.085),'leaf_light'),((0,.045,.06),(.07,.06,.07),'leaf_dark')]:
+        for pos,sz,c in [((-.07,0,.055),(.09,.08,.06),'rock'),((.045,0,.07),(.10,.085,.075),'rust'),((0,.065,.05),(.075,.07,.05),'basalt')]:
             rock(pos,sz,c)
     elif key=='reeds': reeds()
     elif key=='cactus': cactus()
     elif key=='flowers': flowers()
-    elif key=='rock_small': rock()
+    elif key=='rock_small':
+        rock((0,0,.055),(.105,.09,.065),'rust')
+        rock((.05,-.02,.035),(.06,.05,.04),'rock_dark')
     elif key=='rock_large':
-        rock((-.03,0,.13),(.21,.18,.16));rock((.14,-.08,.05),(.10,.09,.065),'rock_dark')
+        rock((-.035,.015,.12),(.22,.19,.14),'rust')
+        rock((.14,-.08,.06),(.12,.10,.07),'basalt')
     elif key.startswith('mountain_'): mountain(key.split('_')[1])
     elif key=='hill_rocks':
-        knoll(-.13,.035,.48,.40,.20,'leaf')
-        knoll(.23,.13,.33,.30,.29,'leaf_light')
-        for x,y,r,h,z in [(-.12,.10,.18,.26,.08),(.27,.17,.16,.26,.16),(.36,-.04,.14,.19,.08)]:
-            crag(x,y,r,h,(.015,.025),None,.3).location.z=z
-        alpine_pine(-.39,-.07,.07,.16)
-        alpine_pine(-.29,-.18,.07,.12)
+        massif_shell([(0,.78,0,0),(.09,.70,0,0),(.20,.50,.03,0),(.25,.28,.06,.01)],'ochre','Layered sediment outcrop')
+        for x,y,z,s,c in [(-.37,-.1,.09,.16,'rust'),(.24,.08,.12,.19,'rock'),(.48,-.06,.07,.12,'basalt')]:
+            rock((x,y,z),(s,s*.72,s*.68),c)
+        for z in [.08,.145,.20]:
+            beam((-.48,.02,z),(.40,.02,z+.01),.009,'sand',4)
     elif key=='ice_floe':
-        cone((0,0,.032),.31,.064,'water',7,top=.30)
-        cone((-.015,0,.07),.29,.035,'snow',7,top=.26)
-        cone((.28,.16,.025),.10,.05,'snow',5,top=.09)
+        cone((0,0,.035),.34,.07,'dryice',7,top=.31)
+        cone((-.035,.005,.075),.29,.035,'snow',7,top=.24)
+        cone((.20,.12,.064),.12,.045,'dryice',5,top=.08)
+        for x,y in [(-.16,.10),(.10,-.12)]:
+            beam((x,y,.08),(x+.05,y,.085),.008,'glass',4)
     elif key=='reef_coral':
-        rock((0,0,.025),(.18,.12,.035),'sand')
-        for x,y,h in [(-.10,0,.13),(0,.03,.18),(.10,0,.11)]:
-            beam((x,y,.02),(x,y,h),.022,'coral',5,end=.016)
+        rock((0,0,.025),(.21,.16,.035),'basalt')
+        for x,y,h in [(-.12,0,.13),(0,.03,.19),(.12,0,.14),(.04,-.11,.10)]:
+            crystal(x,y,.035,h,'opal')
             for side in [-1,1]:
-                beam((x,y,h*.6),(x+side*.035,y,h*.85),.013,'pink',5)
-                beam((x+side*.035,y,h*.85),(x+side*.035,y,h*1.1),.012,'pink',5)
+                crystal(x+side*.035,y,.025,h*.64,'cryo')
 
 def crop(x,y,h=.16,kind='wheat'):
     beam((x,y,0),(x,y,h),.005,'leaf' if kind=='rice' else 'gold',4)
@@ -273,84 +271,108 @@ def derrick(small=False):
     torus((.13,.06,.125),.035,.005,'gold')
 
 def resource(kind):
-    if kind in ['wheat','rice']:
-        for x,y,h in [(-.04,0,.15),(0,.03,.19),(.04,0,.17)]: crop(x,y,h,kind)
-        if kind=='wheat': torus((0,0,.075),.039,.007,'trunk')
-        else: cone((0,0,.005),.10,.01,'water',8,top=.10)
-    elif kind in ['cattle','sheep','deer','horses']: animal(kind)
-    elif kind=='fish': fish()
-    elif kind=='bananas': palm(True)
-    elif kind in ['stone','marble']:
-        cube((-.025,.01,.055),(.17,.12,.11),'stone',.008)
-        cube((.015,.015,.13),(.13,.10,.04),'snow' if kind=='marble' else 'rock',.005)
-        if kind=='marble':
-            beam((-.044,-.047,.036),(.01,-.047,.082),.004,'rock',4)
-            beam((.01,-.047,.082),(.037,-.047,.087),.004,'rock',4)
+    if kind=='wheat':
+        for x,y,h in [(-.08,0,.12),(0,.025,.19),(.075,-.03,.14),(.01,-.08,.10)]: crystal(x,y,.015,h,'snow')
+        rock((0,0,.012),(.17,.13,.012),'cream')
+    elif kind=='rice':
+        for x,y,s in [(-.08,0,.08),(.035,.025,.11),(.10,-.045,.07),(-.01,-.08,.06)]: rock((x,y,.018),(s,s*.72,.018),'teal' if s>.08 else 'leaf')
+        for x,y in [(-.1,.02),(.02,.04),(.09,-.035)]: ico((x,y,.035),(.025,.018,.008),'leaf_light')
+    elif kind=='cattle':
+        for x,y,s in [(-.08,0,.10),(.045,.02,.11),(.10,-.06,.07)]:
+            rock((x,y,.045),(s,s*.65,.045),'basalt'); rock((x,y,.085),(s*.70,s*.52,.022),'lichen'); rock((x+.025,y-.01,.10),(s*.32,s*.26,.016),'coral')
+    elif kind=='sheep':
+        torus((0,0,.025),.12,.018,'snow'); cone((0,0,.04),.075,.06,'basalt',8,top=.04)
+        for x,y,z in [(-.025,0,.14),(.015,.01,.22),(.04,.015,.29)]: ico((x,y,z),(.025,.023,.037),'cream')
+        for x,y in [(-.08,0),(.08,.015)]: ico((x,y,.025),(.028,.022,.016),'dryice')
+    elif kind=='deer':
+        cone((0,0,.07),.19,.14,'rock_dark',9,top=.14); cone((0,0,.11),.125,.035,'dryice',9,top=.105)
+        ico((-.02,0,.13),(.08,.06,.018),'snow'); torus((0,0,.082),.17,.018,'rust')
+    elif kind=='fish':
+        for i in range(3): torus((0,0,.018+i*.007),.14-i*.035,.009,'ochre' if i%2 else 'rock')
+        ico((0,0,.02),(.055,.045,.016),'basalt')
+        for x,y in [(-.10,.035),(.09,-.025),(.02,.10)]: ico((x,y,.025),(.025,.018,.008),'sand')
+    elif kind=='stone':
+        for x,y,h in [(-.09,0,.16),(-.03,.025,.22),(.04,.02,.18),(.10,-.02,.13),(0,-.055,.14)]:
+            cone((x,y,h/2),.045,h,'basalt',6,top=.038); cone((x,y,h+.004),.038,.009,'rock_dark',6,top=.035)
+    elif kind=='bananas':
+        for x,y,h in [(-.075,0,.13),(.02,.035,.19),(.09,-.035,.14)]:
+            beam((x,y,0),(x,y,h),.014,'basalt',5); ico((x,y,h+.018),(.065,.055,.026),'leaf_dark'); ico((x,y,h+.012),(.048,.043,.018),'cryo')
     elif kind in ['gold','gems','iron','niter','coal']:
-        rock((0,0,.03),(.14,.105,.04),'rock_dark')
-        color={'gold':'gold','gems':'teal','iron':'iron','niter':'snow','coal':'coal'}[kind]
-        for x,y,h in [(-.07,0,.11),(.01,.02,.18),(.07,-.015,.125)]:
-            if kind in ['gems','niter']: crystal(x,y,.035,h,color)
-            else: rock((x,y,h*.5),(.045,.045,h*.45),color)
+        rock((0,0,.035),(.17,.13,.045),'basalt')
+        if kind=='gold':
+            for x,y,s in [(-.08,0,.052),(.01,.025,.07),(.075,-.035,.045)]: rock((x,y,.065),(s,s*.78,s*.62),'platinum')
+        elif kind=='gems':
+            for x,y,h in [(-.08,0,.13),(0,.025,.20),(.075,-.035,.15)]: crystal(x,y,.035,h,'opal'); crystal(x+.012,y-.012,.04,h*.7,'cryo')
+        elif kind=='iron':
+            for x,y,h in [(-.07,0,.11),(.01,.025,.18),(.08,-.025,.12)]: rock((x,y,h*.48),(.06,.05,h*.48),'iron'); rock((x-.02,y-.025,h*.40),(.025,.02,.025),'basalt')
+        elif kind=='niter':
+            for x,y in [(-.08,0),(.03,.035),(.09,-.04)]: crystal(x,y,.025,.11,'jarosite'); rock((x,y,.02),(.07,.045,.018),'cream')
+        else:
+            rock((-.055,.01,.055),(.09,.075,.06),'coal'); ico((.04,0,.065),(.065,.055,.06),'ink')
+            for x,y,z in [(-.03,-.04,.10),(.05,-.025,.11),(.02,.04,.12)]: ico((x,y,z),(.018,.018,.018),'lichen')
     elif kind=='silk':
-        beam((0,0,0),(0,0,.15),.013,'trunk',5)
-        for i in range(3):
-            a=i*math.tau/3
-            blade((0,0,.14),(.12*math.cos(a),.12*math.sin(a),.17),.05,'leaf')
-        for x,y in [(-.05,-.03),(.04,-.02)]: ico((x,y,.162),(.031,.016,.018),'cream')
+        for x,y in [(-.075,0),(.07,.02)]:
+            cone((x,y,.10),.052,.18,'steel',8,top=.052); torus((x,y,.15),.054,.006,'cream'); ico((x,y,.20),(.058,.058,.012),'glass')
+        for i in range(4):
+            a=i*math.tau/4; beam((-.075,0,.19),(.07+.11*math.cos(a),.02+.08*math.sin(a),.14),.004,'cream',4)
+        torus((0,0,.07),.10,.005,'cryo')
     elif kind=='spices':
-        for x,y,c in [(-.05,0,'gold'),(.055,.02,'red')]:
-            ring_mesh('Open spice sack',[(0,.05,x,y,0),(.055,.065,x,y,0),(.10,.045,x,y,0)],'sand',7)
-            cone((x,y,.10),.046,.018,c,7,top=.025)
-            torus((x,y,.10),.047,.005,'cream')
+        for x,y in [(-.06,0),(.055,.025)]:
+            cube((x,y,.045),(.105,.075,.085),'steel',.008); cube((x,y,.092),(.08,.052,.012),'glass',.003)
+            cone((x,y,.105),.018,.012,'berry',6,top=.004); cube((x,y-.042,.045),(.018,.006,.05),'hazard')
     elif kind=='wine':
-        pot(.065,.035,0,'roof',1.25)
-        for z,r in [(.04,.04),(.07,.055),(.10,.05)]:
-            for i in range(4):
-                a=i*math.pi/2
-                ico((-.045+r*.5*math.cos(a),-.035+r*.5*math.sin(a),z),(.021,.021,.021),'berry')
-        blade((-.04,-.03,.12),(-.09,-.04,.16),.03,'leaf')
+        cube((0,0,.085),(.25,.19,.17),'timber',.008)
+        for x in [-.075,0,.075]: cone((x,-.025,.14),.021,.11,'red',7,top=.017); cone((x,-.025,.198),.012,.018,'gold',7,top=.012)
+        for z in [.025,.145]: beam((-.12,-.10,z),(.12,-.10,z),.012,'steel',4)
+        cube((0,-.105,.08),(.07,.009,.035),'cream')
     elif kind=='incense':
-        cone((0,0,.045),.073,.06,'gold',8,top=.058)
-        cone((0,0,.078),.055,.006,'coal',8,top=.055)
-        for x,y in [(-.02,0),(.02,.012),(0,-.02)]:
-            beam((x,y,.078),(x+.025,y,.19),.005,'trunk',5)
-            ico((x+.025,y,.19),(.007,.007,.009),'coral')
-        for x in [-.05,.05]: beam((x,0,0),(x,0,.03),.01,'gold',5)
+        for x,y in [(-.07,0),(.04,.025),(.01,-.065)]:
+            cube((x,y,.04),(.10,.075,.075),'soil',.006); cube((x,y,.08),(.09,.068,.012),'timber',.003)
+            beam((x,y-.04,.03),(x,y-.04,.05),.008,'cream',4)
     elif kind=='furs':
-        for x in [-.085,.085]: beam((x,0,0),(x,0,.20),.011,'timber',5)
-        beam((-.10,0,.19),(.10,0,.19),.012,'timber',5)
-        mesh('Hanging fur hide',[(-.07,-.012,.18),(.07,-.012,.18),(.055,-.018,.07),(.025,-.018,.045),(0,-.018,.07),(-.045,-.018,.05)],[(0,1,2,3,4,5)],'cream')
-        ico((0,-.024,.135),(.035,.008,.044),'trunk')
+        for x,y,z in [(-.07,0,.07),(.04,.025,.09),(.08,-.055,.055)]:
+            cube((x,y,z),(.12,.10,.11),'aerogel',.012)
+            for dx in [-.035,.035]: beam((x+dx,y-.052,z-.035),(x+dx,y-.052,z+.035),.004,'glass',4)
     elif kind=='pearls':
-        ico((0,0,.025),(.115,.085,.03),'pink')
-        shell=ico((0,.054,.078),(.11,.026,.08),'cream')
-        shell.rotation_euler[0]=-.35
-        for x in [-.035,0,.035]: ico((x,-.018,.06),(.021,.022,.022),'snow')
+        rock((0,0,.035),(.17,.12,.04),'rock_dark')
+        for x,y,z in [(-.09,0,.07),(-.04,.035,.10),(.025,.015,.075),(.08,-.02,.11),(.11,.045,.065),(-.025,-.055,.065)]:
+            ico((x,y,z),(.027,.025,.024),'coal'); ico((x-.008,y-.012,z+.018),(.008,.007,.006),'steel')
+    elif kind=='marble':
+        for x,y,s in [(-.08,0,.11),(.025,.02,.14),(.11,-.035,.08)]:
+            rock((x,y,s*.55),(s,s*.72,s*.60),'lichen'); beam((x-s*.4,y-s*.2,s*.52),(x+s*.25,y-s*.3,s*.65),.004,'leaf_light',4)
     elif kind=='ivory':
-        for sign in [-1,1]:
-            ring_mesh('Curved ivory tusk',[(0,.028,sign*.05,0,0),(.07,.026,sign*.065,0,0),(.13,.019,sign*.053,0,0),(.18,.012,sign*.025,0,0),(.20,0,sign*.002,0,0)],'cream',6)
+        rock((0,0,.07),(.17,.13,.075),'basalt')
+        for sign in [-1,1]: crystal(sign*.045,0,.07,.16,'platinum'); rock((sign*.045,0,.06),(.065,.06,.055),'iron')
     elif kind=='dyes':
-        for x,y,c in [(-.065,0,'berry'),(.06,.025,'teal'),(.02,-.065,'red')]:
-            pot(x,y,0,c,.75)
-            cone((x,y,.093),.02,.003,c,8,top=.02)
+        rock((0,0,.025),(.18,.13,.025),'rock_dark')
+        for x,y in [(-.09,0),(.015,.03),(.09,-.04)]: cone((x,y,.07),.065,.06,'jarosite',7,top=.018); rock((x,y,.108),(.035,.03,.008),'ochre')
     elif kind=='cotton':
-        for x,y,h in [(-.05,0,.15),(.04,.015,.19),(0,-.04,.13)]:
-            beam((x,y,0),(x,y,h),.007,'trunk',5)
-            blade((x,y,.07),(x+.05,y,.12),.025,'leaf')
-            for i in range(3):
-                a=i*math.tau/3
-                ico((x+.018*math.cos(a),y+.018*math.sin(a),h),(.028,.028,.028),'snow')
+        cube((0,0,.018),(.34,.25,.035),'steel',.008)
+        for x,y in [(-.10,-.06),(-.035,.045),(.05,-.045),(.11,.055)]:
+            cone((x,y,.075),.016,.12,'lichen',5,top=.009)
+            for side in [-1,1]: ico((x+side*.024,y,.13),(.03,.023,.025),'cream')
     elif kind=='sugar':
-        for x,y,h in [(-.04,0,.23),(.02,.03,.28),(.04,-.025,.20)]:
-            beam((x,y,0),(x,y,h),.012,'leaf_light',6)
-            for z in [.06,.12,.18]: cone((x,y,z),.014,.008,'leaf',6,top=.014)
-            blade((x,y,h-.04),(x+.06,y,h+.03),.025,'leaf')
+        torus((0,0,.035),.235,.012,'steel')
+        for a in range(8):
+            t=a*math.tau/8
+            beam((.235*math.cos(t),.235*math.sin(t),.035),(.15*math.cos(t),.15*math.sin(t),.31),.008,'steel',5)
+        torus((0,0,.31),.15,.009,'glass')
+        for x,y,h in [(-.09,0,.17),(.02,.035,.21),(.09,-.04,.15)]:
+            beam((x,y,.03),(x,y,h),.009,'trunk',5)
+            for side in [-1,1]: blade((x,y,h*.55),(x+side*.045,y+.02,h*.72),.02,'leaf')
+            ico((x,y,h),(.035,.027,.025),'leaf_light')
     elif kind=='whales':
-        ico((0,.02,.035),(.12,.075,.04),'water')
-        mesh('Whale sounding tail',[(-.015,0,.045),(-.025,0,.11),(-.15,0,.16),(-.13,0,.205),(0,0,.17),(.13,0,.205),(.15,0,.16),(.025,0,.11),(.015,0,.045), (0,.025,.15)],[(0,1,9),(1,2,3,4,9),(4,5,6,7,9),(7,8,0,9)],'coal')
-    elif kind=='oil': derrick(True)
-
+        cube((0,.025,.055),(.17,.22,.09),'steel',.012); cube((-.23,.025,.075),(.25,.12,.012),'steel',.004); cube((.23,.025,.075),(.25,.12,.012),'steel',.004)
+        beam((0,-.04,.10),(0,-.10,.22),.018,'iron',6); torus((0,-.105,.23),.07,.009,'steel')
+        rock((-.12,.08,.04),(.10,.12,.05),'rust')
+        for x in [-.30,-.18,.18,.30]: beam((x,-.035,.083),(x,.085,.083),.004,'cryo',4)
+    elif kind=='horses':
+        for x in [-.07,.07]:
+            cone((x,0,.11),.05,.21,'steel',8,top=.05); torus((x,0,.17),.052,.007,'hazard'); cube((x,-.054,.12),(.035,.008,.05),'ink')
+        beam((-.07,0,.23),(.07,0,.23),.015,'steel',5); crystal(0,.07,.01,.13,'dryice')
+    elif kind=='oil':
+        rock((0,0,.045),(.20,.16,.06),'dryice'); crystal(-.08,.01,.045,.11,'cryo'); crystal(.06,.025,.05,.14,'snow')
+        cube((.12,-.04,.13),(.11,.10,.12),'steel',.008); beam((.12,-.04,.19),(.12,-.04,.30),.009,'hazard',5); torus((.12,-.04,.30),.025,.006,'hazard')
 def fence(a,b):
     a,b=Vector(a),Vector(b)
     for p in [a,b]:
@@ -380,77 +402,82 @@ def boat(x=0,y=0):
     beam((x,y-.055,.10),(x+.10,y+.035,.05),.008,'gold',5)
 
 def improvement(kind):
-    if kind=='farm':
-        for x in [-.29,0,.29]:
-            cube((x,0,.016),(.23,.64,.032),'earth',.006)
-            for y in [-.25,-.12,.01,.14,.27]:
-                for dx in [-.065,.065]:
-                    # Low-count broad crop tufts remain readable at map distance.
-                    cone((x+dx,y,.087),.023,.12,'gold',5,top=.012)
-                    blade((x+dx,y,.04),(x+dx+.035,y,.10),.014,'leaf',0)
-        fence((-.43,.38,0),(.43,.38,0))
-    elif kind=='mine':
-        rock((0,.07,.16),(.32,.23,.21),'rock_dark')
-        cube((0,-.15,.105),(.20,.024,.20),'ink')
-        for x in [-.12,.12]: cube((x,-.18,.11),(.043,.06,.22),'timber',.004)
-        cube((0,-.18,.22),(.31,.065,.045),'timber',.004)
-        for x in [-.067,.067]: beam((x,-.4,.009),(x,-.12,.009),.009,'coal',4)
-        for y in [-.37,-.27]: cube((0,y,.008),(.19,.025,.016),'timber')
-        cube((.22,-.22,.08),(.13,.105,.10),'iron',.008)
-        rock((.22,-.22,.145),(.065,.048,.045),'coal')
-    elif kind=='pasture':
-        points=[(-.35,-.28,0),(.35,-.28,0),(.40,.22,0),(0,.38,0),(-.40,.22,0)]
-        for i in range(5): fence(points[i],points[(i+1)%5])
-        animal('cattle')
-        cube((.21,.11,.05),(.12,.20,.10),'timber',.01)
-        cube((.21,.11,.105),(.085,.17,.008),'gold')
-    elif kind=='plantation':
-        for y in [-.19,.19]:
-            for x in [-.28,0,.28]:
-                cone((x,y,.07),.017,.14,'trunk',5,top=.01)
-                ico((x,y,.18),(.10,.10,.11),'leaf')
-                for dx,dy in [(-.045,-.04),(.04,-.06)]: ico((x+dx,y+dy,.17),(.019,.019,.019),'coral')
-        cube((0,0,.009),(.73,.045,.018),'sand')
-    elif kind=='lumbermill':
-        building(-.13,.08)
-        cube((.20,-.04,.10),(.18,.25,.04),'timber')
-        saw=cone((.2,-.02,.16),.07,.012,'steel',10,top=.07)
-        saw.rotation_euler[0]=math.pi/2
-        for x,z in [(.15,.034),(.24,.034),(.195,.10)]:
-            beam((x,.15,z),(x,.38,z),.033,'trunk',7)
-            beam((x,.145,z),(x,.15,z),.028,'sand',7)
-    elif kind=='quarry':
-        for y,z,w in [(.16,.15,.56),(0,.095,.46),(-.16,.035,.36)]:
-            cube((0,y,z),(w,.17,z*2),'rock',.009)
-            for x in [-w*.25,w*.25]: cube((x,y-.09,z),(.008,.006,z*1.6),'rock_dark')
-        cube((.27,-.2,.055),(.14,.12,.11),'stone',.007)
-        cube((-.22,-.29,.035),(.16,.10,.07),'stone',.006)
-    elif kind=='fishing_boats':
-        boat(-.13,0)
-        boat(.19,.12)
-        for x,y in [(-.25,-.12),(.22,-.08)]:
-            beam((x,y,.005),(x+.12,y,.005),.006,'water',5)
-    elif kind=='camp':
-        tent(-.06,.04)
-        for x,y in [(.20,-.12),(.22,-.05),(.15,-.08)]: rock((x,y,.012),(.026,.024,.018))
-        cone((.19,-.08,.035),.025,.06,'gold',5)
-        cone((.19,-.08,.052),.017,.065,'coral',5)
-        for x in [.18,.29]: beam((x,.13,0),(x,.13,.15),.009,'timber',5)
-        beam((.18,.13,.14),(.29,.13,.14),.009,'timber',5)
-    elif kind=='trading_post':
-        building(0,.08,'teal')
-        for x in [-.16,.16]: beam((x,-.24,0),(x,-.24,.21),.012,'timber',5)
-        cube((0,-.19,.22),(.37,.23,.025),'cream',.007)
-        for x in [-.12,0,.12]: cube((x,-.19,.235),(.055,.23,.006),'roof')
-        cube((0,-.23,.07),(.31,.12,.14),'timber',.006)
-        pot(.10,-.23,.145,'gold',.42)
-        pot(-.08,-.23,.145,'teal',.42)
-    elif kind=='oil_well':
-        cube((0,0,.012),(.35,.32,.024),'rock',.006)
-        derrick()
-        beam((-.20,.06,.07),(-.20,.23,.07),.065,'iron',8)
-        beam((-.2,.06,.07),(-.12,.06,.07),.014,'coal',6)
-
+    if kind=='farm':  # Greenhouse Dome
+        for x,y,r in [(-.22,0,.18),(.20,.04,.21)]:
+            for a in range(4):
+                t=a*math.pi/2
+                beam((x+r*math.cos(t),y,.025),(x+r*.7*math.cos(t),y+r*.7*math.sin(t),.14),.009,'steel',5)
+            torus((x,y,.025),r,.012,'cream')
+            for a in range(4):
+                t=a*math.pi/2
+                beam((x+r*math.cos(t),y+r*math.sin(t),.025),(x+r*.7*math.cos(t),y+r*.7*math.sin(t),.14),.009,'steel',5)
+            for dx in [-.07,0,.07]: cone((x+dx,y-.03,.045),.012,.055,'lichen',5,top=.006)
+    elif kind=='mine':  # Regolith Mine
+        rock((0,.07,.13),(.39,.31,.16),'rust')
+        cone((0,.07,.18),.23,.10,'basalt',8,top=.16)
+        cube((0,-.18,.12),(.22,.07,.21),'steel',.008)
+        for x in [-.13,.13]: beam((x,-.18,.20),(x,-.18,.34),.018,'hazard',5)
+        cube((0,-.18,.35),(.31,.08,.035),'steel')
+        for x in [-.08,.08]: beam((x,-.39,.012),(x,-.15,.012),.008,'basalt',4)
+        cube((.25,-.18,.075),(.13,.12,.12),'hazard',.008)
+    elif kind=='pasture':  # Bioreactor
+        for x,y,r,h in [(-.14,0,.075,.22),(.12,.03,.085,.26)]:
+            cone((x,y,h/2),r,h,'steel',8,top=r)
+            torus((x,y,h*.76),r*1.02,.009,'cryo')
+            cube((x,y-.077,h*.46),(.045,.008,.05),'glass')
+        beam((-.14,0,.24),(.12,.03,.28),.012,'steel',5)
+        for x in [-.30,.29]: cube((x,0,.035),(.07,.10,.07),'basalt',.006)
+    elif kind=='plantation':  # Hydroponics Bay
+        cube((0,0,.055),(.55,.40,.11),'steel',.012)
+        for z in [.12,.23]:
+            for x in [-.20,0,.20]:
+                cube((x,0,z),(.16,.32,.055),'glass',.008)
+                for y in [-.10,0,.10]: cone((x,y,z+.045),.018,.035,'leaf',5,top=.008)
+        for x in [-.27,.27]: beam((x,-.20,.02),(x,-.20,.29),.014,'steel',5)
+        cube((0,0,.30),(.58,.06,.025),'cryo')
+    elif kind=='lumbermill':  # Sinter Works
+        cube((-.10,.03,.13),(.34,.29,.25),'basalt',.018)
+        cone((-.10,.03,.29),.20,.09,'steel',8,top=.16)
+        cone((-.10,.03,.345),.11,.025,'hazard',8,top=.09)
+        beam((-.10,.03,.34),(-.10,.03,.46),.018,'steel',5)
+        cube((.21,-.04,.06),(.22,.25,.12),'rust',.01)
+        for x in [.14,.27]: cube((x,-.04,.16),(.025,.18,.10),'steel',.004)
+        cube((.21,-.04,.22),(.18,.10,.018),'hazard')
+    elif kind=='quarry':  # Basalt Quarry
+        for z,w in [(.08,.64),(.17,.50),(.27,.34)]:
+            cube((0,.03,z),(w,.42,z*1.45),'basalt',.01)
+            for x in [-w*.30,w*.30]: cube((x,-.19,z),(.012,.008,z*1.1),'rock_dark')
+        cube((.25,-.25,.055),(.14,.13,.11),'steel',.008)
+        rock((-.24,-.27,.06),(.11,.08,.06),'rock')
+    elif kind=='fishing_boats':  # Dust Skimmer
+        for x,y in [(-.17,0),(.18,.07)]:
+            cone((x,y,.07),.16,.12,'steel',6,top=.12)
+            cube((x,y,.13),(.18,.09,.045),'hazard',.008)
+            beam((x,y,.16),(x,y,.29),.012,'steel',5)
+            mesh('Skimmer vane',[(x,y,.28),(x+.14,y,.14),(x+.01,y,.14)],[(0,1,2)],'cream')
+            for side in [-1,1]: beam((x+side*.13,y,.025),(x+side*.13,y,.05),.012,'cryo',5)
+    elif kind=='camp':  # Extraction Rig
+        cube((0,0,.025),(.44,.34,.05),'basalt',.008)
+        for x in [-.13,.13]: beam((x,.04,.04),(x,.04,.37),.017,'steel',5)
+        beam((-.13,.04,.36),(.13,.04,.36),.018,'hazard',5)
+        beam((0,.04,.36),(0,.04,.12),.012,'steel',5)
+        cone((0,.04,.13),.075,.16,'steel',8,top=.04)
+        for x in [-.21,.21]: cube((x,-.10,.09),(.08,.10,.12),'hazard',.008)
+    elif kind=='trading_post':  # Relay Station
+        cube((0,0,.09),(.29,.24,.18),'steel',.012)
+        cone((0,0,.20),.16,.12,'glass',8,top=.10)
+        beam((0,0,.25),(0,0,.48),.014,'steel',5)
+        torus((0,0,.47),.075,.008,'cryo')
+        for x in [-.20,.20]:
+            cube((x,.04,.07),(.11,.14,.13),'solar',.005)
+            for z in [.03,.08,.13]: beam((x-.045,.04,z),(x+.045,.04,z),.003,'steel',4)
+    elif kind=='oil_well':  # Deep Drill
+        cube((0,0,.025),(.42,.34,.05),'basalt',.008)
+        for x in [-.12,.12]: beam((x,.02,.05),(x*.6,.02,.43),.018,'steel',5)
+        beam((-.072,.02,.42),(.072,.02,.42),.02,'hazard',5)
+        beam((0,.02,.41),(0,.02,.12),.016,'steel',5)
+        cone((0,.02,.11),.07,.12,'steel',8,top=.045)
+        torus((0,.02,.06),.11,.01,'cryo')
 def misc(key):
     if key=='camp_barbarian':
         tent(0,.03,1.35,'red')
@@ -470,9 +497,13 @@ def misc(key):
         rock((.23,-.11,.045),(.08,.07,.06),'stone')
         ico((-.19,-.08,.075),(.07,.065,.06),'leaf_dark')
     elif key=='road_marker':
-        cube((0,0,.075),(.065,.052,.15),'stone',.008)
-        cube((0,-.03,.092),(.033,.007,.012),'gold')
-        rock((.055,.018,.02),(.035,.04,.024),'rock')
+        rock((-.035,.01,.045),(.12,.09,.05),'basalt')
+        rock((.015,.01,.09),(.09,.07,.05),'rust')
+        rock((-.055,.015,.13),(.065,.055,.045),'rock')
+        beam((.01,.015,.11),(.01,.015,.33),.012,'steel',5)
+        beam((.01,.015,.30),(.01,.015,.39),.008,'cryo',5)
+        cone((.01,.015,.40),.025,.025,'hazard',6,top=.012)
+        cube((.055,.015,.25),(.075,.018,.035),'hazard',.003)
 
 KEYS=NATURE+['res_'+r for r in RESOURCES]+['imp_'+i for i in IMPROVEMENTS]+MISC
 
@@ -495,16 +526,16 @@ def main():
             elif key.startswith('imp_'): improvement(key[4:])
             else: misc(key)
             entries.append(export(key,budget(key)))
-        if '--only' in args and (MODELS/'manifest.nature.json').exists():
-            old=json.loads((MODELS/'manifest.nature.json').read_text())
-            by_key={e['key']:e for e in old+entries}
-            entries=[by_key[k] for k in KEYS if k in by_key]
-        write_manifest(entries)
+        old=json.loads((MODELS/'manifest.nature.json').read_text()) if (MODELS/'manifest.nature.json').exists() else []
+        by_key={e['key']:e for e in old+entries}
+        ordered=[by_key[k] for k in KEYS if k in by_key]
+        ordered.extend(e for e in old if e['key'] not in KEYS)
+        write_manifest(ordered)
     if '--only' not in args:
         contact_sheet(NATURE[:10]+NATURE[14:],'foliage',5)
         contact_sheet(NATURE[10:14],'mountains',4,camera_height=8.5)
         contact_sheet(['res_'+r for r in RESOURCES],'resources',6)
-        contact_sheet(['imp_'+i for i in IMPROVEMENTS]+MISC,'settlements',5)
+        contact_sheet(['imp_'+i for i in IMPROVEMENTS]+MISC,'installations',5)
     print('AEONS NATURE COMPLETE',flush=True)
 
 if __name__=='__main__': main()

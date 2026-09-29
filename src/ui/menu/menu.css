@@ -28,3 +28,25 @@
 .ae-demo-game-controls { display: flex; flex-wrap: wrap; gap: 8px; }
 /* Illustrated fallback stays out of the live diorama: never double-expose two worlds. */
 .ae-stage ~ .ae-main-menu .ae-menu-keyart { display: none; }
+
+/* Mars launch identity: hazard-glass UI, hot regolith accents, explicit nation-code badges. */
+.ae-red-exodus-logo svg{width:100%;height:auto;overflow:visible;filter:drop-shadow(0 8px 24px rgba(0,0,0,.65))}
+.ae-main-menu{background:radial-gradient(ellipse at 50% 48%,rgba(116,51,34,.22),transparent 58%),linear-gradient(90deg,color-mix(in srgb,var(--ink-950) 78%,transparent),transparent)}
+.ae-main-top .ae-eyebrow{color:#e88b4a}
+.ae-brand p{color:#e1c7a6}
+.ae-brand p em{color:#f0a45c}
+.ae-ark-badge{position:absolute;right:12px;bottom:14px;display:flex;align-items:center;gap:4px;padding:6px 8px;border:1px solid rgba(240,166,96,.7);border-radius:5px;background:rgba(13,16,20,.88);box-shadow:0 4px 18px #0008;backdrop-filter:blur(8px);font:800 11px/1 ui-monospace,SFMono-Regular,monospace;letter-spacing:.12em;color:#f0c38e}
+.ae-ark-badge i{width:4px;height:19px;border-radius:1px;box-shadow:0 0 8px #fff3}
+.ae-nation-heading{display:grid;gap:5px;margin-bottom:14px}
+.ae-nation-heading h2{font-size:clamp(23px,3vw,34px);color:#f1d3ae}
+.ae-cryo-start{border-top:1px solid rgba(95,212,232,.24);padding-top:12px}
+.ae-cryo-start h3{color:#5fd4e8}
+.ae-leader-art{background:#181719}
+.ae-leader-art-shade{background:linear-gradient(0deg,rgba(11,13,16,.96),transparent 65%),linear-gradient(115deg,rgba(191,78,39,.12),transparent 58%)}
+.ae-menu-header .ae-eyebrow,.ae-option-heading .ae-eyebrow{color:#e88b4a}
+.ae-menu-choice strong{letter-spacing:.015em}
+.ae-main-links button:hover{color:#f0a45c}
+.ae-codex-tabs button[aria-pressed="true"]{color:#f2ad69;border-color:#b85a32}
+@media(max-width:650px){.ae-ark-badge{right:8px;bottom:10px}.ae-nation-heading h2{font-size:24px}}
+@media(max-width:650px){.ae-menu-body:has(.ae-hazard-launch){padding-bottom:calc(220px + var(--safe-bottom))}.ae-run-options,.ae-run-config{display:contents}.ae-advanced{grid-column:auto;grid-row:auto;margin:4px 0 18px}.ae-seed-label{grid-column:auto;grid-row:auto}.ae-hazard-launch{position:fixed;z-index:35;left:0;right:0;bottom:0;display:grid;gap:4px;padding:10px calc(14px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(14px + var(--safe-left));border-top:1px solid rgba(240,166,96,.45);background:linear-gradient(160deg,rgba(28,25,24,.98),rgba(13,16,20,.98));box-shadow:0 -12px 32px rgba(0,0,0,.48);backdrop-filter:blur(16px)}.ae-hazard-launch .ae-option-heading{margin:0;min-height:22px}.ae-hazard-launch .ae-ascensions{gap:5px;padding:0;overflow-x:auto}.ae-hazard-launch .ae-ascensions button{min-height:40px;flex:1 0 34px}.ae-hazard-launch .ae-ascension-text{min-height:0;padding:0}.ae-hazard-launch .ae-ascension-text p,.ae-hazard-launch .ae-ascension-text small{display:none}.ae-hazard-launch .ae-ascension-text strong{font-size:10px;color:var(--text-dim)}.ae-hazard-launch .ae-begin{margin:3px 0 0;min-height:46px}.ae-run-options>.ae-small-print{text-align:left;padding:8px 0}.ae-run-options>.ae-error{padding:8px 0}.ae-demo-nav{display:none}}
+@media(max-width:650px) and (max-height:600px){.ae-menu-body:has(.ae-hazard-launch){padding-bottom:calc(165px + var(--safe-bottom))}.ae-hazard-launch{gap:2px;padding-top:6px}.ae-hazard-launch .ae-ascensions button{min-height:34px}.ae-hazard-launch .ae-begin{min-height:40px}.ae-run-options>.ae-small-print{font-size:9px;padding:5px 0}}

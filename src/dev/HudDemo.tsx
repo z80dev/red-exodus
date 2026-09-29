@@ -56,6 +56,8 @@ function buildFixture(seed: string, turns: number): GameState {
   }
   const me = state.players[HUMAN];
   if (!me.researching) me.researching = availableTechs(state, HUMAN)[0] ?? null;
+  me.researchOffer = availableTechs(state, HUMAN).slice(0, 3);
+  me.cryo = Math.max(me.cryo, 2);
   me.gold = Math.max(me.gold, 180);
   refreshAllCities(state, HUMAN);
   return state;
@@ -248,7 +250,13 @@ function DebugMap() {
   const state = buildFixture(q.get('seed') ?? 'HUD-DEMO', Number(q.get('turns') ?? 14));
   // ?reveal=1: explore the whole map (meets every rival) for Empire/journal screenshots
   if (q.get('reveal') === '1') state.players[HUMAN].vis = state.players[HUMAN].vis.map((v) => Math.max(v, 1));
-  useGame.setState({ state, version: useGame.getState().version + 1, screen: 'game', selection: null, panel: (q.get('panel') as Panel | null) ?? 'none', mode: { kind: 'normal' } });
+  const panel = (q.get('panel') as Panel | null) ?? 'none';
+  const firstColony = Object.values(state.cities).find((city) => city.owner === HUMAN);
+  useGame.setState({
+    state, version: useGame.getState().version + 1, screen: 'game',
+    selection: panel === 'city' && firstColony ? { kind: 'city', id: firstColony.id } : null,
+    panel, mode: { kind: 'normal' },
+  });
   Object.assign(window, { hud: { useGame, interaction, toast, useMap } });
 }
 

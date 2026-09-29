@@ -14,19 +14,19 @@ function edictCtx(state: GameState, id: string, emit: Emit): HookCtx {
 /** null if the edict `uid` can be used on `t` right now */
 export function useEdictError(state: GameState, uid: Uid, t: EdictTargetArgs): string | null {
   const run = state.run;
-  if (run.phase !== 'playing' || state.gameOver) return 'Edicts can only be issued during play';
+  if (run.phase !== 'playing' || state.gameOver) return 'Salvage can only be used during play';
   const inst = run.edicts.find((e) => e.uid === uid);
-  if (!inst) return 'No such edict';
+  if (!inst) return 'No such Salvage';
   const def = EDICTS[inst.id];
-  if (!def) return 'Unknown edict';
+  if (!def) return 'Unknown Salvage';
   const human = state.players.find((p) => p.id === HUMAN)!;
   switch (def.target) {
     case 'none':
       break;
     case 'city': {
       const city = t.cityId != null ? state.cities[t.cityId] : undefined;
-      if (!city) return 'Choose a city';
-      if (city.owner !== HUMAN) return 'Choose one of your cities';
+      if (!city) return 'Choose a colony';
+      if (city.owner !== HUMAN) return 'Choose one of your colonies';
       break;
     }
     case 'ownedTile': {
@@ -38,7 +38,7 @@ export function useEdictError(state: GameState, uid: Uid, t: EdictTargetArgs): s
     case 'tile': {
       const tile = t.tile != null ? state.map.tiles[t.tile] : undefined;
       if (!tile) return 'Choose a tile';
-      if (!human.vis[tile.idx]) return 'That land is unexplored';
+      if (!human.vis[tile.idx]) return 'That ground is unsurveyed';
       break;
     }
     case 'unit': {
@@ -68,7 +68,7 @@ export function discardEdict(state: GameState, uid: Uid): string | null {
   const run = state.run;
   if (run.phase === 'victory' || run.phase === 'defeat') return 'The run is over';
   const idx = run.edicts.findIndex((e) => e.uid === uid);
-  if (idx < 0) return 'No such edict';
+  if (idx < 0) return 'No such Salvage';
   run.edicts.splice(idx, 1);
   return null;
 }

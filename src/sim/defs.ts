@@ -107,6 +107,34 @@ export interface EffectHooks {
   /** crisis only: chapter III begins/ends */
   onBegin?(ctx: HookCtx): void;
   onEnd?(ctx: HookCtx): void;
+  /**
+   * Martian dust storm damage about to hit one of the owner's units or colonies (owner = a.victim).
+   * Also runs for the owner of the territory the victim stands in (a.territoryOwner), so a nation can
+   * amplify storms against intruders. Set a.damage (≥ 0).
+   */
+  storm?(ctx: HookCtx, a: StormDamageArgs): void;
+  /** price of one Orbital Drop for the owner (default { cryo: 1, gold: 0 }) */
+  dropPrice?(ctx: HookCtx, a: { cryo: number; gold: number; cryoLeft: number }): void;
+  /** number of techs in the owner's Breakthrough draft (default RESEARCH_OFFER_SIZE) */
+  researchOffers?(ctx: HookCtx, a: Scalar): void;
+  /** Credits price of the owner's next research reroll */
+  researchReroll?(ctx: HookCtx, a: Scalar): void;
+  /** runs for BOTH the declarer's and the target's effects; set allowed=false to forbid */
+  warDeclaration?(ctx: HookCtx, a: { by: PlayerId; target: PlayerId; allowed: boolean; reason?: string }): void;
+  /** Scrip interest cap at chapter end (default INTEREST_CAP) */
+  interestCap?(ctx: HookCtx, a: Scalar): void;
+  /** Scrip a Crew card sells for, set when it is acquired (default half its price) */
+  sellValue?(ctx: HookCtx, a: { id: DoctrineId; price: number; value: number }): void;
+}
+
+export interface StormDamageArgs {
+  tile: Tile;
+  unit: Unit | null;
+  city: City | null;
+  victim: PlayerId;
+  territoryOwner: PlayerId | null;
+  power: number;
+  damage: number;
 }
 
 // ───────────────────────────── civ content ─────────────────────────────
@@ -231,6 +259,10 @@ export interface DoctrineDef {
   unlock?: { text: string; rule?: string };
   /** exclude from shops (e.g. leader starting doctrines) */
   noShop?: boolean;
+  /** cannot be sold at the Uplink (sellDoctrine rejects) */
+  noSell?: boolean;
+  /** nationality of the crew member (a LeaderId / nation id); shown as a badge, used by synergies */
+  nation?: LeaderId;
   effects: EffectHooks;
 }
 
@@ -281,6 +313,14 @@ export interface OmenDef {
 export interface LeaderDef {
   id: LeaderId; name: string; title: string; civName: string; adjective: string;
   colors: { primary: string; secondary: string };
+  /** real-world country this Ark launched from, e.g. 'United States' */
+  country: string;
+  /** 2–3 letter badge code, e.g. 'USA' */
+  code: string;
+  /** 2–4 flag-inspired colors (UI badge stripes; never a literal flag render) */
+  flagColors: string[];
+  /** starting Cryo pods (default START_CRYO) */
+  cryo?: number;
   description: string; // one-line identity
   bonus: string; // rich text of the ability
   startDoctrine?: DoctrineId;

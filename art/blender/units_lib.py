@@ -1,18 +1,15 @@
-"""AEONS chibi unit kit. Blender 5.2; coordinates are centimeters until finish().
+"""Mars unit geometry kit. Blender 5.2; coordinates are centimeters until finish().
 
-Flat shaded, texture-free meshes; all figures look toward Blender -Y / glTF +Z.
-TEAM and TEAM_DARK are deliberately exact material names for runtime recoloring.
+Flat-shaded, texture-free meshes face Blender -Y (glTF +Z); team material names are runtime contracts.
 """
 import bmesh
 import bpy
 from mathutils import Vector
 
 PALETTE = {
-    'TEAM': '438ed0', 'TEAM_DARK': '254665', 'Skin': 'e6b184',
-    'Hair': '553828', 'Timber': '98633a', 'WoodLight': 'c49155',
-    'Leather': '594638', 'Iron': '777f89', 'Steel': 'c4d0d7',
-    'Gold': 'e0b84a', 'Linen': 'f4e3b8', 'Ink': '202c39',
-    'Horse': 'a5704b', 'Mane': '43332f', 'Olive': '78806a',
+    'TEAM': 'c65c3c', 'TEAM_DARK': '713625', 'Suit': 'e7e3dc',
+    'Hull': '8d9097', 'Basalt': '3b2f2a', 'Hazard': 'f28c28',
+    'Cryo': '5fd4e8', 'Solar': '1d2a44',
 }
 MATERIALS = {}
 

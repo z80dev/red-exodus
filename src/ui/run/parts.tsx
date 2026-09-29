@@ -1,8 +1,9 @@
-// Small shared pieces for run overlays: ornamental divider, mandate hearts, influence counter, orientation hook.
+// Shared run-overlay pieces: Charter hearts, Scrip counter, divider and orientation hook.
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { PILLARS } from '../../sim/types';
 import type { PillarId } from '../../sim/types';
+import { T } from '../terms';
 import { Icon } from '../icons/Icon';
 import { useTweened } from './fx';
 import { fmt, pillarInfo } from './runUtil';
@@ -36,7 +37,7 @@ export function Ornament({ className = '', draw = false }: { className?: string;
 /** Mandate hearts. `shatter` = how many of the rightmost filled hearts break (animated). */
 export function Hearts({ total, filled, shatter = 0, size = 20 }: { total: number; filled: number; shatter?: number; size?: number }) {
   return (
-    <div className="ro-hearts" aria-label={`Mandate ${Math.max(0, filled - shatter)} of ${total}`}>
+    <div className="ro-hearts" aria-label={`${T.mandate} ${Math.max(0, filled - shatter)} of ${total}`}>
       {Array.from({ length: Math.max(total, filled) }, (_, i) => {
         const on = i < filled;
         const breaking = on && i >= filled - shatter;
@@ -54,7 +55,7 @@ export function Hearts({ total, filled, shatter = 0, size = 20 }: { total: numbe
 export function InfluencePill({ value, big = false, className = '' }: { value: number; big?: boolean; className?: string }) {
   const shown = useTweened(value, 520);
   return (
-    <div className={`ro-influence ${big ? 'ro-influence--big' : ''} ${className}`} aria-label={`${value} influence`}>
+    <div className={`ro-influence ${big ? 'ro-influence--big' : ''} ${className}`} aria-label={`${value} ${T.influence}`}>
       <Icon name="influence" size={big ? 22 : 16} />
       <span className="num">{fmt(shown)}</span>
     </div>
@@ -74,7 +75,7 @@ export function usePortrait(): boolean {
 /** Six pillar level chips (fly-to targets for Scrolls: `[data-pillar=<id>]`). */
 export function PillarStrip({ levels, focus, className = '' }: { levels: Record<PillarId, number>; focus?: PillarId; className?: string }) {
   return (
-    <div className={`ro-pillars ${className}`} aria-label="Pillar levels">
+    <div className={`ro-pillars ${className}`} aria-label="Priority levels">
       {PILLARS.map((p) => {
         const info = pillarInfo(p);
         return (

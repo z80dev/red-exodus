@@ -13,8 +13,9 @@ import { doctrineCard, edictCard, leaderCard } from './cards';
 import type { CardModel } from './cards';
 import { useParticles, useTweened } from './fx';
 import { Ornament, usePortrait } from './parts';
-import { act, chapterTitle, eraTitle, fmt, haptic, roman, sfx } from './runUtil';
+import { act, chapterTitle, eraTitle, fmt, haptic, sfx } from './runUtil';
 import './runend.css';
+import { T } from '../terms';
 
 export interface RunEndUnlock { kind: string; id: string; name: string }
 export interface RunEndUnlocks { unlocks: RunEndUnlock[] }
@@ -121,12 +122,12 @@ export function RunEnd() {
   const bg = backdropFor('key', victory ? 'victory' : 'defeat', portrait);
   const tot = run.totals;
   const grid: { icon: string; label: string; value: string }[] = [
-    { icon: 'calendar', label: 'Turns', value: fmt(state.turn) },
-    { icon: 'city', label: 'Cities', value: fmt(stats.cities) },
-    { icon: 'wonder', label: 'Wonders', value: fmt(tot.wonders) },
-    { icon: 'tech', label: 'Techs', value: fmt(tot.techs) },
-    { icon: 'sword', label: 'Kills', value: fmt(tot.kills) },
-    { icon: 'trophy', label: 'Chapters passed', value: `${stats.passed}/${stats.chapters}` },
+    { icon: 'calendar', label: 'Sols', value: fmt(state.turn) },
+    { icon: 'city', label: T.cities, value: fmt(stats.cities) },
+    { icon: 'wonder', label: T.wonders, value: fmt(tot.wonders) },
+    { icon: 'tech', label: 'Breakthroughs', value: fmt(tot.techs) },
+    { icon: 'sword', label: 'Ferals & rivals retired', value: fmt(tot.kills) },
+    { icon: 'trophy', label: 'Chapters cleared', value: `${stats.passed}/${stats.chapters}` },
   ];
 
   return (
@@ -136,27 +137,27 @@ export function RunEnd() {
       <div className="ro-particles" ref={setHost} />
       <div className="rre-stage">
         <header className="rre-head">
-          <div className="rre-kicker display">{victory ? 'The Chronicle Endures' : 'The Chronicle Ends'}</div>
-          <h1 className="rre-title display" ref={titleRef}>{victory ? 'Victory' : 'Collapse'}</h1>
+          <div className="rre-kicker display">{victory ? 'The Ark makes it' : 'Mission terminated'}</div>
+          <h1 className="rre-title display" ref={titleRef}>{victory ? 'New Earth' : 'Ark Cut Off'}</h1>
           <Ornament draw />
           <p className="rre-line">
             {victory
-              ? `${leader?.civName ?? state.players[HUMAN]?.civName ?? 'Your people'} will be remembered for a thousand ages.`
-              : run.defeatReason ?? 'Your civilization has fallen.'}
+              ? `${leader?.country ?? 'Your nation'} has a future here. The old world can stop calling.`
+              : (run.defeatReason?.replace(/\bMandate\b/g, T.mandate).replace(/\bLegacy\b/g, T.score).replace(/\bCouncil\b/g, T.council) ?? 'Charter exhausted. The Ark has cut the line. Mars keeps the lights.')}
           </p>
           {!victory && (
             <p className="rre-reached">
-              Reached <b>{eraTitle(run.era)}</b> · {chapterTitle(run.chapter)}
+            Reached <b>{eraTitle(run.era)}</b> · {chapterTitle(run.chapter)}
             </p>
           )}
         </header>
 
         <section className="rre-legacy">
-          <div className="rre-legacy-label display">Total Legacy</div>
+          <div className="rre-legacy-label display">Total Viability</div>
           <div className="rre-legacy-num num display">{fmt(legacyShown)}</div>
           {stats.best && (
             <div className="rre-best">
-              Best Chronicle: <b className="num">{fmt(stats.best.score)}</b> · Era {roman(stats.best.era + 1)}, Chapter {roman(stats.best.chapter + 1)}
+              Best Sol Report: <b className="num">{fmt(stats.best.score)}</b> · {eraTitle(stats.best.era)}, {chapterTitle(stats.best.chapter)}
             </div>
           )}
         </section>
@@ -198,14 +199,14 @@ export function RunEnd() {
           {victory ? (
             <>
               <Button variant="gold" onClick={() => { sfx('click'); act({ type: 'continueEndless' }); }}>
-                Continue into Endless <Icon name="chevronRight" size={16} />
+                Continue into Beyond <Icon name="chevronRight" size={16} />
               </Button>
               <Button onClick={() => { sfx('click'); useGame.getState().setScreen('summary'); }}>Finish</Button>
             </>
           ) : (
             <>
               <Button variant="gold" onClick={() => { sfx('click'); useGame.getState().setScreen('summary'); }}>
-                Chronicle Summary <Icon name="journal" size={16} />
+                Run Summary <Icon name="journal" size={16} />
               </Button>
               <Button onClick={() => { sfx('click'); useGame.getState().setScreen('menu'); }}>Main Menu</Button>
             </>

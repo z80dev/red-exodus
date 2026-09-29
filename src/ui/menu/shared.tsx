@@ -7,8 +7,8 @@ import type { Profile } from '../../meta/profile';
 import { Icon } from '../icons/Icon';
 import './menu.css';
 
-export const ERA_NAMES = ['Ancient', 'Classical', 'Medieval', 'Renaissance', 'Industrial', 'Modern'];
-export const chapterName = (chapter: number) => ['I · Rise', 'II · Trial', 'III · Crisis'][chapter] ?? String(chapter + 1);
+export const ERA_NAMES = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'];
+export const chapterName = (chapter: number) => ['Dawn', 'Dusk', 'Crisis'][chapter] ?? String(chapter + 1);
 export const dailyDate = () => new Date().toISOString().slice(0, 10);
 export const number = (n: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);
 let dailyLaunch = false;
@@ -45,7 +45,7 @@ export function CopySeed({ seed, share = false }: { seed: string; share?: boolea
   async function copy() {
     try {
       const nativeShare = share && typeof navigator.share === 'function';
-      if (nativeShare) await navigator.share({ title: 'AEONS — My Chronicle', text: `Every empire is a story. Play my AEONS seed: ${seed}` });
+      if (nativeShare) await navigator.share({ title: 'RED EXODUS — My Landfall', text: `Twelve Arks. One red world. Play my RED EXODUS seed: ${seed}` });
       else await navigator.clipboard.writeText(seed);
       setStatus(nativeShare ? 'Shared' : 'Copied');
     } catch { setStatus('Select the seed to copy'); }

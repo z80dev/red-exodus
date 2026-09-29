@@ -1,44 +1,43 @@
-/* AEONS design tokens. All UI MUST use these variables (no ad-hoc colors/fonts). Additive edits only. */
+/* RED EXODUS hazard-glass UI tokens. */
 :root {
-  /* surfaces: deep ink glass */
-  --ink-950: #07090f;
-  --ink-900: #0c111b;
-  --ink-800: #131a28;
-  --ink-700: #1c2536;
-  --ink-600: #283347;
-  --ink-500: #3a4760;
-  --glass: rgba(12, 17, 27, 0.78);
-  --glass-strong: rgba(9, 13, 21, 0.92);
-  --glass-border: rgba(224, 184, 74, 0.28);
+  /* basalt glass */
+  --ink-950: #090b0e;
+  --ink-900: #111519;
+  --ink-800: #1a2024;
+  --ink-700: #252d31;
+  --ink-600: #354047;
+  --ink-500: #536168;
+  --glass: rgba(15, 19, 21, 0.84);
+  --glass-strong: rgba(9, 12, 14, 0.96);
+  --glass-border: rgba(242, 140, 40, 0.34);
 
-  /* parchment & gold leaf */
-  --parchment: #efe3c4;
-  --parchment-dim: #cbbd99;
-  --gold-300: #f6dd8f;
-  --gold-400: #eac766;
-  --gold-500: #d9ab3f;
-  --gold-600: #b3862a;
-  --gold-700: #7d5c1b;
-
+  /* Mars signal colors: oxidized regolith, hazard amber, cryo cyan */
+  --parchment: #e8d4bd;
+  --parchment-dim: #baa18a;
+  --gold-300: #ffd08a;
+  --gold-400: #f5a84e;
+  --gold-500: #d77a32;
+  --gold-600: #a94d26;
+  --gold-700: #71351f;
   /* text */
   --text: #f1ead8;
   --text-dim: #b9b3a3;
   --text-faint: #7f7a6e;
 
   /* yields */
-  --y-food: #7fc75a;
-  --y-prod: #e2894b;
-  --y-gold: #f2c94c;
-  --y-sci: #5fb4f0;
-  --y-cul: #c77dff;
-  --happy: #ffd166;
-  --unhappy: #ef476f;
+  --y-food: #a7c66b;
+  --y-prod: #f28c28;
+  --y-gold: #ffd166;
+  --y-sci: #5fd4e8;
+  --y-cul: #dc9cff;
+  --happy: #f6c76e;
+  --unhappy: #ff635b;
 
   /* roguelite */
-  --renown: #4fb3ff;      /* chips-blue */
-  --splendor: #ff5a4f;    /* mult-red */
-  --influence: #b28dff;
-  --mandate: #ff6b8a;
+  --renown: #5fd4e8;
+  --splendor: #ff815e;
+  --influence: #f5a84e;
+  --mandate: #ff6b62;
 
   /* pillars */
   --p-arts: #c77dff;
@@ -58,8 +57,8 @@
   --bad: #ff6060;
   --info: #7fb8ff;
 
-  --font-display: 'Cinzel', 'Times New Roman', serif;
-  --font-deco: 'Cinzel Decorative', 'Cinzel', serif;
+  --font-display: 'Rajdhani', 'Arial Narrow', sans-serif;
+  --font-deco: 'Rajdhani', 'Arial Narrow', sans-serif;
   --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
 
   --radius-sm: 6px;

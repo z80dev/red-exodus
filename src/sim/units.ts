@@ -10,6 +10,7 @@ import { addInfluence } from './roguelite';
 import type { Emit, GameState, PlayerId, TileIdx, Unit, UnitId, UnitTypeId } from './types';
 import { BARBARIAN } from './types';
 import { recomputeVisibility, revealArea } from './visibility';
+import { STORM_VISION_PENALTY, stormAt } from './mars';
 
 export function unitDef(type: UnitTypeId): UnitDef {
   const def = UNITS[type];
@@ -72,6 +73,7 @@ export function maxMoves(state: GameState, unit: Unit): number {
 export function visionOf(state: GameState, unit: Unit): number {
   const value = { unit, value: unitDef(unit.type).vision + unit.promotions.reduce((n, id) => n + (PROMOTIONS[id]?.vision ?? 0), 0) };
   if (unit.owner !== BARBARIAN) runHook(state, unit.owner, 'unitVision', () => {}, null, value);
+  if (state.storms.length && stormAt(state, unit.tile)) value.value -= STORM_VISION_PENALTY;
   return Math.max(1, value.value);
 }
 function clearCamp(state: GameState, unit: Unit, emit: Emit): void {
@@ -79,7 +81,7 @@ function clearCamp(state: GameState, unit: Unit, emit: Emit): void {
   if (!tile.camp || unit.owner === BARBARIAN || isCivilian(unit.type) || militaryAt(state, unit.tile)?.id !== unit.id) return;
   tile.camp = false;
   const gold = 25 + 15 * Math.min(5, state.run.era);
-  addGold(state, unit.owner, gold, 'Barbarian camp', emit);
+  addGold(state, unit.owner, gold, 'Feral Den', emit);
   emit({ type: 'campCleared', player: unit.owner, tile: unit.tile, gold });
 }
 function exploreRuin(state: GameState, unit: Unit, emit: Emit, entered = unit.tile): void {
@@ -96,15 +98,15 @@ function exploreRuin(state: GameState, unit: Unit, emit: Emit, entered = unit.ti
   const reward = kinds[weightedIndex(state.rng, weights)];
   let text: string;
   switch (reward) {
-    case 'gold': { const n = randRange(state.rng, 30, 60); addGold(state, unit.owner, n, 'Ancient ruin', emit); text = `${n} gold`; break; }
-    case 'tech': { const tech = eraTechs[randInt(state.rng, eraTechs.length)]; grantTech(state, unit.owner, tech.id, emit); text = `Free technology: ${tech.name}`; break; }
+    case 'gold': { const n = randRange(state.rng, 30, 60); addGold(state, unit.owner, n, 'Crash Site', emit); text = `${n} Credits in the wreckage`; break; }
+    case 'tech': { const tech = eraTechs[randInt(state.rng, eraTechs.length)]; grantTech(state, unit.owner, tech.id, emit); text = `Recovered research: ${tech.name}`; break; }
     case 'population': { const nearest = cities.reduce((a, b) => hexDistance(state.map, b.tile, entered) < hexDistance(state.map, a.tile, entered) ? b : a);
-      changePop(state, nearest, 1, emit); text = `Population in ${nearest.name}`; break; }
-    case 'reveal': revealArea(state, unit.owner, entered, 4, emit); text = 'Ancient maps'; break;
+      changePop(state, nearest, 1, emit); text = `Survivors join ${nearest.name}`; break; }
+    case 'reveal': revealArea(state, unit.owner, entered, 4, emit); text = 'Nav logs: the surrounding terrain'; break;
     case 'unit': { const type = randInt(state.rng, 2) ? 'scout' : 'warrior';
-      const recruit = createUnit(state, unit.owner, type, entered, emit); text = recruit ? `Free ${type}` : 'Ancient maps';
+      const recruit = createUnit(state, unit.owner, type, entered, emit); text = recruit ? `A ${UNITS[type]?.name ?? type} crawls out of the wreck` : 'Nav logs: the surrounding terrain';
       if (!recruit) revealArea(state, unit.owner, entered, 4, emit); break; }
-    case 'influence': addInfluence(state, 3, emit); text = '3 Influence'; break;
+    case 'influence': addInfluence(state, 3, emit); text = '3 Scrip'; break;
   }
   emit({ type: 'ruinExplored', player: unit.owner, tile: entered, reward: text });
 }

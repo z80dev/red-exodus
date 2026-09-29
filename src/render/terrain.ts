@@ -1,14 +1,17 @@
-// Continuous stylized terrain: a regular vertex lattice over the map whose heights and colors are
-// kernel-blended from tile data (so hex borders melt into organic coastlines and biome transitions),
-// with rounded hills, raised mountain plateaus, carved river channels and beaches. Chunked meshes.
+// Continuous stylized Mars terrain: a regular vertex lattice over the map whose heights and colors are
+// kernel-blended from tile data (so hex borders melt into organic dust shores and biome transitions),
+// with rounded ridges, raised massif plateaus, carved ancient channels and pale dust shores. Chunked meshes.
+// Per vertex `aMars` = (clay-basin weight → terraform lichen, brine-lake weight → lakes widen by New Earth).
 import {
   BufferAttribute, BufferGeometry, Color, DataTexture, Group, LinearFilter, Mesh, MeshStandardMaterial,
-  RedFormat, UnsignedByteType,
+  RGFormat, UnsignedByteType,
 } from 'three';
 import type { GameMap, Tile } from '../sim/types';
 import { WATER_TERRAIN, colX, hash01, mapBounds, rowZ } from './hexgeo';
 import { fbm, snoise } from './noise';
-import { GRAVEL, ROCK, ROCK_DARK, SAND, SEABED, SNOW_SHADE, WET_SAND, featureColor, terrainColor } from './palette';
+import {
+  BASALT, BASALT_DARK, DUST_BED, DUST_DEEP, DUST_FINES, DUST_WET, FROST_GRAVEL, ICE_SHADE, featureColor, terrainColor,
+} from './palette';
 import { type RiverSeg, segDist } from './rivers';
 import { patchTerrainMaterial } from './shaders';
 
@@ -27,6 +30,8 @@ export interface TerrainField {
   nz: number;
   heights: Float32Array;
   colors: Float32Array;
+  /** per vertex (basin, lake) weights */
+  mars: Float32Array;
   /** per-tile base heights (surface level where props sit, before micro detail) */
   tileBase: Float32Array;
   rivers: RiverSeg[];
@@ -45,19 +50,27 @@ function baseHeight(t: Tile): number {
   return h;
 }
 
+const LAKE_SHORE = new Color('#d8d0c4');
+
 function tileColor(t: Tile, out: Color): Color {
-  if (WATER_TERRAIN[t.terrain]) {
-    out.copy(SEABED);
-    if (t.terrain === 'ocean') out.multiplyScalar(0.55);
-    return out;
-  }
+  if (WATER_TERRAIN[t.terrain]) return out.copy(t.terrain === 'ocean' ? DUST_DEEP : t.terrain === 'lake' ? DUST_WET : DUST_BED);
   out.copy(terrainColor(t.terrain));
-  // snow reads as cloud if pure white: cool it down so relief shading carries
-  if (t.terrain === 'snow') out.lerp(SNOW_SHADE, 0.45);
-  if (t.feature && t.feature !== 'ice' && t.feature !== 'reef') out.lerp(featureColor(t.feature), 0.72);
-  if (t.elevation === 'hills') out.lerp(ROCK, 0.12).multiplyScalar(0.94);
-  if (t.elevation === 'mountain') out.lerp(ROCK, 0.7);
+  // polar ice reads as cloud if pure white: cool it down so relief shading carries
+  if (t.terrain === 'snow') out.lerp(ICE_SHADE, 0.4);
+  if (t.feature && t.feature !== 'ice' && t.feature !== 'reef') out.lerp(featureColor(t.feature), 0.62);
+  if (t.elevation === 'hills') out.lerp(BASALT, 0.14).multiplyScalar(0.95);
+  if (t.elevation === 'mountain') out.lerp(BASALT, 0.62);
   return out;
+}
+
+/** how readily terraform lichen takes hold: clay basins and wet deltas first, never ice or massifs */
+function basinWeight(t: Tile): number {
+  if (WATER_TERRAIN[t.terrain] || t.elevation === 'mountain') return 0;
+  let w = t.terrain === 'grassland' ? 1 : t.terrain === 'plains' ? 0.3 : t.terrain === 'tundra' ? 0.15 : t.terrain === 'desert' ? 0.05 : 0;
+  if (t.feature === 'floodplains') w = Math.max(w, 0.9);
+  else if (t.feature === 'oasis') w = Math.max(w, 0.8);
+  else if (t.feature === 'marsh') w = Math.max(w, 0.6);
+  return t.elevation === 'hills' ? w * 0.6 : w;
 }
 
 /** axial round of a world point → offset (col,row), may be off-map */
@@ -87,10 +100,13 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
   const nz = Math.ceil((b.maxZ + MARGIN - z0) / STEP) + 1;
   const heights = new Float32Array(nx * nz);
   const colors = new Float32Array(nx * nz * 3);
+  const mars = new Float32Array(nx * nz * 2);
   const n = map.tiles.length;
   const tileBase = new Float32Array(n);
   const tileCol: Color[] = [];
   const isWater = new Uint8Array(n);
+  const isLake = new Uint8Array(n);
+  const basin = new Float32Array(n);
   const coldShore = new Uint8Array(n);
   const tmp = new Color();
   for (let i = 0; i < n; i++) {
@@ -98,6 +114,8 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
     tileBase[i] = baseHeight(t);
     tileCol.push(tileColor(t, new Color()));
     isWater[i] = WATER_TERRAIN[t.terrain] ? 1 : 0;
+    isLake[i] = t.terrain === 'lake' ? 1 : 0;
+    basin[i] = basinWeight(t);
     coldShore[i] = t.terrain === 'snow' || t.terrain === 'tundra' ? 1 : 0;
   }
   // river segments bucketed by tile for carve lookups
@@ -106,7 +124,7 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
     riverByTile[s.t0].push(s);
     if (s.t1 >= 0) riverByTile[s.t1].push(s);
   }
-  const oceanCol = SEABED.clone().multiplyScalar(0.55);
+  const oceanCol = DUST_DEEP;
   const W = map.width;
   const H = map.height;
   const colAcc = new Color();
@@ -127,6 +145,8 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
       let wet = 0;
       let wetW = 0;
       let cold = 0;
+      let lake = 0;
+      let bas = 0;
       colAcc.setRGB(0, 0, 0);
       let cws = 0;
       for (let k = 0; k < 7; k++) {
@@ -173,7 +193,11 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
         const wv = ti < 0 || isWater[ti] ? 1 : 0;
         wet += wv * cw;
         wetW += cw;
-        if (ti >= 0) cold += coldShore[ti] * cw;
+        if (ti >= 0) {
+          cold += coldShore[ti] * cw;
+          lake += isLake[ti] * cw;
+          bas += basin[ti] * cw;
+        }
       }
       let h = hs / ws + bump;
       const vi = iz * nx + ix;
@@ -203,14 +227,18 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
       colAcc.multiplyScalar(1 / cws);
       const wetF = wet / wetW;
       const coldF = cold / cws;
+      const lakeF = lake / cws;
+      mars[vi * 2] = bas / cws;
+      mars[vi * 2 + 1] = lakeF;
       if (h > -0.02 && wetF > 0.02) {
+        // pale windblown fines pile up along dust shores; brine lakes leave white salt rims
         const beach = smooth(0.12, -0.01, h) * smooth(0.0, 0.25, wetF);
-        tmp.copy(SAND).lerp(GRAVEL, coldF);
+        tmp.copy(DUST_FINES).lerp(FROST_GRAVEL, coldF).lerp(LAKE_SHORE, Math.min(1, (lakeF / Math.max(wetF, 0.01)) * 0.9));
         colAcc.lerp(tmp, beach);
       }
       if (h <= 0.02) {
         const depth = Math.max(0, -h);
-        tmp.copy(WET_SAND).lerp(SEABED, smooth(0.0, 0.12, depth)).lerp(oceanCol, smooth(0.15, 0.55, depth));
+        tmp.copy(DUST_WET).lerp(DUST_BED, smooth(0.0, 0.12, depth)).lerp(oceanCol, smooth(0.15, 0.55, depth));
         colAcc.lerp(tmp, smooth(0.02, -0.03, h));
       }
       const v1 = snoise(x * 2.1, z * 2.1);
@@ -221,7 +249,7 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
       colors[vi * 3 + 2] = colAcc.b * bright;
     }
   }
-  // slope rock + snow-dusted peaks on mountain plateaus
+  // bare basalt on steep slopes
   for (let iz = 1; iz < nz - 1; iz++) {
     for (let ix = 1; ix < nx - 1; ix++) {
       const vi = iz * nx + ix;
@@ -232,14 +260,14 @@ export function buildTerrainField(map: GameMap, rivers: RiverSeg[]): TerrainFiel
       const slope = Math.sqrt(gx * gx + gz * gz);
       const r = smooth(0.55, 1.1, slope) * 0.75;
       if (r > 0) {
-        const rc = (hash01(ix, iz) > 0.5 ? ROCK : ROCK_DARK);
+        const rc = (hash01(ix, iz) > 0.5 ? BASALT : BASALT_DARK);
         colors[vi * 3] += (rc.r - colors[vi * 3]) * r;
         colors[vi * 3 + 1] += (rc.g - colors[vi * 3 + 1]) * r;
         colors[vi * 3 + 2] += (rc.b - colors[vi * 3 + 2]) * r;
       }
     }
   }
-  return { map, x0, z0, nx, nz, heights, colors, tileBase, rivers };
+  return { map, x0, z0, nx, nz, heights, colors, mars, tileBase, rivers };
 }
 
 function smooth(e0: number, e1: number, x: number): number {
@@ -269,7 +297,7 @@ export function createTerrainMaterial(): MeshStandardMaterial {
 export function buildTerrainMeshes(f: TerrainField, mat: MeshStandardMaterial): Group {
   const g = new Group();
   g.name = 'terrain';
-  const { nx, nz, heights, colors } = f;
+  const { nx, nz, heights, colors, mars } = f;
   // normals from central differences over the whole field (seamless across chunks)
   const normals = new Float32Array(nx * nz * 3);
   for (let iz = 0; iz < nz; iz++) {
@@ -296,6 +324,7 @@ export function buildTerrainMeshes(f: TerrainField, mat: MeshStandardMaterial): 
       const pos = new Float32Array(w * d * 3);
       const nor = new Float32Array(w * d * 3);
       const col = new Float32Array(w * d * 3);
+      const mw = new Float32Array(w * d * 2);
       let skip = true;
       for (let j = 0; j < d; j++) {
         for (let i = 0; i < w; i++) {
@@ -307,6 +336,7 @@ export function buildTerrainMeshes(f: TerrainField, mat: MeshStandardMaterial): 
           if (heights[src] > -0.5) skip = false;
           nor.set(normals.subarray(src * 3, src * 3 + 3), dst * 3);
           col.set(colors.subarray(src * 3, src * 3 + 3), dst * 3);
+          mw.set(mars.subarray(src * 2, src * 2 + 2), dst * 2);
         }
       }
       // chunks that are entirely deep sea floor are invisible under opaque water
@@ -333,6 +363,7 @@ export function buildTerrainMeshes(f: TerrainField, mat: MeshStandardMaterial): 
       geo.setAttribute('position', new BufferAttribute(pos, 3));
       geo.setAttribute('normal', new BufferAttribute(nor, 3));
       geo.setAttribute('color', new BufferAttribute(col, 3));
+      geo.setAttribute('aMars', new BufferAttribute(mw, 2));
       geo.setIndex(new BufferAttribute(idx, 1));
       geo.computeBoundingSphere();
       geo.computeBoundingBox();
@@ -345,11 +376,15 @@ export function buildTerrainMeshes(f: TerrainField, mat: MeshStandardMaterial): 
   return g;
 }
 
-/** 8-bit height raster for the water shader (depth tint, shore foam) */
+/** 8-bit raster for the dust-sea / brine / storm shaders: R height (from H_MIN), G brine-lake weight */
 export function buildHeightTexture(f: TerrainField): DataTexture {
-  const data = new Uint8Array(f.nx * f.nz);
-  for (let i = 0; i < data.length; i++) data[i] = Math.max(0, Math.min(255, Math.round((f.heights[i] - H_MIN) * 255)));
-  const tex = new DataTexture(data, f.nx, f.nz, RedFormat, UnsignedByteType);
+  const n = f.nx * f.nz;
+  const data = new Uint8Array(n * 2);
+  for (let i = 0; i < n; i++) {
+    data[i * 2] = Math.max(0, Math.min(255, Math.round((f.heights[i] - H_MIN) * 255)));
+    data[i * 2 + 1] = Math.round(Math.min(1, f.mars[i * 2 + 1]) * 255);
+  }
+  const tex = new DataTexture(data, f.nx, f.nz, RGFormat, UnsignedByteType);
   tex.magFilter = LinearFilter;
   tex.minFilter = LinearFilter;
   tex.needsUpdate = true;

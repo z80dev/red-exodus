@@ -1,107 +1,72 @@
-# AEONS — Illustration Style Guide
+# RED EXODUS — Illustration Style Guide
 
-The painted layer: leader portraits, Doctrine / Edict / Crisis / Omen / Reform card art, era title
-backdrops and key art (main menu, victory, defeat). Everything is generated through Nous Portal
-(`scripts/nous_image.py`) from the job files in this folder, then post-processed into
-`public/art/<kind>/<id>.webp` and listed in `src/ui/art/artManifest.ts`.
+Painted RED EXODUS art for Crew cards, Salvage, Crises, Directives, Ark Modules, fictional commanders, era backdrops, and key art. Generated through Nous Portal from the live content registry and job files in this folder, then post-processed into `public/art/<kind>/<id>.webp` and listed in `src/ui/art/artManifest.ts`.
 
-## Art direction — "Gilded Chronicle"
+## Art direction — “The Last Dawn”
 
-**Hades × Civilization VI × Slay the Spire card art.** Painterly stylized fantasy-historical: the
-world of a history book re-told as legend. Every image should read like a painted plate from an
-illuminated chronicle that has been lit by a stage spotlight.
+Painterly-but-graphic science fiction: human survival after Earth's collapse, where hardship is real and hope is stubborn. Think premium illustrated science-fiction concept art, shaped for an expressive strategy game rather than a documentary. Every picture should feel like one memorable image from humanity's second beginning.
 
 | Pillar | Rule |
 |---|---|
-| Brushwork | Hand-painted digital oil/gouache. Visible, confident brush strokes; soft painterly edges in the background, crisp graphic edges on the focal silhouette. Not photographic, not 3D render, not anime cel, not vector flat. |
-| Shape | Bold, simplified, slightly exaggerated shapes. One chunky, readable focal silhouette that still reads at 96 px (Doctrine bar) — the card test: squint and the subject is obvious. |
-| Light | Strong chiaroscuro. One warm key light + a **rich rim light** (gold or the card's accent colour) outlining the subject against a dark ground. Luminous glow / god rays / embers are allowed; flat daylight is not. |
-| Palette | **Limited, hue-driven**: each card has a dominant hue (from its content `art.hue`) plus deep ink-navy shadows (#0d1424-ish) and gold-leaf highlights (#e0b84a). Three colour families max per image. |
-| Edges | **Dark ink vignette, applied in post.** `scripts/art_post.py` darkens the outer edge of every image toward ink navy (#0b0f1a) with one consistent smoothstep falloff (cards strongest, backdrops lightest) so the art melts into the gold-framed cards and dark-glass UI. Prompts ask for a full-bleed painting instead: when asked for a vignette, Seedream paints inconsistent torn-paper / oval frames. |
-| Mood | Mythic and optimistic for boons (Doctrines, Reforms, Edicts); ominous and cold for Crises; mysterious and celestial for Omens. |
-| Taboo | **No text, letters, runes, numbers, logos, borders, frames, UI, watermarks or signatures.** No real people, no real flags, no modern brand marks, no gore. Civilisations are fictional. |
+| Brushwork | Hand-painted digital gouache/oil with visible, confident strokes. Atmospheric, soft-edged distance; crisp designed edges on the focal subject. Painterly, not photographic, not 3D-render glossy, not anime or vector-flat. |
+| Shape | Bold, simplified forms and a single unmistakable focal silhouette. Strong value grouping; the subject remains legible at phone size. Scale can be epic, but avoid detail soup. |
+| Light | Strong chiaroscuro and a bright, clean rim light separating people, habitats, and machines from the rust-dark ground. Use sun glare, dust glow, habitat windows, and restrained luminous cyan as hope-signals. Avoid generic gold fantasy glow. |
+| Palette | Mars first: regolith rust `#b5552b`, clay `#c8693a`, deep red `#9b4424`, butterscotch dust `#d9a066`, basalt `#3b2f2a` / `#57463d`, polar ice `#eef3f6`, brine teal `#3f8f8a`, ochre sky `#d7a07a` shifting toward terraformed blue `#8fb6d6`, habitat white `#e7e3dc`, hull grey `#8d9097`, solar-panel navy `#1d2a44`, hazard orange `#f28c28`, cryo cyan `#5fd4e8`, and lichen `#8a9a3b` / `#c77b2c`. Progressively introduce blue sky, wider brine lakes, and living greens as Mars is terraformed. National insignia colors may accent a spacesuit's shoulder panels, trim, or equipment; they are accents on practical kit, never literal flags. |
+| Mood | Post-apocalyptic hope: the cost of survival is visible, but people build, care, joke, and keep going. Darkly funny details are welcome when they read visually; never turn suffering into gore or hopeless spectacle. |
+| People | Commanders and Crew are fictional people. Portray individual adults with believable faces, varied ages, features, and physiques; no real public figures or celebrity likenesses. Crew art is person-first, with job props and practical pressure-rated Mars suits. National insignia colors appear only as restrained suit/equipment accents, not flags; no ceremonial fantasy regalia. |
+| Taboo | No text, letters, numbers, labels, insignia that forms a flag, literal flags, logos, watermarks, signatures, borders, frames, UI, or gore. No recognizable real individuals. Never put writing on a suit, habitat, screen, or equipment. |
 
 ### Per-kind framing
 
 | Kind | Aspect → shipped size | Framing |
 |---|---|---|
-| `leaders` | portrait → 640×800 | Head-and-shoulders to half-length hero portrait, three-quarter view, eyes to viewer, face in the upper-middle third. Costume in the leader's two civ colours; their emblem (crest motif) glows faintly in the dark background. Dramatic rim light from behind one shoulder. |
-| `doctrines` | square → 512×512 | Emblematic tableau: a single iconic subject (object, figure or small scene) centred, embodying the doctrine's idea. Like a joker card: witty, clear, instantly legible. |
-| `edicts` | square → 512×512 | A decisive action frozen at its peak — a decree being enacted (harvest bursting, troops rising, a star falling). Tarot energy: symbolic, centred, vertical symmetry welcome. |
-| `crises` | square → 512×512 | Ominous, epic scale: the disaster looming over a small silhouetted city or figures. Cold palette + one sickly/fiery accent. Storm, smoke, darkness pressing in from the edges. |
-| `omens` | square → 512×512 | Simpler vignette: a celestial portent or sacred object floating on a dark starfield ground, soft haze, strongly centred, lots of negative space. |
-| `reforms` | square → 512×512 | Simpler vignette: an institution or civic symbol (hall, seal, scales, archive) presented as a monument on a dark ground, gold rim light. |
-| `eras` | landscape 1600×900 + portrait 900×1600 | Panoramic establishing shot of a fictional civilisation at that era: city on the horizon, big sky, strong era lighting (Ancient golden dawn → Classical warm noon → Medieval misty morning → Renaissance amber afternoon → Industrial smoky sunset → Modern crisp blue daylight). Keep the centre-top calm for the era title. |
-| `key` | landscape 1600×900 + portrait 900×1600 | `menu`: the grand vista of all ages at once; `victory`: triumphant golden apotheosis; `defeat`: fallen empire in ashes and twilight. Calm area for the logo/title. |
-
-### Hue → palette vocabulary
-
-Content defines `art.hue` (0–360) per card. `scripts/art_jobs.ts` turns it into words:
-0–15 crimson & ember · 15–40 burnt orange & copper · 40–60 amber & gold · 60–85 olive & chartreuse
-· 85–150 emerald & jade · 150–185 teal & verdigris · 185–215 azure & cerulean · 215–250 sapphire &
-royal blue · 250–285 violet & amethyst · 285–320 magenta & plum · 320–345 rose & wine · 345–360
-crimson & ember.
+| `leaders` | portrait → 640×800 | Fictional commander, head-and-shoulders to half-length, three-quarter view, direct and distinctive gaze; face in upper-middle third. Mars suit with restrained national insignia colors, softly illuminated abstract mission crest (not a flag), dark atmospheric habitat or Mars background, strong rim light. |
+| `doctrines` | square → 512×512 | One fictional Crew member (or a small named pair/group), character-forward joker-card energy, expressive face and instantly readable job-specific prop. Nationality reads through small practical suit accents from `LEADERS[nation].flagColors`; never a literal flag. |
+| `edicts` | square → 512×512 | One concrete Salvage object, cache, device, or colonist using it. Tactile Mars materials and one clear, witty, readable action. |
+| `crises` | square → 512×512 | Ominous Mars hazard looming over a vulnerable habitat and a small crew. Large scale, pressed-in storm/dust, one hazard accent; clear at card size. |
+| `omens` | square → 512×512 | Directive in action: suited colonist(s) doing one objective on Mars, with a clear action and small wry survival detail. |
+| `reforms` | square → 512×512 | A distinctive Ark Module: practical habitat/life-support infrastructure with a tiny crew member for scale; calm but memorable monument-like composition. |
+| `eras` | landscape 1600×900 + portrait 900×1600 | Wide establishing view with a clear focal habitat/landmark and calm upper-middle title space. Sequential terraforming arc: Landfall, Foothold, Frontier, Industry, Terraform, New Earth. |
+| `key` | landscape 1600×900 + portrait 900×1600 | `menu`: all six stages of Mars colonization in one sweeping vista; `victory`: thriving New Earth and a human-scale celebration; `defeat`: lost colony beneath a punishing Martian storm, with a small unmistakable signal of hope. Reserve calm upper-middle space for title. |
 
 ## Prompt recipe
 
-Every prompt = `SUBJECT` + `FRAMING(kind)` + `PALETTE(hue)` + `STYLE` + `NEGATIVE`, assembled by
-`scripts/art_jobs.ts` from `art/gen/subjects/<kind>.json` (hand-written, one scene per content id).
+Subjects turn live names, flavor, job titles, descriptions, and nationality colors into visible people, props, actions, or hazards; game text is thematic input only and must never appear in the image. Keep a full-bleed painting edge to edge; the image pipeline adds a consistent dark vignette afterward. Ask for readable composition and light, not text or graphic overlays.
 
-```
-STYLE    = painterly stylized fantasy-historical illustration, hand-painted digital oil with
-           visible confident brushstrokes, bold simplified chunky shapes, one clear readable focal
-           silhouette, dramatic low-key chiaroscuro, strong warm rim light, luminous glow against
-           deep darkness, painted shadows toward the corners, limited rich palette with deep ink-navy
-           shadows and gold-leaf highlights, full-bleed painting that fills the
-           entire canvas edge to edge, premium AAA card-game art in the spirit of Hades, Civilization VI
-           and Slay the Spire
-NEGATIVE = no text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame,
-           no torn paper edges, no vignette mask, no UI, no watermark, no signature
+```text
+STYLE = painterly-but-graphic science-fiction concept illustration, hand-painted digital gouache and oil,
+        confident visible brushwork, bold simplified forms, one strong readable focal silhouette,
+        dramatic Mars sunlight and crisp rim-lit subjects, atmospheric rust dust and basalt shadows,
+        restricted Mars palette with restrained cryo-cyan highlights, full-bleed premium strategy-game art
+NEGATIVE = no text, letters, numbers, labels, flags, logos, border, frame, UI, watermark, signature,
+           photorealism, glossy 3D render, anime, gore
 ```
 
-Subjects describe **what is in the picture**, never the mechanic ("a farmer kneeling in a river
-delta, green shoots glowing" — not "+1 food on river tiles").
+### Era arc
 
-## Model choice
+1. **Landfall** — harsh, dim, dust-choked red horizon; the first landed Ark Hab and tiny fragile lights.
+2. **Foothold** — inflatable habitats, solar arrays, first greenhouse glow and a working settlement.
+3. **Frontier** — connected domes and rover tracks spreading across a vast basin; first lichen and brine.
+4. **Industry** — foundries, mass drivers, power infrastructure, busy colonies under a smoky amber sky.
+5. **Terraform** — atmospheric processors and widening brine lakes; rust sky breaks into blue, green takes hold.
+6. **New Earth** — blue sky, broad lakes, green valleys, glass-domed city; still recognizably Mars, finally home.
 
-Chosen after the style exploration (8 test images across GPT Image 2.5 Sunburst, Nano Banana Pro, Krea 2
-Medium and Seedream 5 Pro — see `art/previews/gen_styletest.png`):
+## Model choice and pipeline
 
-- **Cards, eras, key art** — `bytedance/seedream/v5/pro/text-to-image`. Follows the recipe most
-  faithfully: bold graphic silhouettes that read at 96 px, rich shadow and gold-leaf flecks, and
-  native 1536² / 2048×1152 / 1152×2048 output that maps onto the shipped sizes without upscaling.
-  (Nano Banana Pro added a white passe-partout border; Krea read as flat children's-book; GPT Image was
-  lush but busy at card size and only 1024×768 for backdrops.)
-- **Leaders** — `openai/gpt-image-2.5/sunburst/text-to-image` (768×1024): the most convincing,
-  characterful faces and costume detail; its 3:4 frame crops cleanly to 4:5.
+- **Crew / card art** — `bytedance/seedream/v5/pro/text-to-image` for readable graphic scenes and faces.
+- **Commanders** — `openai/gpt-image-2.5/sunburst/text-to-image` for expressive, characterful faces.
+- **Era backdrops and key art** — `bytedance/seedream/v5/pro/text-to-image` for native widescreen and portrait compositions.
 
-## Pipeline
-
+```sh
+bun scripts/art_subjects.ts
+bun scripts/art_jobs.ts doctrines edicts crises omens reforms
+python3 scripts/art_batch.py art/gen/doctrines.json --jobs 4 --tries 6
+python3 scripts/art_batch.py art/gen/edicts.json --jobs 4 --tries 6
+python3 scripts/art_batch.py art/gen/crises.json --jobs 4 --tries 6
+python3 scripts/art_batch.py art/gen/omens.json --jobs 4 --tries 6
+python3 scripts/art_batch.py art/gen/reforms.json --jobs 4 --tries 6
+~/.hermes/hermes-agent/venv/bin/python scripts/art_post.py doctrines edicts crises omens reforms
+bun scripts/art_manifest.ts
 ```
-bun scripts/art_jobs.ts [kind…]                       # subjects + content → art/gen/<kind>.json
-python3 scripts/nous_image.py --batch art/gen/<kind>.json --jobs 4   # → art/gen/out/<kind>/*.png
-~/.hermes/hermes-agent/venv/bin/python scripts/art_post.py [kind…]   # crop/resize/vignette → WebP + contact sheets
-bun scripts/art_manifest.ts                           # public/art/** → src/ui/art/artManifest.ts
-```
 
-Gateway throttling: `python3 scripts/art_batch.py art/gen/<kind>.json --jobs 4` calls the same
-`nous_image.generate` function with bounded transient-error backoff. Run one queue at a time; multiple
-queues compete for the same model rate limit. To queue several kinds, pass several batch filenames.
-Backdrops use the lighter `BACKDROP_LIGHT` prompt clause (open luminous skies); cards use `CARD_LIGHT`
-(low-key with painted corners in deep shadow).
-
-### Vignette sheets
-
-Omens and Reforms are simpler symbolic paintings generated four to a 2×2 sheet (two remaining entries
-use a side-by-side sheet). Each job records `cells` in reading order and its `layout`; `art_post.py`
-finds the central dark seam, slices each cell, trims 2% of the cell edge, centre-crops square, then
-applies the same finishing as single-card generations. Each content id receives its own unique 512²
-WebP, not a shared image. Forty illustrations require eleven model generations this way.
-Raw `_sheet_*.png` files never enter the public manifest. Regenerating a sheet automatically updates
-its per-id crops on the next post-processing run.
-
-- Raw PNGs live in `art/gen/out/` (gitignored). The batch runner skips outputs that already exist, so
-  regenerating an outlier = delete its PNG and rerun the batch.
-- Contact sheets: `art/previews/gen_<kind>.png`. Review every sheet; regenerate anything with text
-  artefacts, broken anatomy, off-palette colour or photographic look.
-- Budget: `public/art` ≤ 25 MB total (WebP q80; cards ≈ 40–70 KB, portraits ≈ 80 KB, backdrops ≈ 200 KB).
+Run one image queue at a time to avoid competing for the model rate limit. `art_batch.py` retries bounded transient gateway failures; it calls the same Nous client as `nous_image.py`. Review each kind's contact sheet for legibility, Mars context, text/flag artifacts, and anatomy; regenerate any failures before shipping.

@@ -1,38 +1,170 @@
 {
- "golden_harvest": "A radiant sheaf of golden wheat raised high by a farmer's hands, grains bursting into light like sparks, a village of happy families and a brimming harvest basket below.",
- "rain_of_plenty": "Glowing blue rain falling from a single luminous cloud over a whole valley of small villages, every field sprouting green, silver droplets turning into tiny stars.",
- "pioneers_charter": "A family of pioneers with a laden ox-cart setting out along a sunlit road toward unexplored hills, a golden compass glowing in the sky ahead pointing the way, a sealed wax-stamped blank parchment in the lead pioneer's hand.",
- "royal_survey": "A royal surveyor planting a banner pole on a hilltop while glowing golden border lines spread across the valley below like threads of light, a brass theodolite beside him.",
- "guild_overtime": "Guild craftsmen hammering in a blazing workshop at night, sparks fountaining upward, giant bronze gears turning behind them, a great hourglass with glowing sand racing.",
- "master_builders": "A grand stone tower rising instantly out of scaffolding in a burst of golden light, masons with raised mallets cheering, stone blocks flying into place by themselves.",
- "miracle_of_masons": "A colossal golden pyramid assembling itself in a single luminous moment, gigantic stone blocks floating upward on beams of light, tiny masons kneeling in awe at its base.",
- "terraform": "A giant hand of light reshaping the land, a forest peeling away and the earth folding upward into green hills, a mountain spirit rising from the ground.",
- "verdant_rain": "Emerald rain sweeping over a desert, dunes turning into lush grassland as it passes, flowers and trees bursting from the sand in a spreading wave of green.",
- "imperial_roads": "A great paved stone road unrolling itself across hills toward the horizon, milestones and arches, a galloping courier on horseback, sunrise at the end of the road.",
- "levy": "Two fresh soldiers with round shields and spears stepping forward in unison out of a glowing city gate, banners unfurling above them, drum and horn raised.",
- "conscription": "Rows of townsfolk handing over their tools and taking up swords before a war banner, a stern officer with a raised sword leading the column out of the city.",
- "sanctuary": "A wounded warrior kneeling in prayer within a shaft of healing light inside a stone temple, his shield glowing as a protective dome of light surrounds him.",
- "balm_of_ages": "A golden chalice pouring glowing healing elixir that flows like a river of light over a battlefield, wounded soldiers and cracked city walls mending as it passes.",
- "forge_of_heroes": "A hero's old bronze sword plunged into a blazing magical anvil and emerging as gleaming steel, an armoured smith striking it with a glowing hammer, sparks everywhere.",
- "veterans_laurels": "A battle-scarred veteran soldier being crowned with a glowing golden laurel wreath by a general, his armour gleaming, comrades saluting behind.",
- "olive_branch": "A white dove carrying a glowing olive branch between two opposing armies, soldiers lowering their spears, the sun breaking through storm clouds between them.",
- "revelation": "A scholar in a dark study struck by a pillar of light from above, a glowing all-seeing eye opening in the sky, orbiting diagrams of light forming around the scholar.",
- "scholars_boon": "A wise white owl spreading luminous wings over a scholar's desk, glowing blank pages flying up like birds, candlelit books and an astrolabe.",
- "rediscovery": "An explorer brushing sand from an ancient buried vault, a glowing forgotten scroll case revealed inside, beams of light spilling out into the ruins.",
- "cartographers_commission": "A tall ship sailing off the edge of a painted sea toward unknown lands, fog parting before its bow to reveal glowing coastlines, a brass compass rose shining in the sky.",
- "spymasters_ledger": "A hooded spymaster in a candlelit room turning an ornate golden key in a lock, shadows of distant rival castles projected on the wall through a keyhole of light.",
- "windfall": "A torrent of gold coins pouring down from the sky into a treasury chest, a delighted merchant catching them in his hat, golden light everywhere.",
- "tribute": "Foreign envoys kneeling before a throne presenting chests overflowing with gold and jewels, a crown gleaming on a velvet cushion, golden light on marble steps.",
- "hermits_tithe": "An old hermit in a mountain cave turning a great hourglass whose sand is glowing violet crystals, the crystals multiplying as they fall into an overflowing bowl.",
- "royal_audit": "A royal auditor with brass spectacles weighing golden emblem medallions on grand scales in a vaulted treasury, a heavy iron key hanging at his belt.",
- "grand_festival": "A grand festival night in a city square, masked dancers whirling, fireworks bursting in magenta and gold, lanterns strung between towers, a jubilant crowd.",
- "epiphany": "A young thinker gazing upward as a brilliant violet-white star of inspiration bursts open above her head, rays of light pouring down and a golden lyre resonating on its own beside her, night sky over a marble terrace.",
- "codex_universalis": "A colossal glowing tome opening in the sky above a city, its blank pages radiating six beams of coloured light down onto the land, scholars looking up in awe.",
- "heavens_clemency": "A golden sun breaking through a black storm, a single shaft of divine light falling on a kneeling crowned ruler, a broken crown on the ground being restored to wholeness.",
- "augurs_sign": "An augur with raised arms reading the flight of a great serpent-shaped flock of birds across a golden sky, a sacred altar smoking beside her.",
- "patronage": "A noble patron's jewelled hand offering a glowing sealed commission to a kneeling young artist, a gallery of half-finished statues and paintings behind them.",
- "gilded_charter": "A plain bronze emblem medallion being dipped into a basin of liquid gold by a jeweller's tongs, emerging gilded and glowing, a laurel of gold leaf flying off it.",
- "fortunes_wheel": "A great ornate wheel of fortune spinning in the night sky, its spokes studded with stars and gems of gold, ruby and prismatic crystal, sparks flying from its rim.",
- "mirror_of_ages": "An ornate silver hand-mirror under a crescent moon reflecting a glowing jewel into a second identical glowing jewel, starlight rippling across the mirror surface.",
- "veil_of_ether": "A translucent ethereal veil woven of starlight drifting away from an ornate emblem, the emblem turning ghostly and weightless, a single luminous feather floating beside it."
+ "golden_harvest": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Hydroponic Ration: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Hydroponic Ration. A colony gains population from a recycled seed batch.. Use a subtle flask-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 45
+ },
+ "rain_of_plenty": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Cryo Thaw: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Cryo Thaw. Every colony gains population from the reserve.. Use a subtle flask-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 200
+ },
+ "pioneers_charter": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crawler Fabrication Order: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crawler Fabrication Order. A colony fabricates a free Hab Crawler without losing population.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 90
+ },
+ "royal_survey": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Perimeter Beacon Kit: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Perimeter Beacon Kit. A colony claims up to unowned tiles along its perimeter.. Use a subtle compass-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 180
+ },
+ "guild_overtime": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Double Shift: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Double Shift. A colony adds turns of its output to its current construction.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 20
+ },
+ "master_builders": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Rapid Assembly Kit: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Rapid Assembly Kit. Instantly complete a habitat module under construction; invested Industry carries over.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 25
+ },
+ "miracle_of_masons": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Megaproject Assembly Kit: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Megaproject Assembly Kit. Instantly complete the Megaproject under construction; invested Industry carries over.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 42
+ },
+ "terraform": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Regolith Grader: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Regolith Grader. Strip surface debris from a tile you own; flat regolith is graded into ridged terrain.. Use a subtle mountain-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 95
+ },
+ "verdant_rain": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Soil Remediation Foam: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Soil Remediation Foam. Improve barren soil: Dune Sea or Frost Flats become Regolith Plain, Polar Ice becomes Frost Flats, and plains become Clay Basin.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 120
+ },
+ "imperial_roads": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Beacon Cairn Network: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Beacon Cairn Network. Mark every land tile inside your borders with a navigation beacon.. Use a subtle compass-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 28
+ },
+ "levy": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Muster: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Muster. Deploy of your strongest combat units beside the Ark Hab.. Use a subtle shield-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 10
+ },
+ "conscription": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crew Draft: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crew Draft. Every colony with population assigns colonist to the strongest available infantry unit.. Use a subtle sword-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 355
+ },
+ "sanctuary": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Field Patch: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Field Patch. Fully repair one combat unit and entrench it at full strength ( defense).. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 150
+ },
+ "balm_of_ages": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Colony Repair Kit: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Colony Repair Kit. Restore all your units and colonies to full health.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 160
+ },
+ "forge_of_heroes": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Field Retrofit Kit: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Field Retrofit Kit. Upgrade one of your units for free, even outside your borders.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 30
+ },
+ "veterans_laurels": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Combat Data Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Combat Data Cache. A combat unit instantly gains the field experience for its next promotion.. Use a subtle bolt-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 50
+ },
+ "olive_branch": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Ceasefire Packet: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Ceasefire Packet. Make peace with every rival nation currently at war with you.. Use a subtle key-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 110
+ },
+ "revelation": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Breakthrough Injection: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Breakthrough Injection. Instantly complete your current research project.. Use a subtle flask-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 270
+ },
+ "scholars_boon": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Research Data Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Research Data Cache. Your current research gains equal to of its cost.. Use a subtle flask-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 220
+ },
+ "rediscovery": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Research Salvage: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Research Salvage. Complete the cheapest technology currently available to you.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 35
+ },
+ "cartographers_commission": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Survey Drone Battery: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Survey Drone Battery. Reveal every tile within of an explored coordinate.. Use a subtle compass-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 205
+ },
+ "spymasters_ledger": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Relay Scan: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Relay Scan. Reveal the land within tiles of every rival landing site.. Use a subtle eye-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 280
+ },
+ "windfall": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Credit Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Credit Cache. Gain per era (Landfall → New Earth).. Use a subtle coin-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 48
+ },
+ "tribute": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Asset Transfer: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Asset Transfer. Every peaceful rival transfers up to per era from its reserves.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 40
+ },
+ "hermits_tithe": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Reserve Scrip Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Reserve Scrip Cache. Double your (max ).. Use a subtle coin-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 260
+ },
+ "royal_audit": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crew Appraisal: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crew Appraisal. Gain equal to the total sell value of your Crew (max ).. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 55
+ },
+ "grand_festival": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Sol Report Broadcast: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Sol Report Broadcast. Bank era² now (Landfall → ,New Earth).. Use a subtle sun-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 330
+ },
+ "epiphany": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Priority Report: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Priority Report. Your current Priority pillar gains level.. Use a subtle flask-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 300
+ },
+ "codex_universalis": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called All-Systems Report: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: All-Systems Report. Every pillar gains level.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 265
+ },
+ "heavens_clemency": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Charter Repair Voucher: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Charter Repair Voucher. Restore Charter (up to your maximum).. Use a subtle bolt-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 50
+ },
+ "augurs_sign": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Directive Progress Packet: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Directive Progress Packet. Your accepted Directive advances by a third of its goal.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 275
+ },
+ "patronage": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crew Candidate File: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crew Candidate File. Add a random Common Crew member (needs a free bunk).. Use a subtle hand-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 190
+ },
+ "gilded_charter": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Decorated Crew Patch: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Decorated Crew Patch. Your leftmost base-edition Crew member becomes Decorated.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 45
+ },
+ "fortunes_wheel": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crew Upgrade Lottery: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crew Upgrade Lottery. in chance: a random base-edition Crew member improves to Decorated, Inspired or Legendary Tale.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 285
+ },
+ "mirror_of_ages": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Crew Edition Transfer: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Crew Edition Transfer. Copy the edition of your leftmost improved Crew member onto your leftmost base-edition Crew member.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 230
+ },
+ "veil_of_ether": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Ghost Protocol: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Ghost Protocol. Your rightmost base-edition Crew member becomes Ghost (it no longer takes a bunk).. Use a subtle bolt-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 190
+ },
+ "tsar_charge": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Tsar Charge: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Tsar Charge. Detonate an orbital warhead on a tile and its radius-neighbors. Hostile units and colonies are left at HP. Russia starts with this charge.. Use a subtle flame-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 8
+ },
+ "weather_sat_uplink": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Weather Sat Uplink: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Weather Sat Uplink. Lock onto a storm eye to dissipate the storm before it reaches a colony.. Use a subtle eye-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 205
+ },
+ "cryo_batch": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Cryo Batch: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Cryo Batch. Recover Cryo pod from the reserve freezer. The freezer is making that noise again.. Use a subtle flask-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 190
+ },
+ "emergency_shelter": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Emergency Shelter: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Emergency Shelter. Protect your units and colonies from dust-storm damage for this round.. Use a subtle tower-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 28
+ },
+ "supply_pod": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Supply Pod: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Supply Pod. Land a free Orbital Drop on a valid explored site.. Use a subtle flame-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 24
+ },
+ "seed_vault_key": {
+  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Seed Vault Key: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Seed Vault Key. A city gains population from the last viable seed bank. Hope nobody asks what happened to the rest.. Use a subtle key-shaped prop or silhouette. Witty, tactile, immediately readable.",
+  "hue": 92
+ }
 }

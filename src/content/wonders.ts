@@ -38,50 +38,50 @@ export function cheapestAvailableTechs(known: readonly TechId[], n: number): Tec
 const LIST: WonderDef[] = [
   // ───────── Era 0 · Ancient ─────────
   wonder({
-    id: 'pyramids', name: 'The Pyramids', era: 0, cost: 115, tech: 'bronze_working', requiresTerrain: ['desert', 'plains', 'grassland'],
+    id: 'pyramids', name: 'Sintered Citadel', era: 0, cost: 115, tech: 'bronze_working', requiresTerrain: ['desert', 'plains', 'grassland'],
     yields: { prod: 2, cul: 1 },
     effects: {
       cost(_ctx, a) {
         if (a.currency === 'prod' && a.item.kind === 'building') a.cost = Math.round(a.cost * 0.8);
       },
     },
-    description: '+2 {prod} +1 {cul}. **Buildings cost 20% less {prod} in every city** (+25% build speed).',
-    flavor: '“Ten thousand hands, one sunrise, and a mountain made by men.”',
+    description: '+2 {prod} +1 {cul}. **Buildings cost 20% less {prod} in every colony** (+25% build speed).',
+    flavor: '“Ten thousand hands, one sunrise, and a mountain made from what the colony had.”',
   }),
   wonder({
-    id: 'stonehenge', name: 'Stonehenge', era: 0, cost: 110, tech: 'mining',
+    id: 'stonehenge', name: 'Solar Henge', era: 0, cost: 110, tech: 'mining',
     yields: { cul: 3 },
     effects: {
       cityYield(_ctx, a) { a.yields.cul += 1; },
-      chronicle(_ctx, c) { if (c.focus === 'arts') c.addSplendor(1, 'Stonehenge'); },
+      chronicle(_ctx, c) { if (c.focus === 'arts') c.addSplendor(1, 'Solar Henge'); },
     },
-    description: '+3 {cul}. **+1 {cul} in every city.** Chronicles with an **Arts** Focus gain +1 {splendor}.',
-    flavor: '“The stones remember every solstice. So will they remember you.”',
+    description: '+3 {cul}. **+1 {cul} in every colony.** Reports with a **Heritage** Priority gain +1 {splendor}.',
+    flavor: '“Mirrors follow the sun. At night, they reflect a sky without a home.”',
   }),
   wonder({
-    id: 'hanging_gardens', name: 'Hanging Gardens', era: 0, cost: 120, tech: 'agriculture', requiresRiver: true,
+    id: 'hanging_gardens', name: 'Hanging Greenhouses', era: 0, cost: 120, tech: 'agriculture', requiresRiver: true,
     yields: { food: 3 }, happiness: 1,
     effects: {
       cityYield(_ctx, a) { a.pct.food += 10; },
     },
-    description: '+3 {food}, +1 {happy}. Must be built on a river. **+10% {food} in every city.**',
-    flavor: '“A queen longed for the hills of home, so a king raised a forest into the sky.”',
+    description: '+3 {food}, +1 {happy}. **+10% {food} in every colony.**',
+    flavor: '“They hung greenhouses above the dust. Gravity filed a complaint; the crops did not.”',
   }),
 
   // ───────── Era 1 · Classical ─────────
   wonder({
-    id: 'colossus', name: 'The Colossus', era: 1, cost: 180, tech: 'currency', requiresCoastal: true,
+    id: 'colossus', name: 'Beacon Colossus', era: 1, cost: 180, tech: 'currency', requiresCoastal: true,
     yields: { gold: 3 },
     effects: {
       tileYield(ctx, a) {
         if (a.city?.id === ctx.cityId && TERRAINS[a.tile.terrain]?.water) a.yields.gold += 1;
       },
     },
-    description: '+3 {gold}. Coastal. **Every water tile of this city yields +1 {gold}.**',
-    flavor: '“Bronze giant astride the harbor, every sail that passes pays him homage.”',
+    description: '+3 {gold}. Coastal. **Every water tile of this colony yields +1 {gold}.**',
+    flavor: '“A beacon taller than the habs. The ships are gone; the signal still has work.”',
   }),
   wonder({
-    id: 'great_library', name: 'The Great Library', era: 1, cost: 195, tech: 'writing',
+    id: 'great_library', name: 'Library of Earth', era: 1, cost: 195, tech: 'writing',
     yields: { sci: 3, cul: 1 },
     effects: {
       onEvent: onCompleted((ctx) => {
@@ -89,40 +89,40 @@ const LIST: WonderDef[] = [
       }),
     },
     description: '+3 {sci} +1 {cul}. **On completion: 2 free techs** (the cheapest available).',
-    flavor: '“Every ship that docks must surrender its scrolls. Knowledge is the only tax worth paying.”',
+    flavor: '“Knowledge was the only cargo nobody could confiscate. Keep the backups.”',
   }),
   wonder({
-    id: 'oracle', name: 'The Oracle', era: 1, cost: 175, tech: 'calendar', requiresTerrain: ['plains', 'grassland', 'tundra', 'desert'],
+    id: 'oracle', name: 'The Deep Ear', era: 1, cost: 175, tech: 'calendar', requiresTerrain: ['plains', 'grassland', 'tundra', 'desert'],
     yields: { cul: 3 }, happiness: 2,
     effects: {
       onEvent: onCompleted((ctx) => {
         if (ctx.player.id === HUMAN) addInfluence(ctx.state, 4, ctx.emit);
       }),
-      influenceIncome(_ctx, a) { a.lines.push({ label: 'The Oracle', amount: 1 }); },
+      influenceIncome(_ctx, a) { a.lines.push({ label: 'The Deep Ear', amount: 1 }); },
     },
     description: '+3 {cul}, +2 {happy}. **On completion: +4 {influence}**, then +1 {influence} every chapter.',
-    flavor: '“Ask, and the smoke will answer. Whether you like the answer is another matter.”',
+    flavor: '“The dish listens toward Earth. Mostly static. Occasionally, an answer you did not want.”',
   }),
 
   // ───────── Era 2 · Medieval ─────────
   wonder({
-    id: 'great_wall', name: 'The Great Wall', era: 2, cost: 290, tech: 'engineering',
+    id: 'great_wall', name: 'Storm Wall', era: 2, cost: 290, tech: 'engineering',
     yields: { cul: 2, prod: 1 },
     effects: {
       combat(ctx, a) {
         const me = ctx.player.id;
-        if (a.side === 'defense' && a.defender && a.tile.owner === me) a.defenseMods.push({ label: 'Great Wall', pct: 15 });
-        if (a.side === 'attack' && a.attacker && a.fromTile.owner === me) a.attackMods.push({ label: 'Great Wall', pct: 15 });
+        if (a.side === 'defense' && a.defender && a.tile.owner === me) a.defenseMods.push({ label: 'Storm Wall', pct: 15 });
+        if (a.side === 'attack' && a.attacker && a.fromTile.owner === me) a.attackMods.push({ label: 'Storm Wall', pct: 15 });
       },
       cost(_ctx, a) {
         if (a.currency === 'prod' && a.item.kind === 'building' && (a.item.id === 'walls' || a.item.id === 'castle')) a.cost = Math.round(a.cost * 0.5);
       },
     },
-    description: '+2 {cul} +1 {prod}. **Your units fight at +15% inside your borders.** Walls and Castles cost 50% less {prod}.',
-    flavor: '“Ten thousand li of stone, and every brick a sleepless sentry.”',
+    description: '+2 {cul} +1 {prod}. **Your units fight at +15% inside your borders.** Blast Walls and Bastion Domes cost 50% less {prod}.',
+    flavor: '“The forecast is clear on one thing: storms do not negotiate.”',
   }),
   wonder({
-    id: 'hagia_sophia', name: 'Hagia Sophia', era: 2, cost: 300, tech: 'theology',
+    id: 'hagia_sophia', name: 'Dome of Remembrance', era: 2, cost: 300, tech: 'theology',
     yields: { cul: 3 }, happiness: 2,
     effects: {
       happiness(ctx, a) {
@@ -132,56 +132,56 @@ const LIST: WonderDef[] = [
         }
       },
     },
-    description: '+3 {cul}, +2 {happy}. **+1 {happy} for every Temple and Cathedral** in your empire.',
-    flavor: '“The dome does not rest on its walls. It hangs from heaven by a golden chain.”',
+    description: '+3 {cul}, +2 {happy}. **+1 {happy} for every Memorial Chapel and Cathedral of Earth** in your colonies.',
+    flavor: '“A dome for memory, sealed against the dust. Grief gets an airlock too.”',
   }),
   wonder({
-    id: 'angkor_wat', name: 'Angkor Wat', era: 2, cost: 310, tech: 'theology',
+    id: 'angkor_wat', name: 'Lava Tube Temple City', era: 2, cost: 310, tech: 'theology',
     yields: { cul: 3, food: 2 },
     effects: {
       borderThreshold(_ctx, a) { a.value = Math.round(a.value * 0.66); },
       cityYield(_ctx, a) { a.yields.food += 1; },
     },
-    description: '+3 {cul} +2 {food}. **Borders grow 33% faster and every city gains +1 {food}.**',
-    flavor: '“The city is a temple, and the temple is a map of the universe drawn in water.”',
+    description: '+3 {cul} +2 {food}. **Borders grow 33% faster and every colony gains +1 {food}.**',
+    flavor: '“Shelter in the old tubes. Feed the colony above; remember what the planet was.”',
   }),
 
   // ───────── Era 3 · Renaissance ─────────
   wonder({
-    id: 'taj_mahal', name: 'Taj Mahal', era: 3, cost: 450, tech: 'architecture', requiresRiver: true,
+    id: 'taj_mahal', name: 'Monument to the Lost', era: 3, cost: 450, tech: 'architecture', requiresRiver: true,
     yields: { cul: 4 }, happiness: 4,
     effects: {
       cityYield(_ctx, a) { a.pct.cul += 15; },
     },
     description: '+4 {cul}, +4 {happy}. Must be built on a river. **+15% {cul} in every city.**',
-    flavor: '“A teardrop on the cheek of time, carved in marble that blushes at dawn.”',
+    flavor: '“An elegy in glass and stone, built where the lost can look up.”',
   }),
   wonder({
-    id: 'leaning_tower', name: 'Leaning Tower', era: 3, cost: 440, tech: 'astronomy',
+    id: 'leaning_tower', name: 'Tilted Spire', era: 3, cost: 440, tech: 'astronomy',
     yields: { sci: 4 },
     effects: {
       cityYield(_ctx, a) { if (a.city.buildings.includes('library')) a.yields.sci += 2; },
-      chronicle(_ctx, c) { if (c.focus === 'discovery') c.addSplendor(1, 'Leaning Tower'); },
+      chronicle(_ctx, c) { if (c.focus === 'discovery') c.addSplendor(1, 'Tilted Spire'); },
     },
-    description: '+4 {sci}. **+2 {sci} in every city with a Library.** Chronicles with a **Discovery** Focus gain +1 {splendor}.',
-    flavor: '“Drop two stones from the top and the world will never fall the same way again.”',
+    description: '+4 {sci}. **+2 {sci} in every colony with a Data Archive.** Reports with a **Science** Priority gain +1 {splendor}.',
+    flavor: '“It leans by design. The engineers insist; the scaffolding says otherwise.”',
   }),
   wonder({
-    id: 'himeji', name: 'Himeji Castle', era: 3, cost: 460, tech: 'gunpowder', requiresTerrain: ['grassland', 'plains', 'tundra'],
+    id: 'himeji', name: 'Olympus Observatory', era: 3, cost: 460, tech: 'gunpowder', requiresTerrain: ['grassland', 'plains', 'tundra'],
     yields: { prod: 2, cul: 2 },
     effects: {
       unitHeal(_ctx, a) { a.value += 10; },
       combat(ctx, a) {
-        if (a.side === 'defense' && a.defender && a.tile.owner === ctx.player.id) a.defenseMods.push({ label: 'Himeji Castle', pct: 15 });
+        if (a.side === 'defense' && a.defender && a.tile.owner === ctx.player.id) a.defenseMods.push({ label: 'Olympus Observatory', pct: 15 });
       },
     },
     description: '+2 {prod} +2 {cul}. **Your units heal +10 HP per turn** and defend at +15% inside your borders.',
-    flavor: '“The White Heron spreads its wings, and no arrow has ever found its heart.”',
+    flavor: '“The observatory watches the horizon. It cannot make the horizon less alarming.”',
   }),
 
   // ───────── Era 4 · Industrial ─────────
   wonder({
-    id: 'big_ben', name: 'Big Ben', era: 4, cost: 650, tech: 'economics',
+    id: 'big_ben', name: 'Clocktower of Sols', era: 4, cost: 650, tech: 'economics',
     yields: { gold: 6 },
     effects: {
       cost(_ctx, a) { if (a.currency === 'gold') a.cost = Math.round(a.cost * 0.75); },
@@ -190,13 +190,13 @@ const LIST: WonderDef[] = [
     flavor: '“Every hour on the hour, the empire checks its ledgers and smiles.”',
   }),
   wonder({
-    id: 'eiffel', name: 'Eiffel Tower', era: 4, cost: 660, tech: 'industrialization',
+    id: 'eiffel', name: 'Skyhook Pylon', era: 4, cost: 660, tech: 'industrialization',
     yields: { cul: 5 }, happiness: 10,
-    description: '+5 {cul}. **+10 {happy}.** An iron lattice the whole world comes to see.',
-    flavor: '“They called it a monstrous skeleton. Then they could not stop looking at it.”',
+    description: '+5 {cul}. **+10 {happy}.** A skyhook pylon lifts cargo above the worst of the dust.',
+    flavor: '“A tether to orbit: the longest elevator queue in the solar system.”',
   }),
   wonder({
-    id: 'liberty', name: 'Statue of Liberty', era: 4, cost: 680, tech: 'electricity', requiresCoastal: true,
+    id: 'liberty', name: 'Statue of Tomorrow', era: 4, cost: 680, tech: 'electricity', requiresCoastal: true,
     yields: { cul: 3 }, happiness: 2,
     effects: {
       onEvent: onCompleted((ctx) => {
@@ -204,37 +204,37 @@ const LIST: WonderDef[] = [
       }),
       growthThreshold(_ctx, a) { a.value = Math.round(a.value * 0.9); },
     },
-    description: '+3 {cul}, +2 {happy}. Coastal. **On completion: +1 population in every city.** Cities grow 10% faster.',
-    flavor: '“Give me your tired, your poor — and watch them build a nation.”',
+    description: '+3 {cul}, +2 {happy}. Coastal. **On completion: +1 population in every colony.** Colonies grow 10% faster.',
+    flavor: '“The first light on the horizon is not freedom. It is a lander, carrying another shift.”',
   }),
 
   // ───────── Era 5 · Modern ─────────
   wonder({
-    id: 'opera_house', name: 'Opera House', era: 5, cost: 900, tech: 'computers', requiresCoastal: true,
+    id: 'opera_house', name: 'Biodome Opera', era: 5, cost: 900, tech: 'computers', requiresCoastal: true,
     yields: { cul: 8 },
     effects: {
-      chronicle(_ctx, c) { c.addSplendor(2, 'Opera House'); },
+      chronicle(_ctx, c) { c.addSplendor(2, 'Biodome Opera'); },
     },
     description: '+8 {cul}. Coastal. **+2 {splendor} in every Chronicle.**',
-    flavor: '“White sails of concrete, forever about to leave the harbor.”',
+    flavor: '“A glass dome opens to the stars. Everyone gets a ticket; nobody gets a balcony.”',
   }),
   wonder({
-    id: 'cristo', name: 'Cristo Redentor', era: 5, cost: 920, tech: 'radio', requiresTerrain: ['grassland', 'plains', 'desert', 'tundra'],
+    id: 'cristo', name: 'Guardian of Mars', era: 5, cost: 920, tech: 'radio', requiresTerrain: ['grassland', 'plains', 'desert', 'tundra'],
     yields: { cul: 5 }, happiness: 4,
     effects: {
       cityYield(_ctx, a) { a.pct.cul += 10; a.pct.gold += 10; },
     },
     description: '+5 {cul}, +4 {happy}. **+10% {cul} and {gold} in every city.**',
-    flavor: '“A radio signal from across the sea lit him up, and he has not let go of the city since.”',
+    flavor: '“Arms open over the valley, guarding a world that has not learned to behave.”',
   }),
   wonder({
-    id: 'launch_pad', name: 'Launch Pad', era: 5, cost: 1000, tech: 'rocketry',
+    id: 'launch_pad', name: 'Space Elevator', era: 5, cost: 1000, tech: 'rocketry',
     yields: { sci: 10 },
     effects: {
-      chronicle(_ctx, c) { c.mulSplendor(2, 'Launch Pad'); },
+      chronicle(_ctx, c) { c.mulSplendor(2, 'Space Elevator'); },
     },
-    description: '+10 {sci}. **×2 {splendor} in every future Chronicle.** The last great race.',
-    flavor: '“Three. Two. One. And the story of your people leaves the world behind.”',
+    description: '+10 {sci}. **×2 {splendor} in every future Sol Report.** The last great race.',
+    flavor: '“Three. Two. One. The colony reaches upward; Earth does not answer.”',
   }),
 ];
 

@@ -8,6 +8,7 @@ import { TRIUMPH_INFLUENCE, TRIUMPH_RATIO, previewChronicle } from '../../sim/ro
 import type { ChronicleResult, ChronicleStep } from '../../sim/types';
 import { Line, Ornament, Popover, fmt, useAnimatedNumber } from '../kit';
 import { Icon } from '../icons/Icon';
+import { T } from '../terms';
 
 const DEBOUNCE_MS = 220;
 
@@ -69,7 +70,7 @@ export function LegacyMeter() {
         type="button"
         className={`lm ${tone} ${anchor ? 'is-active' : ''}`}
         data-tutorial="legacy"
-        aria-label={`Projected Legacy ${fmt(score)} of ${fmt(target)}`}
+        aria-label={`${T.score} ${fmt(score)} of ${fmt(target)}`}
         onClick={(e) => { audio.sfx('tap'); setAnchor(anchor ? null : e.currentTarget); }}
       >
         <span className="lm__formula">
@@ -85,7 +86,7 @@ export function LegacyMeter() {
             <span className="lm__target">/ {fmt(target, true)}</span>
           </span>
         </span>
-        {passed && <span className="lm__badge">{triumph ? 'Triumph' : `×${ratio.toFixed(ratio >= 10 ? 0 : 1)}`}</span>}
+        {passed && <span className="lm__badge">{T.triumph}</span>}
         {burst > 0 && <span className="lm__burst" key={`burst${burst}`} aria-hidden />}
       </button>
       {anchor && (
@@ -117,8 +118,8 @@ function LegacyBreakdown({ res }: { res: ChronicleResult }) {
     <div className="lm-bd">
       <div className="lm-bd__head">
         <div>
-          <div className="k-title lm-bd__title">Projected Legacy</div>
-          <div className="lm-bd__sub">If the Chronicle were written now · {left} {left === 1 ? 'turn' : 'turns'} left</div>
+          <div className="k-title lm-bd__title">{T.score}</div>
+          <div className="lm-bd__sub">If the {T.report} were written now · {left} {left === 1 ? T.turn : `${T.turn}s`} left</div>
         </div>
         <Icon name={passed ? 'trophy' : 'hourglass'} size={26} color={passed ? 'var(--gold-300)' : 'var(--text-dim)'} />
       </div>
@@ -142,9 +143,9 @@ function LegacyBreakdown({ res }: { res: ChronicleResult }) {
         })}
         {!steps.length && <p className="pop-note">Nothing recorded yet this chapter — grow, build, discover and conquer.</p>}
       </div>
-      <Line label="Chapter target" value={fmt(res.target)} strong />
+      <Line label={`${T.report} target`} value={fmt(res.target)} strong />
       <Line label={passed ? 'Surplus' : 'Still needed'} value={fmt(Math.abs(res.score - res.target))} tone={passed ? 'good' : 'bad'} />
-      {res.score < res.target * TRIUMPH_RATIO && passed && <Line label={`Triumph at ${TRIUMPH_RATIO}× target (+${TRIUMPH_INFLUENCE}◈)`} value={fmt(res.target * TRIUMPH_RATIO)} tone="dim" />}
+      {res.score < res.target * TRIUMPH_RATIO && passed && <Line label={`${T.triumph} at ${TRIUMPH_RATIO}× target (+${TRIUMPH_INFLUENCE} ${T.influence})`} value={fmt(res.target * TRIUMPH_RATIO)} tone="dim" />}
     </div>
   );
 }

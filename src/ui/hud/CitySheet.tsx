@@ -15,6 +15,8 @@ import { RichText } from '../icons/RichText';
 import { Bar, Button, Chip, IconButton, Sheet, SheetHeader, Tabs, fmt, signed } from '../kit';
 import { FOCUS_META, FOCUS_ORDER, YIELD_META, itemIcon, itemName, sameItem, turnsLabel } from './format';
 import { toast } from './toast';
+import { canThaw } from '../../sim/mars';
+import { T, YIELD_NAMES } from '../terms';
 
 const CATS: { id: ProductionCategory; label: string; icon: string }[] = [
   { id: 'unit', label: 'Units', icon: 'sword' },
@@ -38,12 +40,18 @@ export function CitySheet() {
       strength: cityStrength(s, city),
       gold: s.players[HUMAN].gold,
       siblings: cities.map((c) => c.id),
+      cryo: s.players[HUMAN].cryo,
+      thawError: canThaw(s, HUMAN, city.id),
     };
   });
   const [openYield, setOpenYield] = useState<YieldKey | null>(null);
   const [picker, setPicker] = useState<boolean | null>(null);
   if (!data) return null;
-  const { city, bd, options } = data;
+  const { city, bd, options, cryo, thawError } = data;
+  const thaw = () => {
+    const result = act({ type: 'thawColonists', cityId: city.id }, 'thaw');
+    if (result.ok) toast(`${T.thaw}: +2 population`, 'good', 'cryo');
+  };
   const close = () => { audio.sfx('close'); useGame.getState().setPanel('none'); };
   const showPicker = picker ?? (panel === 'production' || city.queue.length === 0);
   const idx = data.siblings.indexOf(city.id);
@@ -60,7 +68,7 @@ export function CitySheet() {
         <SheetHeader
           icon={city.isCapital ? 'crown' : 'city'}
           title={city.name}
-          subtitle={<>Population {city.pop} · <Icon name="shield" size={12} /> {Math.round(data.strength)} strength</>}
+          subtitle={<>{city.pop} colonists · <Icon name="shield" size={12} /> {Math.round(data.strength)} strength</>}
           onClose={close}
         >
           {data.siblings.length > 1 && (
@@ -72,6 +80,9 @@ export function CitySheet() {
         </SheetHeader>
 
         <Growth city={city} bd={bd} />
+        <div className="cs-thaw">
+          <Button disabled={!!thawError} title={thawError ?? undefined} onClick={thaw}><Icon name="cryo" size={18} /> {T.thaw} · {cryo} {cryo === 1 ? 'pod' : 'pods'}</Button>
+        </div>
 
         <div className="cs-yields">
           {YIELD_KEYS.map((k) => (
@@ -86,7 +97,7 @@ export function CitySheet() {
         {openYield && <YieldBreakdown bd={bd} k={openYield} />}
 
         <div className="cs-sec">
-          <div className="cs-sec__title">City Focus</div>
+          <div className="cs-sec__title">{T.focus}</div>
           <div className="cs-focus">
             {FOCUS_ORDER.map((f) => (
               <Chip key={f} active={city.focus === f} color={FOCUS_META[f].color} title={FOCUS_META[f].hint}
@@ -99,7 +110,7 @@ export function CitySheet() {
 
         <div className="cs-sec" data-tutorial="production">
           <div className="cs-sec__title">
-            Production
+            {YIELD_NAMES.prod}
             <span className="cs-sec__aside"><Icon name="prod" size={14} /> {fmt(bd.total.prod)}/turn</span>
           </div>
           <Current city={city} bd={bd} options={options} gold={data.gold} onChange={() => setPicker(!showPicker)} pickerOpen={showPicker} />

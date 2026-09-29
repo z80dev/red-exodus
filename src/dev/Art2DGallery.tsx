@@ -10,6 +10,7 @@ import { MOTIF_GLYPHS } from '../ui/icons/glyphs/motifs';
 import { RESOURCE_GLYPHS } from '../ui/icons/glyphs/resources';
 import { BUILDING_GLYPHS } from '../ui/icons/glyphs/buildings';
 import { WONDER_GLYPHS } from '../ui/icons/glyphs/wonders';
+import { MARS_GLYPHS } from '../ui/icons/glyphs/mars';
 import { CardArt } from '../ui/art/CardArt';
 import { Emblem, Logo } from '../ui/art/Logo';
 import { Crest } from '../ui/art/Crest';
@@ -19,7 +20,7 @@ import { MOTIF_IDS } from '../ui/art/motifs';
 import type { Rarity } from '../sim/types';
 
 const SETS: Record<string, string[]> = {
-  core: Object.keys(CORE_GLYPHS),
+  core: [...Object.keys(CORE_GLYPHS), ...Object.keys(MARS_GLYPHS)],
   pillars: ['arts', 'discovery', 'commerce', 'conquest', 'prosperity', 'glory'],
   game: Object.keys(GAME_GLYPHS),
   units: Object.keys(UNIT_GLYPHS),
@@ -97,17 +98,17 @@ function IconGrid({ names }: { names: string[] }) {
 }
 
 const SAMPLES = [
-  '+2 {food} and +1 {prod} on river tiles.',
-  'Cities with a **Library** gain +3 {sci}. ×1.5 {splendor} if your Focus is {icon:discovery} **Discovery**.',
-  '+50 {renown} per wonder · +4 {splendor} · −1 {mandate} if you make peace.',
-  'Gain 3 {influence} per chapter per 3 cities. Luxuries give +2 {happy}; each city costs -1 {happy}.',
-  'Unlocks {icon:res_iron} Iron and {icon:bld_workshop} Workshop. x2 {gold} from trade routes.\nSecond line: {cul} +25% culture.',
+  '+2 {food} and +1 {prod} on greenhouse and fabrication tiles.',
+  'Colonies with a **Data Archive** gain +3 {sci}. ×1.5 {splendor} if your Priority is {icon:discovery} **Discovery**.',
+  '+50 {renown} per megaproject · +4 {splendor} · −1 {mandate} if you break the Charter.',
+  'Gain 3 {influence} per chapter per 3 colonies. Luxuries give +2 {happy}; each colony costs -1 {unhappy}.',
+  'Unlocks {icon:res_iron} Nickel-Iron and {icon:bld_workshop} Fabricator. x2 {gold} from trade routes.\nSecond line: {cul} +25% morale.',
 ];
 
 export default function Art2DGallery() {
   return (
     <div style={page}>
-      <h1 style={{ fontFamily: 'var(--font-deco)', color: 'var(--gold-300)', fontSize: 28, margin: 0 }}>AEONS · 2D art gallery</h1>
+      <h1 style={{ fontFamily: 'var(--font-deco)', color: 'var(--gold-300)', fontSize: 28, margin: 0 }}>RED EXODUS · 2D art gallery</h1>
       <Section id="logo" title="Logo & emblem">
         <div style={{ display: 'grid', gap: 24, justifyItems: 'start' }}>
           <Logo height={120} tagline />

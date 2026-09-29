@@ -81,6 +81,21 @@ export interface GameMap {
   starts: TileIdx[];
 }
 
+/**
+ * A Martian dust storm cell. Its whole route is rolled at spawn, so the forecast is truthful:
+ * the eye sits on path[step]; the next forecast eyes are path[step+1], path[step+2]. Tiles within
+ * `radius` of the eye are in the storm. The cell dissipates after its last path step.
+ */
+export interface StormCell {
+  id: number;
+  path: TileIdx[];
+  step: number;
+  radius: number; // 1..3
+  power: number; // 1..3 — yield penalty & damage scale
+  /** true for crisis-spawned mega storms (renderer: bigger, darker) */
+  great?: boolean;
+}
+
 // ───────────────────────────── units ─────────────────────────────
 export type UnitOrder =
   | { kind: 'goto'; target: TileIdx }
@@ -172,6 +187,12 @@ export interface Player {
   counters: Record<string, number>;
   /** persistent counters for non-doctrine effects, keyed `${kind}:${id}` (doctrines use their instance counters) */
   effectCounters: Record<string, Record<string, number>>;
+  /** Cryo pods left aboard this nation's orbiting Ark: spent on Orbital Drops (new colony) or Thaws (+pop) */
+  cryo: number;
+  /** Breakthrough draft: techs the player may research next (human only; empty = unrestricted, AIs) */
+  researchOffer: TechId[];
+  /** research rerolls bought for the current offer (price escalates) */
+  researchRerolls: number;
 }
 
 // ───────────────────────────── roguelite layer ─────────────────────────────
@@ -250,6 +271,8 @@ export interface CouncilState {
   rerolls: number;
   /** open pack being chosen from */
   pack: { options: ShopItem[]; picks: number } | null;
+  /** rerolls forbidden this visit (set by `council` hooks, e.g. the Juche Ark) */
+  rerollLocked?: boolean;
 }
 
 export type RunPhase =
@@ -330,6 +353,9 @@ export interface GameState {
   /** recent notable log lines for the UI journal */
   log: LogEntry[];
   gameOver: boolean;
+  /** active Martian dust storms */
+  storms: StormCell[];
+  nextStormId: number;
 }
 
 export interface LogEntry { turn: number; text: string; icon?: string; tile?: TileIdx; player?: PlayerId }
@@ -359,6 +385,10 @@ export type Action =
   | { type: 'declareWar'; target: PlayerId }
   | { type: 'offerPeace'; target: PlayerId }
   | { type: 'endTurn' }
+  // ark / research draft
+  | { type: 'orbitalDrop'; tile: TileIdx } // spend Cryo (see dropPrice) → found a colony on an explored tile
+  | { type: 'thawColonists'; cityId: CityId } // spend 1 Cryo → +THAW_POP pop
+  | { type: 'rerollResearch' } // pay Credits to redraw the Breakthrough offer
   // roguelite
   | { type: 'ackCrisis' }
   | { type: 'chooseChapterStart'; focus: PillarId; omen: OmenId | null }
@@ -416,6 +446,15 @@ export type SimEvent =
   | { type: 'peaceMade'; a: PlayerId; b: PlayerId }
   | { type: 'playerEliminated'; player: PlayerId; by?: PlayerId }
   | { type: 'happinessChanged'; player: PlayerId; value: number }
+  // mars
+  | { type: 'stormSpawned'; storm: StormCell }
+  | { type: 'stormMoved'; id: number; from: TileIdx; to: TileIdx }
+  | { type: 'stormEnded'; id: number; tile: TileIdx }
+  | { type: 'stormDamage'; tile: TileIdx; amount: number; unitId?: UnitId; cityId?: CityId; player: PlayerId; killed?: boolean }
+  | { type: 'podLanded'; player: PlayerId; tile: TileIdx } // precedes the cityFounded it causes
+  | { type: 'colonistsThawed'; player: PlayerId; cityId: CityId; pop: number }
+  | { type: 'cryoChanged'; player: PlayerId; value: number; delta: number }
+  | { type: 'researchOffered'; player: PlayerId; techs: TechId[]; /** true when the player paid to reroll the draft */ reroll?: boolean }
   // roguelite
   | { type: 'crisisRevealed'; era: number; crisis: CrisisId }
   | { type: 'crisisBegan'; crisis: CrisisId }

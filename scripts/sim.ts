@@ -27,8 +27,8 @@ interface RunRecord {
   };
   cities: number; population: number; techs: number;
   rivals: { id: number; name: string; cities: number; population: number; techs: number }[];
-  wars: number; clashes: number; capitalLost: boolean; defeatCause: string | null;
-  wallTimeMs: number; chapters: ChapterRecord[];
+  wars: number; clashes: number; drops: number; thaws: number; stormHits: number;
+  capitalLost: boolean; defeatCause: string | null; wallTimeMs: number; chapters: ChapterRecord[];
 }
 function parseArgs(args: string[]): Options {
   const result: Options = {
@@ -134,7 +134,7 @@ const wins: number[] = [];
 const msTurn: number[] = [];
 const leaders = Object.keys(LEADERS);
 if (!leaders.length) throw new Error('No leader content registered');
-console.log(`AEONS balance · ${opts.runs} runs · ${opts.size} · ascension ${opts.ascension}${opts.noDoctrines ? ' · no doctrines' : ''}`);
+console.log(`RED EXODUS balance · ${opts.runs} runs · ${opts.size} · ascension ${opts.ascension}${opts.noDoctrines ? ' · no doctrines' : ''}`);
 for (let run = 0; run < opts.runs; run++) {
   const seed = opts.seed ? (opts.runs === 1 ? opts.seed : `${opts.seed}-${run + 1}`) : `BALANCE-${run + 1}`;
   const { state } = createGame({ seed, leaderId: leaders[0], ascension: opts.ascension, mapSize: opts.size,
@@ -143,6 +143,9 @@ for (let run = 0; run < opts.runs; run++) {
   let stalled = false;
   let wars = 0;
   let clashes = 0;
+  let drops = 0;
+  let thaws = 0;
+  let stormHits = 0;
   const shop = { councils: 0, purchases: 0, doctrinePurchases: 0, packs: 0, rerolls: 0, edictsUsed: 0 };
   let influenceEarned = 0;
   let influenceSpent = 0;
@@ -157,6 +160,9 @@ for (let run = 0; run < opts.runs; run++) {
     const gained: number[] = [];
     for (const event of events) {
       if (event.type === 'warDeclared') wars++;
+      if (event.type === 'podLanded' && event.player === HUMAN) drops++;
+      if (event.type === 'colonistsThawed' && event.player === HUMAN) thaws++;
+      if (event.type === 'stormDamage' && event.player === HUMAN) stormHits++;
       if (event.type === 'combat') clashes++;
       if (event.type === 'influenceChanged') {
         if (event.delta > 0) influenceEarned += event.delta;
@@ -264,12 +270,12 @@ for (let run = 0; run < opts.runs; run++) {
       const cities = Object.values(state.cities).filter(c => c.owner === p.id);
       return { id: p.id, name: p.name, cities: cities.length, population: cities.reduce((sum, city) => sum + city.pop, 0), techs: p.techs.length };
     }),
-    wars, clashes, capitalLost, defeatCause: state.run.defeatReason, wallTimeMs: elapsed, chapters,
+    wars, clashes, drops, thaws, stormHits, capitalLost, defeatCause: state.run.defeatReason, wallTimeMs: elapsed, chapters,
   };
   records.push(record);
   wins.push(result === 'WIN' ? 1 : 0);
   msTurn.push(elapsed / Math.max(1, state.turn));
-  console.log(`${String(run + 1).padStart(2)} ${seed.padEnd(17)} ${result.padEnd(8)} turn ${String(state.turn).padStart(3)} era ${Math.min(state.run.era + 1, 6)} · human ${seatSummary(state, HUMAN)} vs AI ${state.players.filter(p => p.id !== HUMAN && p.id !== 99).map(p => seatSummary(state, p.id)).join(', ')} · ${wars} wars/${clashes} clashes · ${(elapsed / Math.max(1, state.turn)).toFixed(1)}ms/turn`);
+  console.log(`${String(run + 1).padStart(2)} ${seed.padEnd(17)} ${result.padEnd(8)} turn ${String(state.turn).padStart(3)} era ${Math.min(state.run.era + 1, 6)} · drops ${drops} / thaws ${thaws} / storm hits ${stormHits} · human ${seatSummary(state, HUMAN)} vs AI ${state.players.filter(p => p.id !== HUMAN && p.id !== 99).map(p => seatSummary(state, p.id)).join(', ')} · ${wars} wars/${clashes} clashes · ${(elapsed / Math.max(1, state.turn)).toFixed(1)}ms/turn`);
   console.log(`   chapters ${chapters.map(h => `E${h.era}.${h.chapter} ${Math.round(h.score)}/${Math.round(h.target)}${h.passed ? '✓' : '✗'}`).join('  ') || 'none'}`);
   if (opts.verbose) console.log(`   tech era ${Math.max(0, ...player.techs.map(t => TECHS[t]?.era ?? 0)) + 1}; ${actions} actions; ${elapsed.toFixed(0)}ms`);
 }

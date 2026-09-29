@@ -17,3 +17,10 @@ export * from './omens';
 export * from './leaders';
 export * from './reforms';
 export * from './ascension';
+export * from './nationCrew';
+export * from './crewMars';
+
+// Crew files self-register into DOCTRINES (doctrineRegistry.ts); imported here for that side effect.
+import './crewCommon';
+import './crewUncommon';
+import './crewRare';

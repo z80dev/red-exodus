@@ -13,17 +13,18 @@ vi.mock(import('../cities'), async (orig) => ({ ...(await orig()), refreshAllCit
 
 function leader(id: string, unlock?: LeaderDef['unlock']): LeaderDef {
   return {
-    id, name: id, title: '', civName: id, adjective: id, colors: { primary: '#fff', secondary: '#000' }, description: '',
-    bonus: '', aiPersonality: 'builder', cityNames: [], portrait: { hue: 0, motif: 'sun', crest: 'crown' }, unlock, effects: {},
+    id, name: id, title: '', civName: id, adjective: id, colors: { primary: '#fff', secondary: '#000' }, country: id, code: 'TST',
+    flagColors: ['#fff', '#000'], description: '', bonus: '', aiPersonality: 'builder', cityNames: [],
+    portrait: { hue: 0, motif: 'sun', crest: 'crown' }, unlock, effects: {},
   };
 }
 
 beforeAll(() => {
-  LEADERS.__p_era = leader('__p_era', { text: 'Reach the Medieval Era', rule: 'reachEra3' });
+  LEADERS.__p_era = leader('__p_era', { text: 'Reach the Frontier era', rule: 'reachEra3' });
   LEADERS.__p_win = leader('__p_win', { text: 'Win with the tester', rule: 'winWith:__test_leader' });
   DOCTRINES.__p_doc = {
     id: '__p_doc', name: 'Locked Doc', rarity: 'rare', cost: 8, description: '', tags: [], icon: 'doctrine',
-    art: { hue: 0, motif: 'sun' }, unlock: { text: 'Capture 5 cities in one run', rule: 'capture5' }, effects: {},
+    art: { hue: 0, motif: 'sun' }, unlock: { text: 'Seize 5 colonies in one run', rule: 'capture5' }, effects: {},
   };
 });
 
@@ -49,7 +50,7 @@ describe('profile', () => {
     expect(isLeaderUnlocked(p, '__p_era')).toBe(false);
     expect(isDoctrineUnlocked(p, '__p_doc')).toBe(false);
     expect(lockedContent(p)).toContain('__p_doc');
-    expect(unlockHint('doctrine', '__p_doc')).toBe('Capture 5 cities in one run');
+    expect(unlockHint('doctrine', '__p_doc')).toBe('Seize 5 colonies in one run');
     expect(maxAscension(p, '__test_leader')).toBe(0);
   });
 

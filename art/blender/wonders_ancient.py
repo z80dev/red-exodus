@@ -7,8 +7,8 @@ import random
 
 from wonders_lib import PALETTE, place, polar
 
-PALETTE.setdefault('anc_olive', ('#94a66b', .88, 0))
-PALETTE.setdefault('anc_olive_dark', ('#6f8250', .9, 0))
+PALETTE.setdefault('anc_olive', ('#8a9a3b', .88, 0))       # Mars lichen
+PALETTE.setdefault('anc_olive_dark', ('#59652b', .9, 0))
 
 
 def b_place(at, s):

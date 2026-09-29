@@ -97,13 +97,14 @@ export function councilAction(state: GameState): Action {
   if (best >= 0) return { type: 'councilBuy', slot: best };
   // Replace a weak early card if a substantially better one is on offer.
   if (doctrineSlotsUsed(state.run) >= state.run.doctrineSlots) {
-    let weakest = state.run.doctrines.find((d) => d.edition !== 'ethereal');
-    for (const d of state.run.doctrines) if (d.edition !== 'ethereal' && weakest && doctrineValue(state, d.id, d.edition) < doctrineValue(state, weakest.id, weakest.edition)) weakest = d;
+    let weakest = state.run.doctrines.find((d) => d.edition !== 'ethereal' && !DOCTRINES[d.id]?.noSell);
+    for (const d of state.run.doctrines) if (d.edition !== 'ethereal' && !DOCTRINES[d.id]?.noSell &&
+      weakest && doctrineValue(state, d.id, d.edition) < doctrineValue(state, weakest.id, weakest.edition)) weakest = d;
     const upgrade = council.items.find((item) => item?.kind === 'doctrine' && item.price <= state.run.influence &&
       item.edition !== 'ethereal' && weakest && doctrineValue(state, item.id, item.edition) > doctrineValue(state, weakest.id, weakest.edition) + 12);
     if (weakest && upgrade) return { type: 'sellDoctrine', uid: weakest.uid };
   }
-  if (council.rerolls === 0 && state.run.influence >= council.rerollCost + 8 && councilRerollError(state) === null &&
+  if (!council.rerollLocked && council.rerolls === 0 && state.run.influence >= council.rerollCost + 8 && councilRerollError(state) === null &&
     doctrineSlotsUsed(state.run) < state.run.doctrineSlots) return { type: 'councilReroll' };
   return { type: 'leaveCouncil' };
 }

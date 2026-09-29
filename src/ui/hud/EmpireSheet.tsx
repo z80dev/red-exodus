@@ -12,6 +12,7 @@ import { Icon } from '../icons/Icon';
 import { Button, ConfirmDialog, Line, Sheet, SheetHeader, Tabs, fmt, signed } from '../kit';
 import { YIELD_META, itemIcon, itemName, turnsLabel } from './format';
 import { toast } from './toast';
+import { Crest as MarsCrest } from '../art/Crest';
 
 type Tab = 'cities' | 'rivals' | 'economy';
 
@@ -61,19 +62,23 @@ function Cities() {
   );
 }
 
+
 function Crest({ r }: { r: RivalSummary }) {
   const leader = LEADERS[r.leaderId];
+  const colors = r.met ? r.colors : { primary: '#536168', secondary: '#7f7a6e' };
   return (
-    <span className="es-crest" style={{ '--c1': r.met ? r.colors.primary : 'var(--ink-600)', '--c2': r.met ? r.colors.secondary : 'var(--text-faint)' } as CSSProperties}>
-      <svg viewBox="0 0 40 46" aria-hidden>
-        <path d="M20 2 L37 8 V22 C37 33 29 40 20 44 C11 40 3 33 3 22 V8 Z" className="es-crest__shield" />
-        <path d="M20 6 L33 10.5 V22 C33 31 27 36.5 20 40 C13 36.5 7 31 7 22 V10.5 Z" className="es-crest__inner" />
-      </svg>
-      <span className="es-crest__glyph">{r.met ? <Icon name={leader?.portrait.crest ?? 'crown'} size={20} color={r.colors.secondary} /> : '?'}</span>
+    <span className="es-crest">
+      <MarsCrest
+        motif={r.met ? leader?.portrait.crest ?? 'shield' : 'shield'}
+        colors={colors}
+        code={r.met ? leader?.code : undefined}
+        flagColors={r.met ? leader?.flagColors : undefined}
+        size={40}
+        title={r.met ? `${r.civName} · ${leader?.code ?? ''}` : 'Unknown Ark'}
+      />
     </span>
   );
 }
-
 function Rivals() {
   const data = useSim((s) => ({ rivals: rivalsSummary(s), me: empireYields(s), myTechs: s.players[HUMAN].techs.length, myMil: militaryStrength(s, HUMAN) }));
   const [confirm, setConfirm] = useState<RivalSummary | null>(null);

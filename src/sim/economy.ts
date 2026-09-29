@@ -7,6 +7,8 @@ import {
 } from '../content';
 import { collectEffects, makeCtx, runHook } from './effects';
 import { citiesOf } from './cities';
+import { rollResearchOffer } from './mars';
+import { DARK_AGE_LABEL } from './roguelite/darkAge';
 
 // ───────────────────────────── tunables ─────────────────────────────
 export const HAPPINESS_BASE = 5;
@@ -22,6 +24,8 @@ export const UNIT_UPKEEP = 1;
 /** base research cost per tech era; scaled by (1 + TECH_COST_PER_KNOWN × techs known) */
 export const ERA_TECH_COST = [30, 75, 150, 280, 460, 700] as const;
 export const TECH_COST_PER_KNOWN = 0.06;
+/** RED EXODUS pacing: research lands ≈1.6× faster per turn than the authored era costs imply */
+export const TECH_PACE = 1 / 1.6;
 
 const NOOP: Emit = () => {};
 
@@ -38,15 +42,15 @@ export function getPlayer(state: GameState, pid: PlayerId): Player {
 /** display name for an effect source (used by breakdown lines) */
 export function effectLabel(fx: ActiveEffect): string {
   switch (fx.kind) {
-    case 'leader': return LEADERS[fx.id]?.name ?? 'Leader';
-    case 'doctrine': return DOCTRINES[fx.id]?.name ?? 'Doctrine';
+    case 'leader': return LEADERS[fx.id]?.name ?? 'Nation';
+    case 'doctrine': return DOCTRINES[fx.id]?.name ?? 'Crew';
     case 'crisis': return CRISES[fx.id]?.name ?? 'Crisis';
-    case 'reform': return REFORMS[fx.id]?.name ?? 'Reform';
-    case 'wonder': return WONDERS[fx.id]?.name ?? 'Wonder';
+    case 'reform': return REFORMS[fx.id]?.name ?? 'Ark Module';
+    case 'wonder': return WONDERS[fx.id]?.name ?? 'Megaproject';
     case 'building': return BUILDINGS[fx.id]?.name ?? 'Building';
-    case 'naturalWonder': return NATURAL_WONDERS[fx.id]?.name ?? 'Natural Wonder';
-    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Ascension ${fx.id}`;
-    case 'darkAge': return 'Dark Age';
+    case 'naturalWonder': return NATURAL_WONDERS[fx.id]?.name ?? 'Landmark';
+    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Hazard ${fx.id}`;
+    case 'darkAge': return DARK_AGE_LABEL;
     default: return fx.id;
   }
 }
@@ -83,8 +87,8 @@ export function computeHappiness(state: GameState, pid: PlayerId, fx?: ActiveEff
   const lines: { label: string; amount: number }[] = [];
   if (pid === BARBARIAN) return { value: 0, lines };
   const cities = citiesOf(state, pid);
-  lines.push({ label: 'Base contentment', amount: HAPPINESS_BASE });
-  if (cities.length) lines.push({ label: `Cities (${cities.length})`, amount: HAPPINESS_PER_CITY * cities.length });
+  lines.push({ label: 'Base morale of the landing', amount: HAPPINESS_BASE });
+  if (cities.length) lines.push({ label: `Colonies (${cities.length})`, amount: HAPPINESS_PER_CITY * cities.length });
   const pop = cities.reduce((s, c) => s + c.pop, 0);
   const popUnhappy = Math.floor(pop / POP_PER_UNHAPPY);
   if (popUnhappy) lines.push({ label: `Population (${pop})`, amount: -popUnhappy });
@@ -208,7 +212,7 @@ export function techCost(state: GameState, pid: PlayerId, tech: TechId): number 
     city: null,
     item: { kind: 'tech' as const, id: tech },
     currency: 'sci' as const,
-    cost: ERA_TECH_COST[era] * (1 + TECH_COST_PER_KNOWN * p.techs.length),
+    cost: ERA_TECH_COST[era] * (1 + TECH_COST_PER_KNOWN * p.techs.length) * TECH_PACE,
   };
   runHook(state, pid, 'cost', NOOP, null, args);
   return Math.max(1, Math.round(args.cost));
@@ -246,6 +250,8 @@ export function grantTech(state: GameState, pid: PlayerId, tech: TechId, emit: E
   delete p.researchProgress[tech];
   if (p.researching === tech) p.researching = null;
   emit({ type: 'techResearched', player: pid, tech });
+  // Breakthrough: the human's next draft is drawn the moment research lands
+  if (p.isHuman) rollResearchOffer(state, pid, emit);
 }
 
 /** apply one turn of science: progress (+ stored overflow) toward the current tech; at most one tech per turn */

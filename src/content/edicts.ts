@@ -19,6 +19,8 @@ import { chance, pick } from '../sim/rng';
 import { addInfluence, changeMandate, grantDoctrine } from '../sim/roguelite';
 import { doctrineSlotsUsed } from '../sim/roguelite/council';
 import { grantOmenReward, omenGoal } from '../sim/roguelite/omens';
+import { canOrbitalDrop, changeCryo, dropPrice, orbitalDrop, STORM_SHELTER_COUNTER } from '../sim/mars';
+import { hexDistance } from '../sim/hex';
 
 type Target = { tile?: TileIdx; cityId?: number; unitId?: number };
 
@@ -138,7 +140,7 @@ function commonDoctrineCandidates(ctx: HookCtx): string[] {
 function doctrineName(id: string): string {
   return DOCTRINES[id]?.name ?? id;
 }
-const EDITION_NAMES: Record<Edition, string> = { base: 'Base', gilded: 'Gilded', radiant: 'Radiant', prismatic: 'Prismatic', ethereal: 'Ethereal' };
+const EDITION_NAMES: Record<Edition, string> = { base: 'Base', gilded: 'Decorated', radiant: 'Inspired', prismatic: 'Legendary Tale', ethereal: 'Ghost' };
 
 function levelUpPillar(ctx: HookCtx, pillar: (typeof PILLARS)[number]): void {
   const levels = ctx.state.run.pillarLevels;
@@ -150,9 +152,9 @@ function levelUpPillar(ctx: HookCtx, pillar: (typeof PILLARS)[number]): void {
 const LIST: EdictDef[] = [
   // ── growth & cities ──
   {
-    id: 'golden_harvest', name: 'Golden Harvest', rarity: 'common', cost: 3, target: 'city',
-    description: 'A city gains **+3** population.',
-    icon: 'food', art: { hue: 45, motif: 'wheat' },
+    id: 'golden_harvest', name: 'Hydroponic Ration', rarity: 'common', cost: 3, target: 'city',
+    description: 'A colony gains **+3** population from a recycled seed batch.',
+    icon: 'food', art: { hue: 45, motif: 'flask' },
     canUse: (ctx, t) => cityError(ctx, t),
     use(ctx, t) {
       const c = ownCityArg(ctx, t);
@@ -162,9 +164,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'rain_of_plenty', name: 'Rain of Plenty', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'Every city you own gains **+1** population.',
-    icon: 'seed', art: { hue: 200, motif: 'river' },
+    id: 'rain_of_plenty', name: 'Cryo Thaw', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Every colony gains **+1** population from the reserve.',
+    icon: 'seed', art: { hue: 200, motif: 'flask' },
     canUse: (ctx) => (citiesOf(ctx.state, ctx.player.id).length ? null : 'You have no cities'),
     use(ctx) {
       const cities = citiesOf(ctx.state, ctx.player.id);
@@ -173,9 +175,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'pioneers_charter', name: "Pioneers' Charter", rarity: 'uncommon', cost: 4, target: 'city',
-    description: 'A city raises a free **Settler** without losing population.',
-    icon: 'found', art: { hue: 90, motif: 'compass' },
+    id: 'pioneers_charter', name: 'Crawler Fabrication Order', rarity: 'uncommon', cost: 4, target: 'city',
+    description: 'A colony fabricates a free **Hab Crawler** without losing population.',
+    icon: 'found', art: { hue: 90, motif: 'gear' },
     canUse: (ctx, t) => cityError(ctx, t) ?? (UNITS.settler ? null : 'Settlers are unavailable'),
     use(ctx, t) {
       const c = ownCityArg(ctx, t);
@@ -186,8 +188,8 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'royal_survey', name: 'Royal Survey', rarity: 'uncommon', cost: 4, target: 'city',
-    description: 'A city claims up to **3** unowned tiles along its borders.',
+    id: 'royal_survey', name: 'Perimeter Beacon Kit', rarity: 'uncommon', cost: 4, target: 'city',
+    description: 'A colony claims up to **3** unowned tiles along its perimeter.',
     icon: 'map', art: { hue: 180, motif: 'compass' },
     canUse(ctx, t) {
       const err = cityError(ctx, t);
@@ -216,8 +218,8 @@ const LIST: EdictDef[] = [
 
   // ── production ──
   {
-    id: 'guild_overtime', name: 'Guild Overtime', rarity: 'common', cost: 3, target: 'city',
-    description: 'A city adds **5** turns of its {prod} output to what it is producing.',
+    id: 'guild_overtime', name: 'Emergency Double Shift', rarity: 'common', cost: 3, target: 'city',
+    description: 'A colony adds **5** turns of its {prod} output to its current construction.',
     icon: 'prod', art: { hue: 20, motif: 'gear' },
     canUse(ctx, t) {
       const err = cityError(ctx, t);
@@ -238,9 +240,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'master_builders', name: 'Master Builders', rarity: 'rare', cost: 5, target: 'city',
-    description: 'Instantly complete the building a city is producing; production already invested carries over.',
-    icon: 'prod', art: { hue: 25, motif: 'tower' },
+    id: 'master_builders', name: 'Rapid Assembly Kit', rarity: 'rare', cost: 5, target: 'city',
+    description: 'Instantly complete a habitat module under construction; invested Industry carries over.',
+    icon: 'prod', art: { hue: 25, motif: 'gear' },
     canUse(ctx, t) {
       const err = cityError(ctx, t);
       if (err) return err;
@@ -258,9 +260,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'miracle_of_masons', name: 'Miracle of the Masons', rarity: 'legendary', cost: 6, target: 'city',
-    description: 'Instantly complete the **Wonder** a city is building; production already invested carries over.',
-    icon: 'crown', art: { hue: 42, motif: 'pyramid' },
+    id: 'miracle_of_masons', name: 'Megaproject Assembly Kit', rarity: 'legendary', cost: 6, target: 'city',
+    description: 'Instantly complete the Megaproject under construction; invested Industry carries over.',
+    icon: 'crown', art: { hue: 42, motif: 'gear' },
     unlock: { text: 'Build 4 wonders in one run', rule: 'wonders4' },
     canUse(ctx, t) {
       const err = cityError(ctx, t);
@@ -282,8 +284,8 @@ const LIST: EdictDef[] = [
 
   // ── land ──
   {
-    id: 'terraform', name: 'Terraform', rarity: 'common', cost: 3, target: 'ownedTile',
-    description: 'Clear forest, jungle or marsh from a tile you own; bare flat land rises into hills instead.',
+    id: 'terraform', name: 'Regolith Grader', rarity: 'common', cost: 3, target: 'ownedTile',
+    description: 'Strip surface debris from a tile you own; flat regolith is graded into ridged terrain.',
     icon: 'improve', art: { hue: 95, motif: 'mountain' },
     canUse(ctx, t) {
       const err = ownedLandError(ctx, t);
@@ -309,9 +311,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'verdant_rain', name: 'Verdant Rain', rarity: 'common', cost: 3, target: 'ownedTile',
-    description: 'Desert or tundra becomes plains, snow becomes tundra, plains become grassland.',
-    icon: 'food', art: { hue: 120, motif: 'tree' },
+    id: 'verdant_rain', name: 'Soil Remediation Foam', rarity: 'common', cost: 3, target: 'ownedTile',
+    description: 'Improve barren soil: Dune Sea or Frost Flats become Regolith Plain, Polar Ice becomes Frost Flats, and plains become Clay Basin.',
+    icon: 'food', art: { hue: 120, motif: 'gear' },
     canUse(ctx, t) {
       const err = ownedLandError(ctx, t);
       if (err) return err;
@@ -333,9 +335,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'imperial_roads', name: 'Imperial Roads', rarity: 'common', cost: 3, target: 'none',
-    description: 'Pave roads across every land tile inside your borders.',
-    icon: 'map', art: { hue: 28, motif: 'horse' },
+    id: 'imperial_roads', name: 'Beacon Cairn Network', rarity: 'common', cost: 3, target: 'none',
+    description: 'Mark every land tile inside your borders with a navigation beacon.',
+    icon: 'map', art: { hue: 28, motif: 'compass' },
     canUse: (ctx) => (roadlessLand(ctx).length ? null : 'Every road in your realm is already paved'),
     use(ctx) {
       const tiles = roadlessLand(ctx);
@@ -346,8 +348,8 @@ const LIST: EdictDef[] = [
 
   // ── arms ──
   {
-    id: 'levy', name: 'The Levy', rarity: 'common', cost: 3, target: 'none',
-    description: 'Muster **2** units of your strongest melee, spear, ranged or mounted type at your capital.',
+    id: 'levy', name: 'Emergency Muster', rarity: 'common', cost: 3, target: 'none',
+    description: 'Deploy **2** of your strongest combat units beside the Ark Hab.',
     icon: 'sword', art: { hue: 10, motif: 'shield' },
     canUse(ctx) {
       if (!capitalOf(ctx)) return 'You have no capital';
@@ -363,8 +365,8 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'conscription', name: 'Conscription', rarity: 'common', cost: 3, target: 'none',
-    description: 'Every city with **3+** population gives **1** pop to muster your strongest melee unit.',
+    id: 'conscription', name: 'Crew Draft', rarity: 'common', cost: 3, target: 'none',
+    description: 'Every colony with **3+** population assigns **1** colonist to the strongest available infantry unit.',
     icon: 'war', art: { hue: 355, motif: 'sword' },
     canUse(ctx) {
       if (!citiesOf(ctx.state, ctx.player.id).some((c) => c.pop >= 3)) return 'No city has 3 or more population';
@@ -384,9 +386,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'sanctuary', name: 'Sanctuary', rarity: 'common', cost: 3, target: 'unit',
-    description: 'Fully heal one of your military units and fortify it at full strength (**+50%** defense).',
-    icon: 'heal', art: { hue: 150, motif: 'temple' },
+    id: 'sanctuary', name: 'Field Patch', rarity: 'common', cost: 3, target: 'unit',
+    description: 'Fully repair one combat unit and entrench it at full strength (**+50%** defense).',
+    icon: 'heal', art: { hue: 150, motif: 'gear' },
     canUse(ctx, t) {
       const err = unitError(ctx, t, true);
       if (err) return err;
@@ -403,9 +405,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'balm_of_ages', name: 'Balm of Ages', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'All your units and cities are restored to full health.',
-    icon: 'heal', art: { hue: 160, motif: 'chalice' },
+    id: 'balm_of_ages', name: 'Colony Repair Kit', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Restore all your units and colonies to full health.',
+    icon: 'heal', art: { hue: 160, motif: 'gear' },
     canUse: (ctx) => (woundedUnits(ctx).length || woundedCities(ctx).length ? null : 'Nothing in your realm needs healing'),
     use(ctx) {
       for (const u of woundedUnits(ctx)) u.hp = 100;
@@ -414,7 +416,7 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'forge_of_heroes', name: 'Forge of Heroes', rarity: 'uncommon', cost: 4, target: 'unit',
+    id: 'forge_of_heroes', name: 'Field Retrofit Kit', rarity: 'uncommon', cost: 4, target: 'unit',
     description: 'Upgrade one of your units for free, even outside your borders.',
     icon: 'upgrade', art: { hue: 30, motif: 'gear' },
     canUse(ctx, t) {
@@ -438,9 +440,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'veterans_laurels', name: "Veteran's Laurels", rarity: 'common', cost: 3, target: 'unit',
-    description: 'A military unit instantly gains the XP for its next promotion.',
-    icon: 'xp', art: { hue: 50, motif: 'laurel' },
+    id: 'veterans_laurels', name: 'Combat Data Cache', rarity: 'common', cost: 3, target: 'unit',
+    description: 'A combat unit instantly gains the field experience for its next promotion.',
+    icon: 'xp', art: { hue: 50, motif: 'bolt' },
     canUse(ctx, t) {
       const err = unitError(ctx, t, true);
       if (err) return err;
@@ -456,9 +458,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'olive_branch', name: 'The Olive Branch', rarity: 'rare', cost: 5, target: 'none',
-    description: 'Make peace with every civilization at war with you.',
-    icon: 'peace', art: { hue: 110, motif: 'laurel' },
+    id: 'olive_branch', name: 'Ceasefire Packet', rarity: 'rare', cost: 5, target: 'none',
+    description: 'Make peace with every rival nation currently at war with you.',
+    icon: 'peace', art: { hue: 110, motif: 'key' },
     canUse: (ctx) => (rivals(ctx).some((p) => ctx.player.relations[p.id] === 'war') ? null : 'You are at war with no one'),
     use(ctx) {
       const s = ctx.state;
@@ -478,9 +480,9 @@ const LIST: EdictDef[] = [
 
   // ── knowledge ──
   {
-    id: 'revelation', name: 'Revelation', rarity: 'rare', cost: 5, target: 'none',
-    description: 'Instantly complete your current research.',
-    icon: 'tech', art: { hue: 270, motif: 'eye' },
+    id: 'revelation', name: 'Breakthrough Injection', rarity: 'rare', cost: 5, target: 'none',
+    description: 'Instantly complete your current research project.',
+    icon: 'tech', art: { hue: 270, motif: 'flask' },
     canUse: (ctx) => (ctx.player.researching && TECHS[ctx.player.researching] ? null : 'Choose a technology to research first'),
     use(ctx) {
       const tech = ctx.player.researching;
@@ -488,9 +490,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'scholars_boon', name: "Scholar's Boon", rarity: 'common', cost: 3, target: 'none',
+    id: 'scholars_boon', name: 'Research Data Cache', rarity: 'common', cost: 3, target: 'none',
     description: 'Your current research gains {sci} equal to **50%** of its cost.',
-    icon: 'sci', art: { hue: 220, motif: 'owl' },
+    icon: 'sci', art: { hue: 220, motif: 'flask' },
     canUse: (ctx) => (ctx.player.researching && TECHS[ctx.player.researching] ? null : 'Choose a technology to research first'),
     use(ctx) {
       const p = ctx.player;
@@ -502,9 +504,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'rediscovery', name: 'Rediscovery', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'Learn the cheapest technology currently available to you.',
-    icon: 'book', art: { hue: 35, motif: 'scroll' },
+    id: 'rediscovery', name: 'Research Salvage', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Complete the cheapest technology currently available to you.',
+    icon: 'book', art: { hue: 35, motif: 'gear' },
     canUse: (ctx) => (availableTechs(ctx.state, ctx.player.id).length ? null : 'No technology is left to learn'),
     use(ctx) {
       let best: string | null = null;
@@ -517,9 +519,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'cartographers_commission', name: "Cartographers' Commission", rarity: 'common', cost: 3, target: 'tile',
-    description: 'Reveal every tile within **4** of an explored tile.',
-    icon: 'map', art: { hue: 205, motif: 'ship' },
+    id: 'cartographers_commission', name: 'Survey Drone Battery', rarity: 'common', cost: 3, target: 'tile',
+    description: 'Reveal every tile within **4** of an explored coordinate.',
+    icon: 'map', art: { hue: 205, motif: 'compass' },
     canUse(ctx, t) {
       const tile = t.tile != null ? ctx.state.map.tiles[t.tile] : undefined;
       if (!tile) return 'Choose a tile';
@@ -532,9 +534,9 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'spymasters_ledger', name: "Spymaster's Ledger", rarity: 'common', cost: 3, target: 'none',
-    description: 'Reveal the land within **2** tiles of every rival capital.',
-    icon: 'eye', art: { hue: 280, motif: 'key' },
+    id: 'spymasters_ledger', name: 'Relay Scan', rarity: 'common', cost: 3, target: 'none',
+    description: 'Reveal the land within **2** tiles of every rival landing site.',
+    icon: 'eye', art: { hue: 280, motif: 'eye' },
     canUse(ctx) {
       const caps = rivalCapitals(ctx);
       if (!caps.length) return 'No rival capital stands';
@@ -547,17 +549,17 @@ const LIST: EdictDef[] = [
 
   // ── wealth & influence ──
   {
-    id: 'windfall', name: 'Windfall', rarity: 'common', cost: 3, target: 'none',
-    description: 'Gain **60** {gold} per Era (**60** Ancient → **360** Modern).',
+    id: 'windfall', name: 'Credit Cache', rarity: 'common', cost: 3, target: 'none',
+    description: 'Gain **60** {gold} per era (**60** Landfall → **360** New Earth).',
     icon: 'gold', art: { hue: 48, motif: 'coin' },
     use(ctx) {
       addGold(ctx.state, ctx.player.id, 60 * eraNumber(ctx.state), 'Edict: Windfall', ctx.emit);
     },
   },
   {
-    id: 'tribute', name: 'Tribute of Kings', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'Every rival at peace with you pays you up to **20** {gold} per Era from its treasury.',
-    icon: 'gold', art: { hue: 40, motif: 'crown' },
+    id: 'tribute', name: 'Emergency Asset Transfer', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Every peaceful rival transfers up to **20** {gold} per era from its reserves.',
+    icon: 'gold', art: { hue: 40, motif: 'gear' },
     canUse: (ctx) => (tributeFrom(ctx).length ? null : 'No rival at peace has gold to spare'),
     use(ctx) {
       let total = 0;
@@ -569,19 +571,19 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'hermits_tithe', name: "Hermit's Tithe", rarity: 'uncommon', cost: 4, target: 'none',
+    id: 'hermits_tithe', name: 'Reserve Scrip Cache', rarity: 'uncommon', cost: 4, target: 'none',
     description: 'Double your {influence} (max **+10**).',
-    icon: 'influence', art: { hue: 260, motif: 'hourglass' },
+    icon: 'influence', art: { hue: 260, motif: 'coin' },
     canUse: (ctx) => (ctx.state.run.influence > 0 ? null : 'You have no Influence to double'),
     use(ctx) {
       addInfluence(ctx.state, Math.min(10, Math.max(0, ctx.state.run.influence)), ctx.emit);
     },
   },
   {
-    id: 'royal_audit', name: 'Royal Audit', rarity: 'common', cost: 3, target: 'none',
-    description: 'Gain {influence} equal to the total sell value of your Doctrines (max **8**).',
-    icon: 'influence', art: { hue: 55, motif: 'key' },
-    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.sellValue > 0) ? null : 'You hold no Doctrines to appraise'),
+    id: 'royal_audit', name: 'Crew Appraisal', rarity: 'common', cost: 3, target: 'none',
+    description: 'Gain {influence} equal to the total sell value of your Crew (max **8**).',
+    icon: 'influence', art: { hue: 55, motif: 'gear' },
+    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.sellValue > 0) ? null : 'You have no Crew to appraise'),
     use(ctx) {
       let sum = 0;
       for (const d of ctx.state.run.doctrines) sum += Math.max(0, d.sellValue);
@@ -591,18 +593,18 @@ const LIST: EdictDef[] = [
 
   // ── the chronicle ──
   {
-    id: 'grand_festival', name: 'Grand Festival', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'Gain **50** {renown} × Era² now (**50** Ancient → **1,800** Modern).',
-    icon: 'renown', art: { hue: 330, motif: 'mask' },
+    id: 'grand_festival', name: 'Sol Report Broadcast', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Bank **50** {renown} × era² now (**50** Landfall → **1,800** New Earth).',
+    icon: 'renown', art: { hue: 330, motif: 'sun' },
     use(ctx) {
       const n = eraNumber(ctx.state);
       liveRenown(ctx.state, 50 * n * n, 'Grand Festival', ctx.emit, capitalOf(ctx)?.tile);
     },
   },
   {
-    id: 'epiphany', name: 'Epiphany', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'Your current Focus Pillar gains **+1** level.',
-    icon: 'scroll', art: { hue: 300, motif: 'lyre' },
+    id: 'epiphany', name: 'Priority Report', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Your current Priority pillar gains **+1** level.',
+    icon: 'scroll', art: { hue: 300, motif: 'flask' },
     use(ctx) {
       const focus = ctx.state.run.focus;
       levelUpPillar(ctx, focus);
@@ -610,19 +612,19 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'codex_universalis', name: 'Codex Universalis', rarity: 'legendary', cost: 6, target: 'none',
-    description: 'Every Pillar gains **+1** level.',
-    icon: 'book', art: { hue: 265, motif: 'book' },
-    unlock: { text: 'Reach the Renaissance Era', rule: 'reachEra4' },
+    id: 'codex_universalis', name: 'All-Systems Report', rarity: 'legendary', cost: 6, target: 'none',
+    description: 'Every pillar gains **+1** level.',
+    icon: 'book', art: { hue: 265, motif: 'gear' },
+    unlock: { text: 'Reach the Terraform era', rule: 'reachEra4' },
     use(ctx) {
       for (const p of PILLARS) levelUpPillar(ctx, p);
       notify(ctx, 'Codex Universalis: every Pillar rises a level.', 'book');
     },
   },
   {
-    id: 'heavens_clemency', name: "Heaven's Clemency", rarity: 'legendary', cost: 6, target: 'none',
-    description: 'Restore **1** {mandate} (up to your maximum).',
-    icon: 'mandate', art: { hue: 50, motif: 'sun' },
+    id: 'heavens_clemency', name: 'Charter Repair Voucher', rarity: 'legendary', cost: 6, target: 'none',
+    description: 'Restore **1** {mandate} Charter (up to your maximum).',
+    icon: 'mandate', art: { hue: 50, motif: 'bolt' },
     unlock: { text: 'Overcome 6 Crises in one run', rule: 'crises6' },
     canUse: (ctx) => (ctx.state.run.mandate < ctx.state.run.maxMandate ? null : 'Your Mandate is already whole'),
     use(ctx) {
@@ -631,39 +633,39 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'augurs_sign', name: "Augur's Sign", rarity: 'common', cost: 3, target: 'none',
-    description: 'Your accepted Omen advances by a **third** of its goal.',
-    icon: 'omen', art: { hue: 275, motif: 'serpent' },
+    id: 'augurs_sign', name: 'Directive Progress Packet', rarity: 'common', cost: 3, target: 'none',
+    description: 'Your accepted Directive advances by a **third** of its goal.',
+    icon: 'omen', art: { hue: 275, motif: 'gear' },
     canUse(ctx) {
-      const omen = ctx.state.run.omen;
-      if (!omen || !OMENS[omen.id]) return 'You have not accepted an Omen';
-      return omen.done ? 'Your Omen is already fulfilled' : null;
+      const directive = ctx.state.run.omen;
+      if (!directive || !OMENS[directive.id]) return 'You have not accepted a Directive';
+      return directive.done ? 'Your Directive is already complete' : null;
     },
     use(ctx) {
-      const s = ctx.state;
-      const omen = s.run.omen;
-      const def = omen ? OMENS[omen.id] : undefined;
-      if (!omen || !def || omen.done) return;
-      const goal = omen.goal ?? omenGoal(s, def);
-      omen.progress = Math.min(goal, omen.progress + Math.max(1, Math.ceil(goal / 3)));
-      ctx.emit({ type: 'omenProgress', id: omen.id, progress: omen.progress, goal });
-      if (omen.progress < goal) return;
-      omen.done = true;
-      s.run.totals.extra.omensCompleted = (s.run.totals.extra.omensCompleted ?? 0) + 1;
-      ctx.emit({ type: 'omenCompleted', id: omen.id });
-      grantOmenReward(s, def, ctx.emit);
+      const state = ctx.state;
+      const directive = state.run.omen;
+      const def = directive ? OMENS[directive.id] : undefined;
+      if (!directive || !def || directive.done) return;
+      const goal = directive.goal ?? omenGoal(state, def);
+      directive.progress = Math.min(goal, directive.progress + Math.max(1, Math.ceil(goal / 3)));
+      ctx.emit({ type: 'omenProgress', id: directive.id, progress: directive.progress, goal });
+      if (directive.progress < goal) return;
+      directive.done = true;
+      state.run.totals.extra.omensCompleted = (state.run.totals.extra.omensCompleted ?? 0) + 1;
+      ctx.emit({ type: 'omenCompleted', id: directive.id });
+      grantOmenReward(state, def, ctx.emit);
     },
   },
 
-  // ── doctrines ──
+  // ── Crew ──
   {
-    id: 'patronage', name: 'Patronage', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'Adopt a random **Common** Doctrine (needs a free slot).',
+    id: 'patronage', name: 'Crew Candidate File', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Add a random **Common** Crew member (needs a free bunk).',
     icon: 'doctrine', art: { hue: 190, motif: 'hand' },
     canUse(ctx) {
       const run = ctx.state.run;
-      if (doctrineSlotsUsed(run) >= run.doctrineSlots) return 'Your Doctrine slots are full';
-      return commonDoctrineCandidates(ctx).length ? null : 'No Common Doctrine is left to adopt';
+      if (doctrineSlotsUsed(run) >= run.doctrineSlots) return 'Your Crew bunks are full';
+      return commonDoctrineCandidates(ctx).length ? null : 'No Common Crew member is available';
     },
     use(ctx) {
       const pool = commonDoctrineCandidates(ctx);
@@ -673,45 +675,45 @@ const LIST: EdictDef[] = [
     },
   },
   {
-    id: 'gilded_charter', name: 'Gilded Charter', rarity: 'uncommon', cost: 4, target: 'none',
-    description: 'Your leftmost base-edition Doctrine becomes **Gilded**.',
-    icon: 'star', art: { hue: 45, motif: 'laurel' },
-    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.edition === 'base') ? null : 'No base-edition Doctrine to gild'),
+    id: 'gilded_charter', name: 'Decorated Crew Patch', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Your leftmost base-edition Crew member becomes **Decorated**.',
+    icon: 'star', art: { hue: 45, motif: 'gear' },
+    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.edition === 'base') ? null : 'No base-edition Crew member to upgrade'),
     use(ctx) {
       const d = ctx.state.run.doctrines.find((x) => x.edition === 'base');
       if (!d) return;
       d.edition = 'gilded';
-      notify(ctx, `Gilded Charter: ${doctrineName(d.id)} is Gilded.`, 'star');
+      notify(ctx, `${doctrineName(d.id)} is now Decorated.`, 'star');
     },
   },
   {
-    id: 'fortunes_wheel', name: "Fortune's Wheel", rarity: 'uncommon', cost: 4, target: 'none',
-    description: '**1 in 3** chance: a random base-edition Doctrine becomes Gilded, Radiant or Prismatic.',
-    icon: 'reroll', art: { hue: 285, motif: 'star' },
-    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.edition === 'base') ? null : 'No base-edition Doctrine to bless'),
+    id: 'fortunes_wheel', name: 'Crew Upgrade Lottery', rarity: 'uncommon', cost: 4, target: 'none',
+    description: '**1 in 3** chance: a random base-edition Crew member improves to Decorated, Inspired or Legendary Tale.',
+    icon: 'reroll', art: { hue: 285, motif: 'gear' },
+    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.edition === 'base') ? null : 'No base-edition Crew member to upgrade'),
     use(ctx) {
       const s = ctx.state;
       const pool = s.run.doctrines.filter((d) => d.edition === 'base');
       if (!pool.length) return;
       if (!chance(s.rng, 1 / 3)) {
-        notify(ctx, "Fortune's Wheel turns… and passes you by.", 'reroll', undefined, 'info');
+        notify(ctx, 'The Crew Upgrade Lottery draws a blank.', 'reroll', undefined, 'info');
         return;
       }
       const d = pick(s.rng, pool);
       const edition = pick(s.rng, ['gilded', 'radiant', 'prismatic'] as const);
       d.edition = edition;
-      notify(ctx, `Fortune's Wheel: ${doctrineName(d.id)} turns ${EDITION_NAMES[edition]}!`, 'star');
+      notify(ctx, `${doctrineName(d.id)} becomes ${EDITION_NAMES[edition]}.`, 'star');
     },
   },
   {
-    id: 'mirror_of_ages', name: 'Mirror of Ages', rarity: 'rare', cost: 5, target: 'none',
-    description: 'Copy the edition of your leftmost Doctrine that has one onto your leftmost base-edition Doctrine.',
-    icon: 'doctrine', art: { hue: 230, motif: 'moon' },
+    id: 'mirror_of_ages', name: 'Crew Edition Transfer', rarity: 'rare', cost: 5, target: 'none',
+    description: 'Copy the edition of your leftmost improved Crew member onto your leftmost base-edition Crew member.',
+    icon: 'doctrine', art: { hue: 230, motif: 'gear' },
     unlock: { text: 'Earn 5 Triumphs in one run', rule: 'triumphs5' },
     canUse(ctx) {
       const ds = ctx.state.run.doctrines;
-      if (!ds.some((d) => d.edition !== 'base')) return 'None of your Doctrines has an edition';
-      return ds.some((d) => d.edition === 'base') ? null : 'No base-edition Doctrine to receive it';
+      if (!ds.some((d) => d.edition !== 'base')) return 'No Crew member has an edition upgrade';
+      return ds.some((d) => d.edition === 'base') ? null : 'No base-edition Crew member to receive an upgrade';
     },
     use(ctx) {
       const ds = ctx.state.run.doctrines;
@@ -719,23 +721,113 @@ const LIST: EdictDef[] = [
       const dst = ds.find((d) => d.edition === 'base');
       if (!src || !dst) return;
       dst.edition = src.edition;
-      notify(ctx, `Mirror of Ages: ${doctrineName(dst.id)} becomes ${EDITION_NAMES[src.edition]}.`, 'doctrine');
+      notify(ctx, `${doctrineName(dst.id)} becomes ${EDITION_NAMES[src.edition]}.`, 'doctrine');
     },
   },
   {
-    id: 'veil_of_ether', name: 'Veil of Ether', rarity: 'legendary', cost: 6, target: 'none',
-    description: 'Your rightmost base-edition Doctrine becomes **Ethereal** (it no longer takes a slot).',
-    icon: 'doctrine', art: { hue: 190, motif: 'feather' },
-    unlock: { text: 'Hold a Legendary doctrine', rule: 'legendary' },
-    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.edition === 'base') ? null : 'No base-edition Doctrine to veil'),
+    id: 'veil_of_ether', name: 'Ghost Protocol', rarity: 'legendary', cost: 6, target: 'none',
+    description: 'Your rightmost base-edition Crew member becomes **Ghost** (it no longer takes a bunk).',
+    icon: 'doctrine', art: { hue: 190, motif: 'bolt' },
+    unlock: { text: 'Hold a Legendary Crew member', rule: 'legendary' },
+    canUse: (ctx) => (ctx.state.run.doctrines.some((d) => d.edition === 'base') ? null : 'No base-edition Crew member to upgrade'),
     use(ctx) {
       const ds = ctx.state.run.doctrines;
       for (let i = ds.length - 1; i >= 0; i--) {
         if (ds[i].edition !== 'base') continue;
         ds[i].edition = 'ethereal';
-        notify(ctx, `Veil of Ether: ${doctrineName(ds[i].id)} becomes Ethereal.`, 'doctrine');
+        notify(ctx, `${doctrineName(ds[i].id)} becomes Ghost.`, 'doctrine');
         return;
       }
+    },
+  },
+  {
+    id: 'tsar_charge', name: 'Tsar Charge', rarity: 'legendary', cost: 6, target: 'tile',
+    description: 'Detonate an orbital warhead on a tile and its radius-1 neighbors. Hostile units and colonies are left at **1 HP**. Russia starts with this charge.',
+    icon: 'war', art: { hue: 8, motif: 'flame' },
+    canUse(ctx, t) {
+      return t.tile != null && ctx.state.map.tiles[t.tile] ? null : 'Choose a landing coordinate';
+    },
+    use(ctx, t) {
+      if (t.tile == null) return;
+      for (const idx of tilesInRadius(ctx.state.map, t.tile, 1)) {
+        for (const u of Object.values(ctx.state.units)) {
+          if (u.owner !== ctx.player.id && hexDistance(ctx.state.map, u.tile, idx) === 0) u.hp = 1;
+        }
+        const city = Object.values(ctx.state.cities).find((c) => c.tile === idx && c.owner !== ctx.player.id);
+        if (city) city.hp = 1;
+      }
+      notify(ctx, 'Tsar Charge: the impact site is now a crater with opinions.', 'war', t.tile, 'bad');
+    },
+  },
+  {
+    id: 'weather_sat_uplink', name: 'Weather Sat Uplink', rarity: 'rare', cost: 5, target: 'tile',
+    description: 'Lock onto a storm eye to dissipate the storm before it reaches a colony.',
+    icon: 'storm', art: { hue: 205, motif: 'eye' },
+    canUse(ctx, t) {
+      return t.tile != null && ctx.state.storms.some((s) => s.path[s.step] === t.tile) ? null : 'Choose a current storm eye';
+    },
+    use(ctx, t) {
+      if (t.tile == null) return;
+      const storm = ctx.state.storms.find((s) => s.path[s.step] === t.tile);
+      if (!storm) return;
+      ctx.state.storms = ctx.state.storms.filter((s) => s.id !== storm.id);
+      ctx.emit({ type: 'stormEnded', id: storm.id, tile: t.tile });
+      notify(ctx, 'Weather Sat Uplink: one dust wall has lost its appointment.', 'storm', t.tile);
+    },
+  },
+  {
+    id: 'cryo_batch', name: 'Cryo Batch', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Recover **1 Cryo pod** from the reserve freezer. The freezer is making that noise again.',
+    icon: 'cryo', art: { hue: 190, motif: 'flask' },
+    use(ctx) { changeCryo(ctx.state, ctx.player.id, 1, ctx.emit); },
+  },
+  {
+    id: 'emergency_shelter', name: 'Emergency Shelter', rarity: 'uncommon', cost: 4, target: 'none',
+    description: 'Protect your units and colonies from dust-storm damage for this round.',
+    icon: 'shield', art: { hue: 28, motif: 'tower' },
+    use(ctx) {
+      ctx.player.counters[STORM_SHELTER_COUNTER] = ctx.state.turn;
+      notify(ctx, 'Emergency Shelter: seal the hatches; the weather can yell outside.', 'shield');
+    },
+  },
+  {
+    id: 'supply_pod', name: 'Supply Pod', rarity: 'rare', cost: 5, target: 'tile',
+    description: 'Land a free Orbital Drop on a valid explored site.',
+    icon: 'drop', art: { hue: 24, motif: 'flame' },
+    canUse(ctx, t) {
+      if (t.tile == null) return 'Choose an explored landing site';
+      const p = ctx.player;
+      const price = dropPrice(ctx.state, p.id);
+      const cryo = p.cryo;
+      const gold = p.gold;
+      p.cryo += price.cryo;
+      p.gold += price.gold;
+      const error = canOrbitalDrop(ctx.state, p.id, t.tile);
+      p.cryo = cryo;
+      p.gold = gold;
+      return error;
+    },
+    use(ctx, t) {
+      if (t.tile == null) return;
+      const p = ctx.player;
+      const price = dropPrice(ctx.state, p.id);
+      const cryo = p.cryo;
+      const gold = p.gold;
+      p.cryo += price.cryo;
+      p.gold += price.gold;
+      orbitalDrop(ctx.state, p.id, t.tile, ctx.emit);
+      p.cryo = cryo;
+      p.gold = gold;
+    },
+  },
+  {
+    id: 'seed_vault_key', name: 'Seed Vault Key', rarity: 'uncommon', cost: 4, target: 'city',
+    description: 'A city gains **2** population from the last viable seed bank. Hope nobody asks what happened to the rest.',
+    icon: 'seed', art: { hue: 92, motif: 'key' },
+    canUse: (ctx, t) => cityError(ctx, t),
+    use(ctx, t) {
+      const city = ownCityArg(ctx, t);
+      if (city) changePop(ctx.state, city, 2, ctx.emit);
     },
   },
 ];

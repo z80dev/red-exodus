@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Builds Nous Portal batch job files art/gen/<kind>.json from the hand-written scene subjects in
-// art/gen/subjects/<kind>.json plus the content registries (ids, art hue). Recipe: art/gen/STYLE.md.
+// art/gen/subjects/<kind>.json and, where relevant, the content registries (ids, art hue). Recipe: art/gen/STYLE.md.
 //   bun scripts/art_jobs.ts [kind ...]      (default: every kind)
 // Subjects file shape: { "<id>": "scene text" } or { "<id>": { "subject": "...", "hue": 210 } }.
 // Content-backed kinds report ids that lack a subject (no job is written for them) and stale subjects.
@@ -24,50 +24,43 @@ interface Job {
 const SEEDREAM = 'bytedance/seedream/v5/pro/text-to-image';
 const PORTRAIT_MODEL = 'openai/gpt-image-2.5/sunburst/text-to-image';
 
-// The ink vignette is applied in post (scripts/art_post.py): asked for in the prompt, Seedream paints
-// inconsistent torn-paper / oval frames that read as a border on full-screen backdrops.
+// art_post.py applies one consistent vignette so generated art remains full-bleed.
 const STYLE =
-  'painterly stylized fantasy-historical illustration, hand-painted digital oil with visible confident brushstrokes, ' +
-  'bold simplified chunky shapes, one clear readable focal silhouette, {LIGHT}, limited rich palette with deep ink-navy ' +
-  'shadows and gold-leaf highlights, full-bleed painting that fills the entire canvas edge to edge, premium AAA ' +
-  'card-game art in the spirit of Hades, Civilization VI and Slay the Spire';
-// Cards and portraits sit in dark gold frames: low-key light whose painted shadows deepen toward the corners.
-// Backdrops sit behind titles full-screen: open, luminous skies.
+  'painterly-but-graphic science-fiction concept illustration, hand-painted digital gouache and oil with visible confident ' +
+  'brushwork, bold simplified forms, one clear readable focal silhouette, {LIGHT}, Mars regolith, butterscotch dust, basalt ' +
+  'shadows and restrained cryo-cyan highlights, full-bleed premium strategy-game art';
 const CARD_LIGHT =
-  'dramatic low-key chiaroscuro, strong warm rim light, luminous glow against deep darkness, the painted scene ' +
-  'itself falls into deep shadow toward the corners';
-const BACKDROP_LIGHT = 'dramatic chiaroscuro, strong warm rim light, luminous glow';
+  'dramatic Mars sunlight, crisp rust-orange rim light separating the subject from basalt shadow, luminous habitat glow';
+const BACKDROP_LIGHT = 'dramatic cinematic Mars sunlight, crisp rim-lit forms, atmospheric dust glow';
 const NEGATIVE =
-  'No text, no letters, no writing, no numbers, no runes, no inscriptions, no border, no frame, no torn paper edges, ' +
-  'no vignette mask, no UI, no watermark, no signature.';
+  'No text, letters, writing, numbers, flags, logos, borders, frames, UI, watermark, signature, gore, photorealism, ' +
+  'glossy 3D render, anime.';
 
 const FRAMING: Record<Kind, string> = {
   leaders:
-    'Half-length hero portrait of a fictional leader, three-quarter view, eyes to the viewer, face in the upper third, ' +
-    'regal and characterful, dramatic rim light from behind one shoulder, their emblem glowing faintly in the dark background.',
+    'Half-length portrait of a fictional adult commander, three-quarter view, direct distinctive gaze, face in upper-middle third, ' +
+    'practical pressure-rated Mars suit with restrained national insignia colors only as shoulder-panel accents, never a flag; ' +
+    'abstract mission crest and habitat background, no ceremonial fantasy costume.',
   doctrines:
-    'Square card illustration: a single iconic emblematic subject centred, embodying the idea, instantly legible at small size.',
+    'Square Crew card: a single fictional Mars-colony person or small crew, expressive face, recognizable job prop, joker-card wit, ' +
+    'one crisp focal silhouette; the character and equipment, not an abstract emblem, are the subject.',
   edicts:
-    'Square card illustration: a decisive action frozen at its peak, symbolic tarot-like composition, centred and near-symmetrical.',
+    'Square Salvage card: one memorable physical tool, cache, module, or colonist using it; a readable action with clever visual wit.',
   crises:
-    'Square card illustration: an ominous catastrophe of epic scale looming over small silhouetted people or a city, ' +
-    'darkness and storm pressing in from the edges, cold palette with one sickly or fiery accent.',
+    'Square Crisis card: one dramatic Mars hazard pressing against a tiny vulnerable habitat and crew; ominous scale, one hazard accent.',
   omens:
-    'Square card vignette: a single celestial portent or sacred object floating on a dark starry ground, soft haze, ' +
-    'strongly centred with generous negative space.',
+    'Square Directive card: a suited colonist or crew team visibly carrying out one concrete mission objective in the Martian landscape.',
   reforms:
-    'Square card vignette: a civic institution or symbol presented as a monument on a dark ground, calm and dignified, ' +
-    'gold rim light, strongly centred with generous negative space.',
+    'Square Ark Module card: one distinctive practical habitat or life-support installation with a tiny suited crew member for scale.',
   eras:
-    'Epic panoramic establishing matte painting of a fictional civilisation, wide vista, huge sky, strong era lighting, ' +
-    'calm uncluttered sky area in the upper middle for a title.',
+    'Epic panoramic establishing matte painting of Mars colonization, clear focal habitat or landmark, calm upper-middle sky for title.',
   key:
-    'Epic cinematic key art matte painting, grand vista, calm uncluttered area in the upper middle for a game logo.',
+    'Epic cinematic RED EXODUS key art matte painting, grand Mars vista, calm uncluttered upper-middle title space.',
 };
 
 const PORTRAIT_FRAMING =
-  'Tall vertical phone-wallpaper composition: the vista reframed vertically, the focal landmark in the lower-middle third, ' +
-  'towering sky above.';
+  'Tall vertical phone-wallpaper composition: vista reframed vertically, focal landmark in lower-middle third, towering sky above.';
+
 
 const PALETTE: [number, string][] = [
   [15, 'crimson and ember red'], [40, 'burnt orange and copper'], [60, 'amber and gold'],
@@ -78,7 +71,7 @@ const PALETTE: [number, string][] = [
 const paletteFor = (hue: number) => PALETTE.find(([max]) => (((hue % 360) + 360) % 360) < max)![1];
 
 const CONTENT_KINDS: Record<Kind, ContentKind | null> = {
-  leaders: 'leaders', doctrines: 'doctrines', edicts: 'edicts', crises: 'crises', omens: 'omens', reforms: 'reforms',
+  leaders: null, doctrines: 'doctrines', edicts: 'edicts', crises: 'crises', omens: 'omens', reforms: 'reforms',
   eras: null, key: null,
 };
 /** Simpler vignette kinds painted four to a sheet (a 1×2 pair for a leftover of one or two). */
@@ -116,7 +109,7 @@ for (const kind of kinds.length ? kinds : ALL) {
     return [{ id, subject, hue }];
   });
   if (SHEET_KINDS.includes(kind)) {
-    // Several vignettes per generation (STYLE.md "Sheets"): one shared style pass, split by art_post.py.
+    // Generate shared-style sheets, then split them into individual art files in art_post.py.
     for (let i = 0; i < scenes.length; i += 4) {
       const group = scenes.slice(i, i + 4);
       const layout = group.length > 2 ? '2x2' : '1x2';
@@ -140,7 +133,7 @@ for (const kind of kinds.length ? kinds : ALL) {
     }
   }
   for (const { id, subject, hue } of SHEET_KINDS.includes(kind) ? [] : scenes) {
-    const palette = hue === undefined ? '' : ` Dominant palette: ${paletteFor(hue)}, with ink-navy shadows and gold highlights.`;
+    const palette = hue === undefined ? '' : ` Mars rust and basalt dominate; use ${paletteFor(hue)} only as a small light or equipment accent.`;
     const variants: [string, Aspect, string][] = backdrop
       ? [[id, 'landscape', 'Wide 16:9 landscape composition.'], [`${id}-portrait`, 'portrait', PORTRAIT_FRAMING]]
       : [[id, kind === 'leaders' ? 'portrait' : 'square', '']];

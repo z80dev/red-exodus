@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { audio, EVENT_SFX_NAMES, SFX_NAMES } from '../audio';
 import type { Mood } from '../audio';
 
-const ERAS = ['Ancient', 'Classical', 'Medieval', 'Renaissance', 'Industrial', 'Modern'];
+const ERAS = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'];
 const MOODS: Mood[] = ['menu', 'calm', 'tension', 'war', 'crisis', 'chronicle', 'victory', 'defeat'];
-const PALETTES = ['Lyre / frame drum / Dorian drone', 'Harp / flute / luminous arpeggios', 'Bells / organ / choir harmonics', 'Lute / strings / courtly figures', 'Piano / brass / mechanical pulses', 'Warm synth / drifting arpeggios'];
+const PALETTES = ['Cold analog drone / distant wind', 'Two-note piano beacon / thin wind', 'Piano pulse / warmer synth haze', 'Layered piano / soft counterline', 'Full pluck motif / bright harmonics', 'Hopeful piano / richest synth horizon'];
 const label = (name: string) => name.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase());
 
 /** Standalone sound desk. Diagnostics sample the real post-limiter output, not mock meters. */
@@ -63,7 +63,7 @@ export default function AudioDemo() {
       @media(max-width: 600px) { .audio-head { align-items: start; flex-direction: column; gap: 12px; } .audio-layout { display: flex; flex-direction: column; } .audio-monitor { order: -1; } .audio-monitor .audio-panel { margin-bottom: 0; } .audio-mix { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; } .audio-eras { grid-template-columns: repeat(2, 1fr); } .audio-sounds { grid-template-columns: repeat(3, minmax(0, 1fr)); } .audio-meter { height: 32px; } .audio-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; } .audio-readout { font-size: 23px; } .audio-note { margin-bottom: 0; } }
     `}</style>
     <div className="audio-wrap">
-      <header className="audio-head"><div><div className="audio-kicker">AEONS · Procedural sound atelier</div><h1>The sound of an empire.</h1><p className="audio-muted">Six eras. An evolving score. Every moment, composed.</p></div>
+      <header className="audio-head"><div><div className="audio-kicker">RED EXODUS · Martian sound desk</div><h1>The sound of making it.</h1><p className="audio-muted">Six eras. One stubborn piano. Wind, wire and a little hope.</p></div>
         <button className="audio-start" onClick={() => { audio.init(); audio.setVolumes(volumes); setLast('Sound engine awakened'); }}>{running ? 'Resume sound' : 'Awaken sound'}</button>
       </header>
       <div className="audio-layout"><div>
@@ -85,7 +85,7 @@ export default function AudioDemo() {
         <p className="audio-note">Real post-limiter analysis. Synthesized instruments, stereo convolution and ambience. No audio assets. Background tabs suspend automatically.</p>
         {meter.error && <p role="alert">{meter.error}</p>}
       </section></aside></div>
-      <footer className="audio-footer">AEONS sound desk / WebAudio synthesis / gesture to begin</footer>
+      <footer className="audio-footer">RED EXODUS sound desk / WebAudio synthesis / gesture to begin</footer>
     </div>
   </main>;
 }

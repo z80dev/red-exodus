@@ -90,9 +90,9 @@ function HeraldicPortrait({ leader, shape }: { leader: LeaderDef; shape: Portrai
     <svg viewBox={vb} preserveAspectRatio="xMidYMid slice" aria-hidden focusable="false">
       <defs>
         <radialGradient id={k('bg')} cx="0.5" cy="0.28" r="0.85">
-          <stop offset="0" stopColor={hsl(hue + 18, 50, 42)} />
-          <stop offset="0.45" stopColor={hsl(hue, 52, 20)} />
-          <stop offset="1" stopColor={hsl(hue - 10, 60, 6)} />
+          <stop offset="0" stopColor="#bd744d" />
+          <stop offset="0.45" stopColor="#56352d" />
+          <stop offset="1" stopColor="#17181a" />
         </radialGradient>
         <linearGradient id={k('cloth')} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor={shade(primary, -0.35)} />
@@ -170,9 +170,8 @@ function HeraldicPortrait({ leader, shape }: { leader: LeaderDef; shape: Portrai
       </g>
       <path d="M36.4 62.6q3.6 2.4 7.2 0M37 61.2l-3 4.2M43 61.2l3 4.2" fill="none" stroke={secondary} strokeWidth="1.3" strokeLinecap="round" />
 
-      {/* crest */}
       <g transform="translate(22.5 18.5) scale(0.35)" filter={u('soft')}>
-        <CrestArt uid={k('c')} motif={crest} colors={{ primary: secondary, secondary: primary }} />
+        <CrestArt uid={k('c')} motif={crest} colors={{ primary: secondary, secondary: primary }} code={leader.code} flagColors={leader.flagColors} />
       </g>
       {card && <rect x="0" y="0" width="80" height="100" fill={u('vig')} />}
       {!card && <rect x="4" y="6" width="72" height="72" fill={u('vig')} />}

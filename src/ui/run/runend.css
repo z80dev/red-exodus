@@ -79,3 +79,8 @@
   .rre-stat-v { font-size: 16px; }
   .rre-line { font-size: 13px; margin-top: 4px; }
 }
+.rre-bg { background-image: radial-gradient(80% 60% at 50% 35%, #8a4428, #26150f 70%, #07090c); }
+.rre--defeat .rre-bg { background-image: radial-gradient(80% 60% at 50% 35%, #47332d, #100d0b 70%, #050608); }
+.rre--victory .rre-title { background: linear-gradient(180deg, #fffbe8, #f2ad64 40%, #b4542e); }
+.rre-line { color: var(--text); }
+.rre-legacy-num { color: var(--gold-300); text-shadow: 0 0 26px rgba(242,140,40,0.4), 0 3px 0 rgba(0,0,0,0.5); }

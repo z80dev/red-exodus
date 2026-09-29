@@ -1,5 +1,6 @@
-// THE COUNCIL (shop). Items are dealt face-down and flipped; tap to inspect, Buy flies the card to where it
-// lives; reroll sweeps and re-deals; drag doctrines to reorder or onto the sell zone; packs open in PackOpen.
+// THE UPLINK. Crew, Salvage, Blueprints, Supply Drops and Ark Modules arrive aboard the passing Ark.
+// Inspect, buy, reroll when permitted, reorder Crew, and open drops without leaving the run.
+import { T } from '../terms';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useGame, useSim } from '../../game/store';
@@ -64,12 +65,12 @@ export function Council() {
   const items = council.items;
   const errors = items.map((it, i) => {
     if (!it) return null;
-    try { return councilBuyError(state, i); } catch { return run.influence < it.price ? `Need ${it.price - run.influence} more influence` : null; }
+    try { return councilBuyError(state, i); } catch { return run.influence < it.price ? `Need ${it.price - run.influence} more ${T.influence}` : null; }
   });
   const sel = selected != null ? items[selected] ?? null : null;
   const selCard = sel ? shopItemCard(sel, state) : null;
   const selError = selected != null ? errors[selected] : null;
-  const canReroll = run.influence >= council.rerollCost;
+  const canReroll = !council.rerollLocked && run.influence >= council.rerollCost;
   const nextIsCrisis = next.chapter === 2 && next.era === run.era && !!run.crisis;
 
   const buy = (slot: number) => {
@@ -101,7 +102,7 @@ export function Council() {
   const reroll = () => {
     if (!canReroll) {
       sfx('error');
-      toast(`Rerolling costs ${council.rerollCost} influence`, 'bad');
+      toast(`Rerolling costs ${council.rerollCost} ${T.influence}`, 'bad');
       return;
     }
     setSweeping(true);
@@ -167,7 +168,7 @@ export function Council() {
       <div className="rco-backdrop" />
       <header className="rco-head">
         <div className="rco-titles">
-          <h1 className="rco-title display">The Council</h1>
+          <h1 className="rco-title display">{T.council}</h1>
           <div className="rco-sub">Era {roman(run.era + 1)} · after {chapterName(run.chapter)}</div>
         </div>
         <div className="rco-head-right">
@@ -181,18 +182,18 @@ export function Council() {
         <span className="rco-next-ch display">
           {next.era !== run.era ? `${eraTitle(next.era)} · ` : ''}Chapter {roman(next.chapter + 1)}
         </span>
-        <span className="rco-next-target num"><Icon name="trophy" size={13} /> {fmt(nextTarget)}</span>
+        <span className="rco-next-target num"><Icon name="trophy" size={13} /> {T.score} {fmt(nextTarget)}</span>
         {nextIsCrisis && run.crisis && <span className="rco-next-crisis"><Icon name="crisis" size={13} /> {crisisCard(run.crisis).title}</span>}
         {next.era !== run.era && <span className="rco-next-era"><Icon name="star" size={13} /> New era</span>}
       </button>
 
       <section className={`rco-shop ${sweeping ? 'is-sweeping' : ''}`} ref={shopRef}>
         <div className="rco-group">
-          <div className="rco-group-label display">Offerings</div>
+          <div className="rco-group-label display">{T.council} Inventory</div>
           <div className="rco-row">{offers.map(({ it, i }) => renderItem(it, i))}</div>
         </div>
         <div className="rco-group">
-          <div className="rco-group-label display">Packs &amp; Reforms</div>
+          <div className="rco-group-label display">Supply Drops &amp; Ark Modules</div>
           <div className="rco-row">{packs.map(({ it, i }) => renderItem(it, i))}</div>
         </div>
       </section>
@@ -200,12 +201,12 @@ export function Council() {
       <section className="rco-owned">
         <div className="rco-owned-docs">
           <div className="rco-owned-label display">
-            Doctrines <span className="num">{doctrineSlotsUsed(run)}/{run.doctrineSlots}</span> <small>drag to reorder · drop on Sell</small>
+            {T.doctrines} <span className="num">{doctrineSlotsUsed(run)}/{run.doctrineSlots}</span> <small>drag to reorder · drop to sell</small>
           </div>
           <DoctrineBar compact={false} sellable slotsBadge={false} cardWidth="var(--rco-doc-w)" />
         </div>
         <div className="rco-owned-edicts">
-          <div className="rco-owned-label display">Edicts</div>
+          <div className="rco-owned-label display">{T.edicts}</div>
           <EdictTray compact={false} cardWidth="var(--rco-edict-w)" />
         </div>
       </section>
@@ -242,8 +243,8 @@ export function Council() {
       </section>
 
       <footer className="rco-foot">
-        <Button className="rco-reroll" onClick={reroll} disabled={!canReroll || sweeping}>
-          <Icon name="reroll" size={16} /> Reroll <span className="rco-cost num">{council.rerollCost}<Icon name="influence" size={12} /></span>
+        <Button className={`rco-reroll ${council.rerollLocked ? 'is-locked' : ''}`} onClick={reroll} disabled={council.rerollLocked || !canReroll || sweeping} title={council.rerollLocked ? 'Rerolls locked for this Uplink visit' : undefined}>
+          {council.rerollLocked ? <Icon name="lock" size={16} /> : <Icon name="reroll" size={16} />} {council.rerollLocked ? 'Reroll locked' : 'Reroll'} {!council.rerollLocked && <span className="rco-cost num">{council.rerollCost}<Icon name="influence" size={12} /></span>}
         </Button>
         <Button variant="gold" className="rco-leave" onClick={leave}>
           Next Chapter <Icon name="chevronRight" size={16} />

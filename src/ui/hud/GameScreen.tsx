@@ -26,6 +26,7 @@ import { TopBar } from './TopBar';
 import { TurnBanner } from './TurnBanner';
 import { UnitPanel } from './UnitPanel';
 import './hud.css';
+import { T } from '../terms';
 
 export function GameScreen() {
   const panel = useGame((g) => g.panel);
@@ -92,9 +93,9 @@ function SideRail() {
   const unread = panel === 'journal' ? 0 : Math.max(0, info.logLen - seenLog);
   return (
     <nav className="hud__rail" aria-label="Empire">
-      <IconButton icon="tech" label="Technology" onClick={toggle('tech')} active={panel === 'tech'} badge={info.research ? '!' : undefined} />
-      <IconButton icon="crown" label="Empire" onClick={toggle('empire')} active={panel === 'empire'} />
-      <IconButton icon="journal" label="Journal" onClick={toggle('journal')} active={panel === 'journal'} badge={unread > 0 ? (unread > 9 ? '9+' : unread) : undefined} />
+      <IconButton icon="tech" label={T.breakthrough} onClick={toggle('tech')} active={panel === 'tech'} badge={info.research ? '!' : undefined} />
+      <IconButton icon="crown" label="Ark" onClick={toggle('empire')} active={panel === 'empire'} />
+      <IconButton icon="journal" label="Log" onClick={toggle('journal')} active={panel === 'journal'} badge={unread > 0 ? (unread > 9 ? '9+' : unread) : undefined} />
     </nav>
   );
 }
@@ -125,7 +126,7 @@ function useHotkeys() {
           // sheets/modals/popovers own Escape while open
           if (g.panel !== 'none' || hasEscapeLayer()) return;
           const ui = useInteraction.getState();
-          if (g.mode.kind !== 'normal' || ui.strikeCity != null) cancelMode();
+          if (g.mode.kind !== 'normal' || ui.strikeCity != null || ui.dropTargeting) cancelMode();
           else if (g.selection || ui.preview) deselect();
           else { audio.sfx('open'); g.setPanel('pause'); }
           return;

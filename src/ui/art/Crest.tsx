@@ -1,6 +1,5 @@
-// OWNER: Art2D. Civilization crests: a heraldic shield (or roundel) in the civ's colors — field division chosen
-// per civ, the motif as the gilded charge, forged-gold rim and enamel gloss. Used in city banners, rival
-// lists, leader portraits.
+// Nation crests: a Mars hazard-console shield with Ark code and flag-color stripes. It uses only
+// color accents, never a literal flag. The procedural motif/field remains visible behind the code badge.
 import { useId, type CSSProperties } from 'react';
 import { FitGlyph } from './FitGlyph';
 import { motifGlyph } from './motifs';
@@ -15,6 +14,8 @@ export type CrestShape = 'shield' | 'round';
 export interface CrestProps {
   motif: string;
   colors: CrestColors;
+  code?: string;
+  flagColors?: string[];
   /** px (height for shields; width follows 100:116) — omit to size via CSS */
   size?: number;
   shape?: CrestShape;
@@ -49,7 +50,7 @@ function divisionPath(div: Division, round: boolean): string | null {
  * Crest artwork in its own coordinate space (shield 100×116, round 100×100). `detail=false` drops hairline
  * ornaments for tiny renders.
  */
-export function CrestArt({ uid, motif, colors, shape = 'shield', detail = true }: { uid: string; motif: string; colors: CrestColors; shape?: CrestShape; detail?: boolean }) {
+export function CrestArt({ uid, motif, colors, shape = 'shield', detail = true, code, flagColors }: { uid: string; motif: string; colors: CrestColors; shape?: CrestShape; detail?: boolean; code?: string; flagColors?: string[] }) {
   const round = shape === 'round';
   const outline = round ? ROUND : SHIELD;
   const k = (s: string) => `${uid}${s}`;
@@ -70,15 +71,15 @@ export function CrestArt({ uid, motif, colors, shape = 'shield', detail = true }
     <g>
       <defs>
         <linearGradient id={k('metal')} x1="0.1" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#fff6d2" />
-          <stop offset="0.45" stopColor="#f0cf72" />
-          <stop offset="1" stopColor="#a8751f" />
+          <stop offset="0" stopColor="#ffe1ba" />
+          <stop offset="0.45" stopColor="#d88248" />
+          <stop offset="1" stopColor="#733b2b" />
         </linearGradient>
         <linearGradient id={k('rim')} x1="0" y1="0" x2="0.3" y2="1">
-          <stop offset="0" stopColor="#fff0b8" />
-          <stop offset="0.4" stopColor="#e0b84a" />
-          <stop offset="0.55" stopColor="#9c6f1e" />
-          <stop offset="1" stopColor="#e7c25c" />
+          <stop offset="0" stopColor="#f8c187" />
+          <stop offset="0.4" stopColor="#d76b37" />
+          <stop offset="0.55" stopColor="#793a27" />
+          <stop offset="1" stopColor="#efae69" />
         </linearGradient>
         <linearGradient id={k('gloss')} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fff" stopOpacity="0.34" />
@@ -113,11 +114,16 @@ export function CrestArt({ uid, motif, colors, shape = 'shield', detail = true }
       {/* gold rim */}
       <path d={outline} fill="none" stroke={u('rim')} strokeWidth={detail ? 5.5 : 8} strokeLinejoin="round" />
       {detail && <path d={outline} fill="none" stroke="#fff3c6" strokeWidth="0.8" opacity="0.55" transform="translate(50 50) scale(0.935) translate(-50 -50)" />}
+      {code && <g transform={`translate(18 ${round ? 76 : 92})`}>
+        <rect width="64" height="18" rx="4" fill="#171b20" stroke="#d36a32" strokeWidth="1.5" />
+        {(flagColors ?? [colors.primary, colors.secondary]).slice(0, 4).map((color, i) => <rect key={i} x={5 + i * 5} y="3" width="3.5" height="12" fill={color} />)}
+        <text x="56" y="12.5" textAnchor="end" fill="#f0c38e" fontFamily="monospace" fontWeight="700" fontSize="8" letterSpacing=".6">{code}</text>
+      </g>}
     </g>
   );
 }
 
-export function Crest({ motif, colors, size, shape = 'shield', className, style, title }: CrestProps) {
+export function Crest({ motif, colors, code, flagColors, size, shape = 'shield', className, style, title }: CrestProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const round = shape === 'round';
   const pad = 7;
@@ -134,7 +140,7 @@ export function Crest({ motif, colors, size, shape = 'shield', className, style,
       aria-label={title}
       aria-hidden={title ? undefined : true}
     >
-      <CrestArt uid={uid} motif={motif} colors={colors} shape={shape} detail={size === undefined || size >= 36} />
+      <CrestArt uid={uid} motif={motif} colors={colors} shape={shape} detail={size === undefined || size >= 36} code={code} flagColors={flagColors} />
     </svg>
   );
 }

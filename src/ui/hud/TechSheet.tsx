@@ -8,9 +8,13 @@ import { useGame, useSim } from '../../game/store';
 import { empireYields, techTree } from '../../sim/selectors';
 import type { TechNode } from '../../sim/selectors';
 import { Icon } from '../icons/Icon';
+import { RichText } from '../icons/RichText';
 import { Bar, Button, IconButton, fmt, signed, useEscape } from '../kit';
 import { ERA_NAMES, techName, turnsLabel } from './format';
 import { toast } from './toast';
+import { HUMAN } from '../../sim/types';
+import { researchRerollCost } from '../../sim/mars';
+import { T, YIELD_NAMES } from '../terms';
 
 interface Geo { colW: number; rowH: number; nodeW: number; nodeH: number; eraGap: number; padTop: number; padX: number }
 
@@ -50,6 +54,8 @@ export function TechSheet() {
   const nodes = useSim((s) => techTree(s));
   const y = useSim((s) => empireYields(s));
   const era = useSim((s) => s.run.era) ?? 0;
+  const offer = useSim((s) => s.players[HUMAN].researchOffer);
+  const rerollCost = useSim((s) => researchRerollCost(s, HUMAN));
   const geo = useGeo();
   const scrolled = useRef(false);
   const [focus, setFocus] = useState<string | null>(null);
@@ -66,17 +72,16 @@ export function TechSheet() {
 
   if (!nodes || !y) return null;
   const selected = focus ? byId.get(focus) ?? null : nodes.find((n) => n.status === 'current') ?? null;
+  const offerIds = new Set(offer ?? []);
   const research = (n: TechNode) => {
     setFocus(n.id);
-    if (n.status === 'available') {
+    if (offerIds.has(n.id)) {
       const res = act({ type: 'setResearch', tech: n.id }, 'research');
-      if (res.ok) toast(`Researching ${n.name}`, 'info', n.icon);
+      if (res.ok) toast(`${T.breakthrough}: ${n.name}`, 'info', n.icon);
     } else {
       audio.sfx('tap');
-      if (n.status === 'locked') {
-        const missing = n.prereqs.filter((p) => byId.get(p)?.status !== 'researched').map(techName);
-        if (missing.length) toast(`Requires ${missing.join(' & ')}`, 'info', 'lock');
-      }
+      const missing = n.prereqs.filter((p) => byId.get(p)?.status !== 'researched').map(techName);
+      toast(missing.length ? `Requires ${missing.join(' & ')}` : 'Not in this Breakthrough draft.', 'info', 'lock');
     }
   };
 
@@ -92,14 +97,14 @@ export function TechSheet() {
   }
 
   return (
-    <div className="tt" role="dialog" aria-label="Technology" data-tutorial="tech-tree">
+    <div className="tt" role="dialog" aria-label={T.tech} data-tutorial="tech-tree">
       <div className="tt__scrim" onPointerDown={close} />
       <div className="k-panel tt__panel">
         <header className="tt__head">
           <Icon name="tech" size={28} />
           <div className="tt__title">
-            <h2 className="k-title">Technology</h2>
-            <div className="tt__sub num"><Icon name="sci" size={13} /> {signed(y.sci)} science per turn</div>
+            <h2 className="k-title">{T.breakthrough}</h2>
+            <div className="tt__sub num"><Icon name="sci" size={13} /> {signed(y.sci)} {YIELD_NAMES.sci} per turn</div>
           </div>
           {y.research ? (
             <div className="tt__cur">
@@ -110,6 +115,25 @@ export function TechSheet() {
           ) : <div className="tt__cur tt__cur--none">Choose a technology to research</div>}
           <IconButton icon="close" label="Close" onClick={close} size="sm" />
         </header>
+        <section className="tt-draft" aria-label={T.breakthrough}>
+          <div className="tt-draft__head"><b>{T.breakthrough} Draft</b><span>Pick one. Your options are somebody’s last good idea.</span></div>
+          <div className="tt-draft__cards">
+            {(offer ?? []).map((id) => {
+              const n = byId.get(id);
+              if (!n) return null;
+              const unl = unlocksOf(n);
+              return <button key={n.id} type="button" className="tt-draft-card" onClick={() => research(n)}>
+                <Icon name={n.icon || n.id} size={30} /><b>{n.name}</b>
+                <small><RichText text={String(n.description)} iconSize={13} /></small>
+                <span className="tt-draft-card__unlock">{unl.slice(0, 3).map((u) => u.name).join(' · ')}</span>
+              </button>;
+            })}
+          </div>
+          <Button className="tt-draft__reroll" disabled={(rerollCost ?? 0) > y.treasury} onClick={() => {
+            const result = act({ type: 'rerollResearch' }, 'reroll');
+            if (result.ok) toast(`${T.breakthrough} redrawn.`, 'info', 'reroll');
+          }}><Icon name="reroll" size={16} /> Reroll · {rerollCost ?? 0} {YIELD_NAMES.gold}</Button>
+        </section>
         <div className="tt__scroll" ref={(el) => {
           // open scrolled to the current research (or the current era), once
           if (!el || scrolled.current) return;
@@ -145,16 +169,17 @@ export function TechSheet() {
             {nodes.map((n) => {
               const p = pos(n);
               const unl = unlocksOf(n);
+              const draftLocked = n.status === 'available' && !offerIds.has(n.id);
               return (
                 <button key={n.id} type="button"
-                  className={`tt-node is-${n.status} ${selected?.id === n.id ? 'is-focus' : ''} ${chain.has(n.id) && n.status === 'locked' ? 'is-chain' : ''}`}
+                  className={`tt-node is-${n.status} ${draftLocked ? 'is-draft-locked' : ''} ${selected?.id === n.id ? 'is-focus' : ''} ${chain.has(n.id) && n.status === 'locked' ? 'is-chain' : ''}`}
                   style={{ left: p.x, top: p.y, width: geo.nodeW, height: geo.nodeH, '--prog': n.cost ? Math.min(1, n.progress / n.cost) : 0 } as CSSProperties}
-                  onClick={() => research(n)} aria-label={`${n.name}, ${n.status}`}>
+                  onClick={() => research(n)} aria-label={`${n.name}, ${draftLocked ? 'draft locked' : n.status}`}>
                   <span className="tt-node__icon"><Icon name={n.icon || n.id} size={geo.nodeH > 50 ? 28 : 22} /></span>
                   <span className="tt-node__body">
                     <span className="tt-node__name">{n.name}</span>
                     <span className="tt-node__meta num">
-                      {n.status === 'researched' ? <><Icon name="check" size={11} /> Known</> : turnsLabel(n.turns)}
+                      {n.status === 'researched' ? <><Icon name="check" size={11} /> Known</> : draftLocked ? 'Draft locked' : turnsLabel(n.turns)}
                     </span>
                     {geo.nodeH > 50 && (
                       <span className="tt-node__unlocks">
@@ -169,28 +194,29 @@ export function TechSheet() {
             })}
           </div>
         </div>
-        {selected && <TechDetail n={selected} onResearch={() => research(selected)} />}
+        {selected && <TechDetail n={selected} offered={offerIds.has(selected.id)} onResearch={() => research(selected)} />}
       </div>
     </div>
   );
 }
 
-function TechDetail({ n, onResearch }: { n: TechNode; onResearch: () => void }) {
+function TechDetail({ n, offered, onResearch }: { n: TechNode; offered: boolean; onResearch: () => void }) {
   const unl = unlocksOf(n);
   return (
     <div className="tt-detail" key={n.id}>
       <span className="tt-detail__icon"><Icon name={n.icon || n.id} size={36} /></span>
       <div className="tt-detail__body">
         <div className="tt-detail__name display">{n.name} <small>{ERA_NAMES[n.era]}</small></div>
-        <div className="tt-detail__desc">{n.description}</div>
+        <div className="tt-detail__desc"><RichText text={String(n.description)} iconSize={14} /></div>
         <div className="tt-detail__unlocks">
           {unl.map((u, i) => <span key={i} className="tt-unlock"><Icon name={u.icon} size={16} />{u.name}</span>)}
         </div>
       </div>
       <div className="tt-detail__side">
         <span className="num"><Icon name="sci" size={13} /> {fmt(n.progress)}/{fmt(n.cost)}</span>
-        {n.status === 'available' && <Button small variant="gold" onClick={onResearch}>Research</Button>}
-        {n.status === 'current' && <span className="tt-detail__tag">Researching</span>}
+        {n.status === 'available' && offered && <Button small variant="gold" onClick={onResearch}>{T.tech}</Button>}
+        {n.status === 'available' && !offered && <span className="tt-detail__tag is-locked"><Icon name="lock" size={12} /> Draft locked</span>}
+        {n.status === 'current' && <span className="tt-detail__tag">{T.tech} in progress</span>}
         {n.status === 'researched' && <span className="tt-detail__tag is-done">Known</span>}
         {n.status === 'locked' && <span className="tt-detail__tag is-locked"><Icon name="lock" size={12} /> Locked</span>}
       </div>

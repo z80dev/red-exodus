@@ -3,14 +3,14 @@ import { glide, midi, Synth } from './synth';
 import type { Timbre } from './synth';
 
 const PALETTES: readonly { lead: Timbre; pad: Timbre; root: number; scale: readonly number[] }[] = [
-  { lead: 'lyre', pad: 'flute', root: 50, scale: [0, 2, 3, 5, 7, 9, 10] },
-  { lead: 'harp', pad: 'flute', root: 53, scale: [0, 2, 4, 5, 7, 9, 11] },
-  { lead: 'bell', pad: 'organ', root: 48, scale: [0, 2, 3, 5, 7, 8, 10] },
-  { lead: 'lute', pad: 'strings', root: 55, scale: [0, 2, 4, 5, 7, 9, 11] },
-  { lead: 'piano', pad: 'brass', root: 48, scale: [0, 2, 3, 5, 7, 9, 10] },
-  { lead: 'synth', pad: 'synth', root: 50, scale: [0, 2, 4, 6, 7, 9, 11] },
+  { lead: 'piano', pad: 'synth', root: 50, scale: [0, 2, 3, 5, 7, 9, 10] },
+  { lead: 'piano', pad: 'synth', root: 53, scale: [0, 2, 4, 5, 7, 9, 11] },
+  { lead: 'piano', pad: 'synth', root: 48, scale: [0, 2, 3, 5, 7, 8, 10] },
+  { lead: 'harp', pad: 'synth', root: 55, scale: [0, 2, 4, 5, 7, 9, 11] },
+  { lead: 'piano', pad: 'strings', root: 48, scale: [0, 2, 3, 5, 7, 9, 10] },
+  { lead: 'piano', pad: 'synth', root: 50, scale: [0, 2, 4, 6, 7, 9, 11] },
 ];
-const TEMPO: Record<Mood, number> = { menu: 60, calm: 70, tension: 82, war: 100, crisis: 88, chronicle: 106, victory: 78, defeat: 48 };
+const TEMPO: Record<Mood, number> = { menu: 54, calm: 58, tension: 68, war: 78, crisis: 72, chronicle: 84, victory: 64, defeat: 46 };
 const PROGRESSION = [0, 3, 5, 4, 0, 5, 3, 4];
 interface Layer { gain: GainNode; mood: Mood; era: number; step: number; next: number; retire: number }
 
@@ -24,6 +24,7 @@ export class Score {
   private era = 0;
   private rise = 0;
   private slammed = false;
+  private stormIntensity = 0;
   constructor(synth: Synth, destination: AudioNode) { this.synth = synth; this.destination = destination; }
   get layerCount(): number { return this.layers.length; }
   get schedulerRunning(): boolean { return this.timer !== undefined; }
@@ -42,6 +43,9 @@ export class Score {
     if (this.timer) this.transition(mood, era);
   }
   chronicleProgress(progress: number): void { this.rise = Math.max(0, Math.min(1, progress)); }
+  setStormIntensity(value: number): void {
+    this.stormIntensity = Math.max(0, Math.min(1, value));
+  }
   slam(): void {
     if (this.mood !== 'chronicle') return;
     this.slammed = true;
@@ -94,34 +98,33 @@ export class Score {
     const urgent = mood === 'war' || mood === 'crisis' || mood === 'chronicle';
     const intensity = mood === 'chronicle' ? 0.4 + this.rise * 0.6 : 1;
     if (step % 16 === 0) {
-      for (let i = 0; i < 3; i++) {
-        s.tone(target, p.pad, { at: at + i * 0.032, duration: beat * 9, frequency: midi(note(chord + i * 2) - 12), gain: 0.035, attack: beat * 1.2, pan: (i - 1) * 0.52, cutoff: dark ? 850 : 1800 });
+      const chordVoices = Math.min(3, 1 + Math.floor(era / 2));
+      for (let i = 0; i < chordVoices; i++) {
+        s.tone(target, p.pad, { at: at + i * 0.045, duration: beat * 10, frequency: midi(note(chord + i * 2) - 12), gain: 0.026, attack: beat * 1.8, pan: (i - 1) * 0.52, cutoff: dark ? 600 : 1250 });
       }
-      s.tone(target, 'sine', { at, duration: beat * 8, frequency: midi(note(chord) - 24), gain: 0.04, attack: 0.5 });
+      s.tone(target, 'sine', { at, duration: beat * 9, frequency: midi(note(chord) - 24), gain: 0.035, attack: 0.8 });
     }
-    const space = mood === 'menu' || mood === 'defeat' ? 4 : (urgent || era === 1 || era === 5 ? 1 : 2);
+    const space = mood === 'menu' || mood === 'defeat' ? 4 : urgent ? (mood === 'crisis' ? 2 : 1) : era < 2 ? 4 : 3;
     if (step % space === 0 && (step % 16 < 12 || urgent)) {
       const pattern = [0, 4, 2, 4, 6, 4, 2, 1];
       const degree = chord + pattern[Math.floor(step / space) % 8];
-      const frequency = midi(note(degree) + (era === 2 ? 12 : 0));
-      const o = { at, duration: beat * (era === 2 ? 2.8 : 1.8), frequency, gain: (0.043 + Math.random() * 0.012) * intensity, pan: Math.sin(step * 0.6) * 0.55, attack: era === 5 ? 0.04 : 0.007 };
-      if (era === 2) s.fm(target, o, 2.01, 0.15);
-      else s.tone(target, p.lead, o);
-      if (era === 4 && step % 8 === 0) s.tone(target, 'brass', { ...o, frequency: frequency / 2, gain: 0.03, duration: 0.6, attack: 0.09 });
+      const frequency = midi(note(degree) + (era >= 3 ? 12 : 0));
+      const o = { at, duration: beat * (era >= 4 ? 2.5 : 2), frequency, gain: (0.038 + Math.random() * 0.007) * intensity, pan: Math.sin(step * 0.6) * 0.48, attack: 0.012 };
+      s.tone(target, p.lead, o);
+      if (era >= 3 && step % 8 === 0) s.tone(target, 'piano', { ...o, frequency: frequency / 2, gain: 0.022, duration: beat * 2.4, attack: 0.08 });
+      if (era >= 5 && step % 16 === 8) s.tone(target, 'synth', { ...o, frequency: frequency * 2, gain: 0.015, duration: beat * 3, attack: 0.2, pan: -o.pan });
     }
-    if ((urgent && step % 4 === 0) || (era === 0 && step % 8 === 0)) {
-      s.tone(target, 'sine', { at, frequency: urgent ? 125 : 160, endFrequency: 48, duration: 0.45, gain: 0.095 * intensity });
-      s.noise(target, { at, frequency: 550, duration: 0.14, gain: 0.045 * intensity }, 'lowpass');
+    if (urgent && step % (mood === 'crisis' ? 8 : 4) === 0) {
+      s.tone(target, 'sine', { at, frequency: mood === 'crisis' ? 92 : 125, endFrequency: 48, duration: 0.7, gain: 0.055 * intensity });
     }
-    if (urgent && step % (mood === 'chronicle' && this.rise > 0.65 ? 1 : 2) === 1) {
-      s.noise(target, { at, frequency: 2300, duration: 0.07, gain: 0.025 * intensity, pan: step % 4 === 1 ? -0.35 : 0.35 });
-    }
-    // Camera-independent atmosphere, rendered as finite voices rather than persistent loops.
-    if (step % 32 === 0) {
-      s.noise(target, { at, frequency: dark ? 350 : 750, endFrequency: 280, duration: beat * 14, attack: beat * 4, gain: dark ? 0.045 : 0.025, pan: -0.6 }, 'lowpass');
-      s.noise(target, { at: at + beat * 2, frequency: 1100, endFrequency: 500, duration: beat * 10, attack: beat * 3, gain: 0.017, pan: 0.7 });
-      if (!dark && mood !== 'chronicle') {
-        for (let j = 0; j < 3; j++) s.tone(target, 'sine', { at: at + 1.2 + j * 0.17, frequency: 1700 + j * 180, endFrequency: 2300 + j * 80, duration: 0.12, gain: 0.008, pan: 0.65 });
+    // Finite low-pass wind beds avoid persistent loops while storm proximity swells the mix.
+    if (step % 24 === 0) {
+      const wind = this.stormIntensity;
+      s.noise(target, { at, frequency: dark ? 290 : 540, endFrequency: 145, duration: beat * (12 + wind * 8), attack: beat * 4, gain: 0.018 + wind * 0.075, pan: -0.55 }, 'lowpass');
+      s.noise(target, { at: at + beat * 2, frequency: 980, endFrequency: 380, duration: beat * 8, attack: beat * 3, gain: 0.012 + wind * 0.035, pan: 0.65 }, 'lowpass');
+      if (era >= 2 && step % 48 === 0) s.fm(target, { at: at + beat, duration: 0.08, frequency: midi(era >= 4 ? 88 : 81), gain: 0.009, pan: 0.2 }, 3.7, 0.08);
+      if (!dark && mood !== 'chronicle' && era >= 1) {
+        s.tone(target, 'sine', { at: at + 1.2, frequency: 1700 + era * 80, endFrequency: 2200 + era * 100, duration: 0.12, gain: 0.006, pan: 0.65 });
       }
     }
   }

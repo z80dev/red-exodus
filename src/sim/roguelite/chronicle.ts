@@ -1,4 +1,4 @@
-// The Chronicle: chapter scoring (Legacy = Renown × Splendor) and chapter targets. DESIGN §4.
+// The Sol Report: chapter scoring (Viability = Output × Hope; ids renown/splendor/legacy) and targets. DESIGN §5.
 import type { ChronicleCtx } from '../defs';
 import type { ActiveEffect } from '../effects';
 import { collectEffects, makeCtx, runHook } from '../effects';
@@ -63,7 +63,7 @@ function effectLabel(fx: ActiveEffect): string {
     case 'crisis': return CRISES[fx.id]?.name ?? fx.id;
     case 'reform': return REFORMS[fx.id]?.name ?? fx.id;
     case 'leader': return LEADERS[fx.id]?.name ?? fx.id;
-    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Ascension ${fx.id}`;
+    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Hazard ${fx.id}`;
     case 'building': return BUILDINGS[fx.id]?.name ?? fx.id;
     case 'wonder': return WONDERS[fx.id]?.name ?? fx.id;
     case 'naturalWonder': return NATURAL_WONDERS[fx.id]?.name ?? fx.id;
@@ -108,11 +108,11 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
   if (focusRenown) {
     const add = focusRenown * (FOCUS_RENOWN_MUL - 1);
     renown += add;
-    push({ source: 'focus', label: `Focus: ${focusDef.name} ×${FOCUS_RENOWN_MUL}`, ref: focus, renownAdd: add });
+    push({ source: 'focus', label: `Priority: ${focusDef.name} ×${FOCUS_RENOWN_MUL}`, ref: focus, renownAdd: add });
   }
   const baseSplendor = focusDef.splendor(run.pillarLevels[focus]);
   splendor += baseSplendor;
-  push({ source: 'focus', label: `${focusDef.name} Splendor`, ref: focus, splendorAdd: baseSplendor });
+  push({ source: 'focus', label: `${focusDef.name} Hope`, ref: focus, splendorAdd: baseSplendor });
 
   // 3. cities, capital first then founding order
   const cities = humanCities(state);
@@ -160,7 +160,7 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
   const bonus = run.stats.extra.bonusRenown ?? 0;
   if (bonus) {
     renown += bonus;
-    push({ source: 'bonus', label: 'Festivals & Edicts', renownAdd: bonus });
+    push({ source: 'bonus', label: 'Festivals & Salvage', renownAdd: bonus });
   }
 
   // 4. doctrine bar left → right, each followed by its edition
@@ -174,13 +174,13 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
     if (inst.edition === 'gilded') {
       const add = GILDED_RENOWN_BASE + GILDED_RENOWN_PER_ERA * era;
       renown += add;
-      push({ source: 'edition', label: `Gilded ${name}`, ref, renownAdd: add });
+      push({ source: 'edition', label: `Decorated ${name}`, ref, renownAdd: add });
     } else if (inst.edition === 'radiant') {
       splendor += RADIANT_SPLENDOR;
-      push({ source: 'edition', label: `Radiant ${name}`, ref, splendorAdd: RADIANT_SPLENDOR });
+      push({ source: 'edition', label: `Inspired ${name}`, ref, splendorAdd: RADIANT_SPLENDOR });
     } else if (inst.edition === 'prismatic') {
       splendor *= PRISMATIC_SPLENDOR_MUL;
-      push({ source: 'edition', label: `Prismatic ${name}`, ref, splendorMul: PRISMATIC_SPLENDOR_MUL });
+      push({ source: 'edition', label: `Legendary Tale: ${name}`, ref, splendorMul: PRISMATIC_SPLENDOR_MUL });
     }
   }
 
@@ -191,7 +191,7 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
   renown = Math.max(0, renown);
   splendor = Math.max(0, splendor);
   const score = Math.floor(renown * splendor);
-  push({ source: 'final', label: 'Legacy' });
+  push({ source: 'final', label: 'Viability' });
 
   const target = chronicleTarget(state, era, chapter);
   const passed = score >= target;
@@ -208,9 +208,11 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
 
 function influenceIncome(state: GameState, r: ChronicleResult, effects: ActiveEffect[], emit: Emit): { label: string; amount: number }[] {
   const run = state.run;
-  const lines: { label: string; amount: number }[] = [{ label: 'Chapter stipend', amount: INCOME_BASE }];
+  const lines: { label: string; amount: number }[] = [{ label: 'Ark stipend', amount: INCOME_BASE }];
   if (r.passed) lines.push({ label: `${CHAPTER_NAMES[Math.min(r.chapter, CHAPTER_NAMES.length - 1)]} bonus`, amount: INCOME_CHAPTER_BONUS[Math.min(r.chapter, INCOME_CHAPTER_BONUS.length - 1)] });
-  const interest = Math.min(INTEREST_CAP, Math.floor(Math.max(0, run.influence) / INTEREST_PER));
+  const cap = { value: INTEREST_CAP };
+  runHook(state, HUMAN, 'interestCap', emit, effects, cap);
+  const interest = Math.min(Math.max(0, Math.floor(cap.value)), Math.floor(Math.max(0, run.influence) / INTEREST_PER));
   if (interest > 0) lines.push({ label: 'Interest', amount: interest });
   if (r.triumph) lines.push({ label: 'Triumph', amount: TRIUMPH_INFLUENCE });
   const crisis = r.chapter === CRISIS_CHAPTER && run.crisis ? CRISES[run.crisis] : undefined;

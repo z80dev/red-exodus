@@ -1,5 +1,6 @@
 // Chapter start: chapter title, Legacy target, Focus Pillar picker, Omen choice → chooseChapterStart.
 import { useMemo, useState } from 'react';
+import { T } from '../terms';
 import type { CSSProperties } from 'react';
 import { OMENS } from '../../content';
 import { useGame, useSim } from '../../game/store';
@@ -37,6 +38,8 @@ export function ChapterStart() {
 
   if (!run || !state) return null;
   const crisisChapter = run.chapter === 2;
+  const player = state.players[0];
+  const stormPressure = state.storms.reduce((power, storm) => power + storm.power, 0);
 
   const pick = (p: PillarId) => {
     if (p === focus) return;
@@ -55,25 +58,27 @@ export function ChapterStart() {
       <div className="ro-backdrop" />
       <div className="rcs-scroll">
         <header className="rcs-head">
-          <div className="rcs-era display">Era {roman(run.era + 1)} · {eraTitle(run.era)}</div>
+          <div className="rcs-era display">{eraTitle(run.era)}</div>
           <h1 className="rcs-chapter display">
             <span className="rcs-ch-num">Chapter {roman(run.chapter + 1)}</span>
             <span className="rcs-ch-name">{chapterName(run.chapter)}</span>
           </h1>
           <Ornament draw />
           <div className="rcs-target">
-            <div className="rcs-target-label">Legacy target</div>
+            <div className="rcs-target-label">{T.score} target</div>
             <div className="rcs-target-num num display">{fmt(shownTarget)}</div>
             <div className="rcs-target-eq">
-              <span className="rcs-eq-r"><Icon name="renown" size={14} /> Renown</span>
+              <span className="rcs-eq-r"><Icon name="renown" size={14} /> {T.renown}</span>
               <span className="rcs-eq-x">×</span>
-              <span className="rcs-eq-s"><Icon name="splendor" size={14} /> Splendor</span>
+              <span className="rcs-eq-s"><Icon name="splendor" size={14} /> {T.splendor}</span>
             </div>
           </div>
           <div className="rcs-status">
             <Hearts total={run.maxMandate} filled={run.mandate} size={18} />
-            <span className="rcs-turns"><Icon name="hourglass" size={14} /> {run.chapterLength} turns</span>
-            {run.darkAge && <span className="rcs-warn rcs-warn--dark"><Icon name="skull" size={14} /> Dark Age: −15% yields</span>}
+            <span className="rcs-turns"><Icon name="hourglass" size={14} /> {run.chapterLength} sols</span>
+            <span className="rcs-warn rcs-warn--cryo"><Icon name="cryo" size={14} /> {player.cryo} {T.cryo}</span>
+            {stormPressure > 0 && <span className="rcs-warn rcs-warn--storm"><Icon name="storm" size={14} /> {T.storm} pressure {stormPressure}</span>}
+            {run.darkAge && <span className="rcs-warn rcs-warn--dark"><Icon name="skull" size={14} /> Blackout: −15% yields</span>}
             {crisisChapter && run.crisis && (
               <button type="button" className="rcs-warn rcs-warn--crisis" onClick={() => { sfx('open'); setZoomCrisis(true); }}>
                 <Icon name="crisis" size={14} /> {crisisCard(run.crisis).title}
@@ -83,8 +88,8 @@ export function ChapterStart() {
         </header>
 
         <section className="rcs-section rcs-focus">
-          <h2 className="rcs-h2 display">Choose your Focus <span>Focus renown ×2 · sets base Splendor</span></h2>
-          <div className="rcs-pillars" role="radiogroup" aria-label="Focus pillar">
+          <h2 className="rcs-h2 display">{`Choose your ${T.focus}`} <span>{T.focus} {T.renown} ×2 · sets base {T.splendor}</span></h2>
+          <div className="rcs-pillars" role="radiogroup" aria-label={T.focus}>
             {PILLARS.map((p, i) => {
               const info = pillarInfo(p);
               const level = run.pillarLevels[p] ?? 1;
@@ -110,14 +115,14 @@ export function ChapterStart() {
                     <span>Lv {level}</span>
                   </div>
                   <div className="rcs-pillar-stats num">
-                    <span className="rcs-proj-r" title="Projected renown this chapter">
+                    <span className="rcs-proj-r" title={`Projected ${T.renown} this chapter`}>
                       <Icon name="renown" size={12} />{proj && proj.renown > 0 ? `≈${fmt(proj.renown * (selected ? 2 : 1))}` : '—'}
                     </span>
-                    <span className="rcs-proj-s" title="Base splendor if focused">
+                    <span className="rcs-proj-s" title={`Base ${T.splendor} if focused`}>
                       <Icon name="splendor" size={12} />{proj ? fmt(proj.splendor) : level + 1}
                     </span>
                   </div>
-                  {selected && <div className="rcs-pillar-ribbon display">Focus ×2</div>}
+                  {selected && <div className="rcs-pillar-ribbon display">Priority ×2</div>}
                 </button>
               );
             })}
@@ -125,8 +130,8 @@ export function ChapterStart() {
         </section>
 
         <section className="rcs-section rcs-omens">
-          <h2 className="rcs-h2 display">Omens <span>Optional objective for this chapter</span></h2>
-          <div className="rcs-omen-list" role="radiogroup" aria-label="Omen">
+          <h2 className="rcs-h2 display">Directives <span>Optional objective for this chapter</span></h2>
+          <div className="rcs-omen-list" role="radiogroup" aria-label="Directive">
             {run.omenOffer.map((id, i) => {
               const def = OMENS[id];
               const model = omenCard(id);

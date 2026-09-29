@@ -3,7 +3,7 @@ import { BARBARIAN, HUMAN } from './types';
 import { applyAction } from './engine';
 import { citiesOf } from './cities';
 import { hexDistance } from './hex';
-import { autoplay, findNonFinite, foundFirstCity, newGame, replay, startPlaying } from './testkit';
+import { autoplay, findNonFinite, newGame, replay, startPlaying } from './testkit';
 
 describe('createGame', () => {
   it('seats the human, distinct rivals and the barbarians with correct relations and starting kit', () => {
@@ -20,22 +20,27 @@ describe('createGame', () => {
       }
     }
     for (let pid = 0; pid < 4; pid++) {
+      const capital = s.cities[s.players[pid].capitalId!];
+      expect(capital.tile).toBe(s.map.starts[pid]);
+      expect(capital.isCapital).toBe(true);
       const units = Object.values(s.units).filter((u) => u.owner === pid);
-      expect(units.map((u) => u.type).sort()).toEqual(['scout', 'settler', 'warrior']);
+      expect(units.map((u) => u.type).sort()).toEqual(['scout', 'warrior']);
       for (const u of units) expect(hexDistance(s.map, u.tile, s.map.starts[pid])).toBeLessThanOrEqual(1);
     }
+    expect(s.players[HUMAN].researchOffer.length).toBeGreaterThan(0);
+    for (const p of s.players.slice(1, 4)) expect(p.researchOffer).toEqual([]);
     expect(s.players[HUMAN].vis.some((v) => v === 2)).toBe(true);
     expect(s.run.phase).not.toBe('playing');
   });
 
   it('rejects map actions until the chapter is being played', () => {
     const s = newGame('ENGINE-PHASE');
-    const settler = Object.values(s.units).find((u) => u.owner === HUMAN && u.type === 'settler')!;
-    const r = applyAction(s, { type: 'foundCity', unitId: settler.id });
+    const scout = Object.values(s.units).find((u) => u.owner === HUMAN && u.type === 'scout')!;
+    const r = applyAction(s, { type: 'skipUnit', unitId: scout.id });
     expect(r.ok).toBe(false);
     startPlaying(s);
     expect(s.run.phase).toBe('playing');
-    expect(applyAction(s, { type: 'foundCity', unitId: settler.id }).ok).toBe(true);
+    expect(applyAction(s, { type: 'skipUnit', unitId: scout.id }).ok).toBe(true);
   });
 });
 
@@ -43,18 +48,21 @@ describe('applyPlayerAction validation', () => {
   it('refuses to command another player\'s units and cities', () => {
     const s = newGame('ENGINE-OWN');
     startPlaying(s);
-    foundFirstCity(s);
+    expect(s.players[HUMAN].capitalId).not.toBeNull();
     const rivalUnit = Object.values(s.units).find((u) => u.owner === 1)!;
     expect(applyAction(s, { type: 'skipUnit', unitId: rivalUnit.id }).error).toBe('No such unit');
     const r = applyAction(s, { type: 'endTurn' });
     expect(r.ok).toBe(true);
-    const rivalCity = Object.values(s.cities).find((c) => c.owner !== HUMAN);
-    if (rivalCity) expect(applyAction(s, { type: 'setFocus', cityId: rivalCity.id, focus: 'food' }).ok).toBe(false);
+    const rivalCity = Object.values(s.cities).find((c) => c.owner !== HUMAN)!;
+    expect(applyAction(s, { type: 'setFocus', cityId: rivalCity.id, focus: 'food' }).ok).toBe(false);
   });
 
   it('declaring war flips both sides and a fresh peace treaty blocks immediate redeclaration', () => {
     const s = newGame('ENGINE-WAR');
     startPlaying(s);
+    // nation rules (e.g. Armed Neutrality) may veto wars; test the plain rule
+    s.players[HUMAN].leaderId = '__plain__';
+    s.players[1].leaderId = '__plain__';
     expect(applyAction(s, { type: 'declareWar', target: 1 }).ok).toBe(true);
     expect(s.players[HUMAN].relations[1]).toBe('war');
     expect(s.players[1].relations[HUMAN]).toBe('war');

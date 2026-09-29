@@ -1,5 +1,6 @@
-// Composes static props from GameState: biome decoration, mountains, resources, improvements, camps,
-// ruins, natural wonders, and assembled cities (era center, houses by pop, walls, landmarks, wonders).
+// Composes static props from GameState: Mars landscape decoration (hoodoos, basalt spires, lava-tube skylights,
+// geyser chimneys, salt crystals, ventifacts, terraform lichen), massifs, resources, installations, Feral Dens,
+// Crash Sites, Landmarks, and assembled colonies (era center, habs by pop, walls, landmarks, megaprojects).
 import { Color, Euler, Matrix4, Quaternion, Vector3 } from 'three';
 import { BUILDINGS, IMPROVEMENTS, NATURAL_WONDERS, RESOURCES, TECHS, WONDERS } from '../content';
 import type { City, GameState, Player, Tile, TileIdx } from '../sim/types';
@@ -138,9 +139,13 @@ function pick<T>(arr: readonly T[], h: number): T {
   return arr[Math.floor(h * arr.length) % arr.length];
 }
 
+/** terraform lichen patches: none at Landfall, spreading and growing era by era */
+const LICHEN_BY_ERA = [0, 0.25, 0.45, 0.65, 0.85, 1];
+
 export function composeNature(state: GameState, f: TerrainField, layer: PropLayer, plan: CityPlan, reveal: boolean): void {
   const map = state.map;
   const human = state.players[HUMAN];
+  const era = Math.min(5, Math.max(0, state.run?.era ?? 0));
   const riverSegs = new Map<TileIdx, RiverSeg[]>();
   for (const sg of f.rivers) {
     for (const ti of [sg.t0, sg.t1]) {
@@ -201,8 +206,8 @@ export function composeNature(state: GameState, f: TerrainField, layer: PropLaye
     if (t.ruin) place(layer, 'ruin_ancient', cx, g(0, 0), cz, hash01(seed, 15) * Math.PI * 2, 1.1);
     if (reservedTile) continue;
     const busy = !!t.improvement || t.camp || t.ruin;
-    // features
     const feat = t.feature;
+    // Dry-Ice Sheets and Mineral Shoals sit on the dust sea
     if (feat === 'ice') {
       for (const p of scatter(seed, 2, 0.0, 0.55, 0.45)) place(layer, 'ice_floe', cx + p.x, 0.0, cz + p.z, hash01(seed, p.z * 50) * 6, 0.6 + hash01(seed, p.x * 50) * 0.35);
       continue;
@@ -213,63 +218,72 @@ export function composeNature(state: GameState, f: TerrainField, layer: PropLaye
     }
     if (water) continue;
     const segs = riverSegs.get(t.idx);
-    const trees = (keys: readonly string[], n: number, minR: number, scale: number) => {
-      for (const [i, p] of scatter(seed, n, minR, 0.82, 0.2).entries()) {
+    const scatterProps = (keys: readonly string[], n: number, minR: number, scale: number, salt = 0) => {
+      for (const [i, p] of scatter(seed + salt, n, minR, 0.82, 0.2).entries()) {
         if (segs?.some((sg) => segDist(cx + p.x, cz + p.z, sg) < 0.2)) continue;
-        const k = pick(keys, hash01(seed, i, 21));
-        const s = scale * (0.85 + hash01(seed, i, 22) * 0.4);
-        place(layer, k, cx + p.x, g(p.x, p.z) - 0.01, cz + p.z, hash01(seed, i, 23) * Math.PI * 2, s, undefined, (hash01(seed, i, 24) - 0.5) * 0.12, (hash01(seed, i, 25) - 0.5) * 0.12);
+        const k = pick(keys, hash01(seed, i + salt, 21));
+        const s = scale * (0.85 + hash01(seed, i + salt, 22) * 0.4);
+        place(layer, k, cx + p.x, g(p.x, p.z) - 0.01, cz + p.z, hash01(seed, i + salt, 23) * Math.PI * 2, s, undefined, (hash01(seed, i + salt, 24) - 0.5) * 0.12, (hash01(seed, i + salt, 25) - 0.5) * 0.12);
       }
     };
     const minR = busy ? 0.42 : 0.24;
     if (feat === 'forest') {
-      const keys = t.terrain === 'snow' ? ['tree_snowpine'] : t.terrain === 'tundra' ? ['tree_pine', 'tree_snowpine', 'tree_pine'] : t.terrain === 'desert' ? ['tree_palm'] : t.elevation === 'hills' ? ['tree_pine', 'tree_pine', 'tree_broadleaf'] : ['tree_broadleaf', 'tree_broadleaf', 'tree_pine'];
-      trees(keys, busy ? 4 : 7, minR, 1.0);
-      trees(['bush'], 2, minR, 1.0);
+      // Hoodoo Field: wind-carved hoodoos and basalt spires; ice spires on the frozen flats; ventifacts in the dunes
+      const cold = t.terrain === 'snow' || t.terrain === 'tundra';
+      const keys = t.terrain === 'snow' ? ['tree_snowpine'] : t.terrain === 'tundra' ? ['tree_snowpine', 'tree_pine', 'tree_broadleaf'] : t.terrain === 'desert' ? ['tree_broadleaf', 'cactus', 'tree_broadleaf'] : t.elevation === 'hills' ? ['tree_pine', 'tree_pine', 'tree_broadleaf'] : ['tree_broadleaf', 'tree_broadleaf', 'tree_pine'];
+      scatterProps(keys, busy ? 4 : 6, minR, 1.0);
+      scatterProps(cold ? ['rock_small'] : ['bush', 'rock_small'], 2, minR, 1.0, 40);
     } else if (feat === 'jungle') {
-      trees(['tree_jungle', 'tree_jungle', 'tree_palm'], busy ? 5 : 8, minR, 1.05);
-      trees(['bush', 'bush', 'flowers'], 3, minR, 1.0);
+      // Lava Tubes: collapsed skylights pocking a basalt roof, boulders around the rims
+      scatterProps(['tree_jungle'], busy ? 2 : 3, minR, 1.1);
+      scatterProps(['bush', 'rock_small', 'rock_large'], 3, minR, 1.0, 40);
     } else if (feat === 'marsh') {
-      trees(['reeds'], 6, 0.15, 1.1);
-      trees(['bush', 'tree_broadleaf'], 2, minR, 0.85);
+      // Perchlorate Bog: crusts of toxic salt crystals
+      scatterProps(['reeds'], 6, 0.15, 1.1);
+      scatterProps(['bush', 'rock_small'], 2, minR, 0.85, 40);
     } else if (feat === 'oasis') {
-      trees(['tree_palm'], 4, 0.3, 1.0);
-      trees(['bush', 'flowers'], 3, 0.3, 1.0);
+      // Geyser Vent: mineral chimneys, salt, and the first lichen to take hold
+      scatterProps(['tree_palm'], 2, 0.25, 1.05);
+      scatterProps(['reeds', 'reeds', 'rock_small'], 3, 0.3, 1.0, 40);
     } else if (feat === 'floodplains') {
-      trees(['reeds', 'flowers'], 4, minR, 1.0);
+      // Ancient Delta: salt-streaked sediment fans
+      scatterProps(['reeds', 'rock_small'], 3, minR, 1.0);
     } else {
-      // sparse biome decoration on open terrain
+      // sparse decoration on open ground
       const r = hash01(seed, 31);
       if (t.elevation === 'hills') {
-        // rocky outcrops on hills; the grassy knoll model only on green hills
-        const knoll = t.terrain === 'grassland' && r > 0.6;
+        // Ridges: layered sediment outcrops or rust boulders
         const a = hash01(seed, 32) * Math.PI * 2;
         const rx = Math.cos(a) * 0.5;
         const rz = Math.sin(a) * 0.5;
-        if (knoll) place(layer, 'hill_rocks', cx + rx, g(rx, rz) - 0.03, cz + rz, a, 0.6);
-        else if (r > 0.45) trees(['rock_small', 'rock_small', 'rock_large'], 1, 0.4, 0.9);
+        if (r > 0.55) place(layer, 'hill_rocks', cx + rx, g(rx, rz) - 0.03, cz + rz, a, 0.6);
+        else if (r > 0.3) scatterProps(['rock_small', 'rock_small', 'rock_large'], 1, 0.4, 0.9);
       }
       const decor: Record<string, readonly string[]> = {
-        grassland: ['flowers', 'bush', 'flowers', 'rock_small'],
-        plains: ['bush', 'flowers', 'bush', 'rock_small'],
+        grassland: ['bush', 'rock_small', 'rock_small'],
+        plains: ['rock_small', 'bush', 'cactus', 'rock_small'],
         desert: ['cactus', 'rock_small', 'cactus'],
-        tundra: ['rock_small', 'bush', 'tree_pine'],
+        tundra: ['rock_small', 'bush', 'tree_snowpine'],
         snow: ['rock_small', 'tree_snowpine'],
       };
       const list = decor[t.terrain];
-      if (list && r < 0.5 && t.elevation !== 'hills') trees(list, 1 + Math.floor(hash01(seed, 33) * 3), 0.38, 1.0);
+      if (list && r < 0.5 && t.elevation !== 'hills') scatterProps(list, 1 + Math.floor(hash01(seed, 33) * 3), 0.38, 1.0);
     }
+    // terraform lichen spreads through basins, deltas and vents, era by era
+    const lichen = LICHEN_BY_ERA[era] * (t.terrain === 'grassland' || feat === 'floodplains' || feat === 'oasis' ? 1 : t.terrain === 'plains' || feat === 'marsh' ? 0.45 : 0);
+    if (lichen > 0 && hash01(seed, 34) < lichen) scatterProps(['flowers'], 1 + Math.floor(lichen * 3 * hash01(seed, 35)), 0.3, 0.7 + lichen * 0.6, 80);
   }
   layer.commit();
 }
 
 const RING6 = [0, 1, 2, 3, 4, 5].map((k) => ({ x: CORNER_VEC[k].x, z: CORNER_VEC[k].z }));
 
-export function composeCities(state: GameState, f: TerrainField, layer: PropLayer, plan: CityPlan, reveal: boolean): void {
+/** `hidden`: colony tiles whose Orbital Drop is still falling (the colony appears on touchdown) */
+export function composeCities(state: GameState, f: TerrainField, layer: PropLayer, plan: CityPlan, reveal: boolean, hidden: ReadonlySet<TileIdx>): void {
   const map = state.map;
   layer.begin();
   for (const c of Object.values(state.cities)) {
-    if (!explored(state, c.tile, reveal)) continue;
+    if (!explored(state, c.tile, reveal) || hidden.has(c.tile)) continue;
     const owner = playerById(state, c.owner);
     const team = teamColors(owner);
     const era = playerEra(state, owner);

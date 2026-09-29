@@ -36,12 +36,12 @@ function hexPath(cx: number, cy: number, r: number): string {
 }
 
 const GOLD_STOPS: [number, string][] = [
-  [0, '#fff6cf'],
-  [0.28, '#f6d77c'],
-  [0.5, '#d9a441'],
-  [0.52, '#b98529'],
-  [0.74, '#f0cd6c'],
-  [1, '#8e5f17'],
+  [0, '#fff0d8'],
+  [0.28, '#f28c46'],
+  [0.5, '#c95e37'],
+  [0.52, '#8f3929'],
+  [0.74, '#e99a52'],
+  [1, '#582a26'],
 ];
 
 export function GoldGradient({ id, x1 = 0, y1 = 0, x2 = 0, y2 = 1 }: { id: string; x1?: number; y1?: number; x2?: number; y2?: number }) {
@@ -52,7 +52,7 @@ export function GoldGradient({ id, x1 = 0, y1 = 0, x2 = 0, y2 = 1 }: { id: strin
   );
 }
 
-/** Emblem artwork on a 100×100 grid, centered at (50,50), radius ~48. `bare` omits the hex field (for the wordmark O). */
+/** RED EXODUS mark: a rising Mars horizon, orbital ring and landing rocket. */
 export function EmblemArt({ uid, bare = false }: { uid: string; bare?: boolean }) {
   const k = (s: string) => `${uid}${s}`;
   const u = (s: string) => `url(#${k(s)})`;
@@ -61,54 +61,45 @@ export function EmblemArt({ uid, bare = false }: { uid: string; bare?: boolean }
       <defs>
         <GoldGradient id={k('g')} x1={0.2} y1={0} x2={0.8} y2={1} />
         <radialGradient id={k('field')} cx="0.5" cy="0.38" r="0.7">
-          <stop offset="0" stopColor="#24324f" />
-          <stop offset="1" stopColor="#0a0f1a" />
+          <stop offset="0" stopColor="#994b34" />
+          <stop offset="1" stopColor="#271f20" />
         </radialGradient>
         <radialGradient id={k('halo')} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#ffe9a6" stopOpacity="0.85" />
-          <stop offset="0.45" stopColor="#f2c14e" stopOpacity="0.25" />
-          <stop offset="1" stopColor="#f2c14e" stopOpacity="0" />
+          <stop offset="0" stopColor="#ffb365" stopOpacity="0.7" />
+          <stop offset="0.45" stopColor="#f07842" stopOpacity="0.24" />
+          <stop offset="1" stopColor="#f07842" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {/* ring of ages */}
-      <circle cx="50" cy="50" r="44.5" fill="none" stroke="#1d1204" strokeWidth="10.5" />
+      <circle cx="50" cy="50" r="44.5" fill="none" stroke="#201816" strokeWidth="10.5" />
       <circle cx="50" cy="50" r="44.5" fill="none" stroke={u('g')} strokeWidth="7.4" />
-      <path d={ringTicks(50, 50, 41.6, 47.4, 24)} stroke="#5a3a0c" strokeWidth="1" opacity="0.8" />
-      <circle cx="50" cy="50" r="47.6" fill="none" stroke="#fff3c4" strokeWidth="0.6" opacity="0.6" />
+      <path d={ringTicks(50, 50, 41.6, 47.4, 24)} stroke="#5a2d1d" strokeWidth="1" opacity="0.8" />
+      <circle cx="50" cy="50" r="47.6" fill="none" stroke="#fff0d6" strokeWidth="0.6" opacity="0.6" />
       {!bare && (
         <>
-          <path d={hexPath(50, 50, 36.5)} fill={u('field')} stroke="#1d1204" strokeWidth="3.4" strokeLinejoin="round" />
+          <path d={hexPath(50, 50, 36.5)} fill={u('field')} stroke="#201816" strokeWidth="3.4" strokeLinejoin="round" />
           <path d={hexPath(50, 50, 36.5)} fill="none" stroke={u('g')} strokeWidth="1.6" strokeLinejoin="round" />
-          <path d={hexPath(50, 50, 32.5)} fill="none" stroke="#f2c14e" strokeWidth="0.5" opacity="0.45" />
+          <path d={hexPath(50, 50, 32.5)} fill="none" stroke="#e77d46" strokeWidth="0.5" opacity="0.45" />
         </>
       )}
       <circle cx="50" cy="50" r="24" fill={u('halo')} />
-      {/* radiant star */}
-      <path d={radiantStar(50, 50, bare ? 34 : 28)} fill="#1d1204" stroke="#1d1204" strokeWidth="3.2" strokeLinejoin="round" />
+      <path d="M25 60Q50 51 75 60M29 64Q50 57 71 64" fill="none" stroke="#f2b16f" strokeWidth="1.1" opacity="0.9" />
+      <path d={radiantStar(50, 50, bare ? 34 : 28)} fill="#201816" stroke="#201816" strokeWidth="3.2" strokeLinejoin="round" />
       <path d={radiantStar(50, 50, bare ? 34 : 28)} fill={u('g')} />
-      <path d={`M50 ${bare ? 16 : 22}L50 50L${bare ? 84 : 78} 50`} fill="none" stroke="#fffbe6" strokeWidth="0.7" opacity="0.7" />
-      <path d={`M50 50L50 ${bare ? 84 : 78}M50 50L${bare ? 16 : 22} 50`} fill="none" stroke="#6b4510" strokeWidth="0.7" opacity="0.55" />
-      <circle cx="50" cy="50" r={bare ? 4.4 : 3.8} fill="#1d1204" />
-      <circle cx="50" cy="50" r={bare ? 3 : 2.6} fill="#fff4cc" />
+      <path d="M42 58 50 34 58 58 53 55 50 62 47 55Z" fill="#283b43" stroke="#fff1d7" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M47 55 50 47 53 55 50 59Z" fill="#5fd4e8" />
+      <path d="M46 60l-4 5M54 60l4 5" stroke="#ed7544" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="50" cy="50" r="2.1" fill="#fff0d4" />
     </g>
   );
 }
 
-/** Standalone AEONS emblem (square). */
+/** Standalone RED EXODUS emblem (square). */
 export function Emblem({ size, className, style, title }: { size?: number; className?: string; style?: CSSProperties; title?: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   return (
-    <svg
-      className={className}
-      style={style}
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      role={title ? 'img' : undefined}
-      aria-label={title}
-      aria-hidden={title ? undefined : true}
-    >
+    <svg className={className} style={style} width={size} height={size} viewBox="0 0 100 100" role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true}>
       <EmblemArt uid={uid} />
     </svg>
   );
 }
+

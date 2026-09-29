@@ -12,6 +12,8 @@ import { grantXp } from '../sim/units';
 import { UNIQUE_BUILDINGS } from './uniques';
 import { TERRAINS } from './terrain';
 import { UNITS } from './units';
+import { hexDistance } from '../sim/hex';
+import { stormPowerAt } from '../sim/mars';
 
 type BuildingSpec = Omit<BuildingDef, 'icon'>;
 function building(spec: BuildingSpec): BuildingDef {
@@ -46,78 +48,105 @@ function localTileBonus(pred: (tile: Tile) => boolean, key: 'food' | 'prod' | 'g
 
 const hasRes = (ids: readonly ResourceId[]) => (tile: Tile): boolean => tile.resource != null && ids.includes(tile.resource);
 
+
+function windFarmEffects(): EffectHooks {
+  return {
+    tileYield(ctx, a) {
+      if (!isLocal(ctx, a.city)) return;
+      a.yields.prod += stormPowerAt(ctx.state, a.tile.idx);
+    },
+  };
+}
+
+function stormShelterEffects(): EffectHooks {
+  return {
+    storm(ctx, a) {
+      const city = ctx.cityId ? ctx.state.cities[ctx.cityId] : null;
+      if (!city || !a.unit || a.unit.owner !== ctx.player.id) return;
+      if (hexDistance(ctx.state.map, city.tile, a.tile.idx) <= 1) a.damage = Math.floor(a.damage / 2);
+    },
+  };
+}
+
+function stormScrubberEffects(): EffectHooks {
+  return {
+    tileYield(ctx, a) {
+      if (isLocal(ctx, a.city)) a.yields.food += stormPowerAt(ctx.state, a.tile.idx);
+    },
+  };
+}
 const LIST: BuildingDef[] = [
   // ───────── Era 0 · Ancient ─────────
   building({
-    id: 'palace', name: 'Palace', era: 0, cost: 0, tech: null, maintenance: 0, pillar: 'glory',
+    id: 'palace', name: 'Ark Hab Command', era: 0, cost: 0, tech: null, maintenance: 0, pillar: 'glory',
     yields: { prod: 3, sci: 3, gold: 3, cul: 2 }, happiness: 1, cityStrength: 3, cityHp: 25,
-    description: 'Seat of your dynasty, granted free in the capital. +3 {prod} +3 {sci} +3 {gold} +2 {cul}, +1 {happy}. **Lose the capital and the civilization falls.**',
+    description: 'The Ark Hab is command center, last refuge and free capital building. +3 {prod} +3 {sci} +3 {gold} +2 {cul}, +1 {happy}. Lose it and the mission ends.',
   }),
   building({
-    id: 'monument', name: 'Monument', era: 0, cost: 30, tech: null, maintenance: 0, pillar: 'arts',
+    id: 'monument', name: 'Crew Memorial', era: 0, cost: 30, tech: null, maintenance: 0, pillar: 'arts',
     yields: { cul: 2 },
-    description: '+2 {cul}. A carved stele proclaiming your people\u2019s name. Speeds border growth.',
+    description: '+2 {cul}. A carved roster remembers the people who did not make the crossing. Speeds border growth.',
   }),
   building({
-    id: 'shrine', name: 'Shrine', era: 0, cost: 30, tech: null, maintenance: 0, pillar: 'arts',
+    id: 'shrine', name: 'Earth Shrine', era: 0, cost: 30, tech: null, maintenance: 0, pillar: 'arts',
     yields: { cul: 1 }, happiness: 1,
-    description: '+1 {cul}, +1 {happy}. A humble altar where the first gods are honored.',
+    description: '+1 {cul}, +1 {happy}. A quiet place for whatever survived the old world.',
   }),
   building({
-    id: 'granary', name: 'Granary', era: 0, cost: 45, tech: 'agriculture', maintenance: 1, pillar: 'prosperity', model: 'bld_granary',
+    id: 'granary', name: 'Seed Silo', era: 0, cost: 45, tech: 'agriculture', maintenance: 1, pillar: 'prosperity', model: 'bld_granary',
     yields: { food: 2 },
     effects: { tileYield: localTileBonus(hasRes(['wheat', 'rice', 'bananas', 'deer', 'cattle']), 'food') },
-    description: '+2 {food}. Wheat, Rice, Bananas, Deer and Cattle worked by this city give +1 {food}.',
+    description: '+2 {food}. Tiles with Nitrate Salts, Brine Algae, Glowcap Fungus, Crater Ice or Lichen Beds yield +1 {food}.',
   }),
   building({
-    id: 'walls', name: 'Walls', era: 0, cost: 45, tech: 'bronze_working', maintenance: 1, pillar: 'conquest',
+    id: 'walls', name: 'Blast Walls', era: 0, cost: 45, tech: 'bronze_working', maintenance: 1, pillar: 'conquest',
     yields: {}, cityHp: 75, cityStrength: 6,
-    description: '+75 city HP and +6 city strength. Ring your city in timber and stone.',
+    description: '+75 colony HP and +6 colony strength. Regolith berms and armored panels keep the outside outside.',
   }),
   building({
-    id: 'barracks', name: 'Barracks', era: 0, cost: 45, tech: 'bronze_working', maintenance: 1, pillar: 'conquest', model: 'bld_barracks',
+    id: 'barracks', name: 'Armory', era: 0, cost: 45, tech: 'bronze_working', maintenance: 1, pillar: 'conquest', model: 'bld_barracks',
     yields: { prod: 1 },
     effects: trainingXp(15),
-    description: '+1 {prod}. Land units trained here start with **+15 XP**.',
+    description: '+1 {prod}. Troops trained here start with **+15 XP** and a serviceable helmet.',
   }),
   building({
-    id: 'lighthouse', name: 'Lighthouse', era: 0, cost: 45, tech: 'sailing', maintenance: 1, pillar: 'commerce', model: 'bld_lighthouse',
+    id: 'lighthouse', name: 'Beacon Tower', era: 0, cost: 45, tech: 'sailing', maintenance: 1, pillar: 'commerce', model: 'bld_lighthouse',
     yields: { gold: 1 }, coastal: true,
     effects: { tileYield: localTileBonus(isWater, 'gold') },
-    description: '+1 {gold}. Coastal. Every water tile worked by this city yields +1 {gold}.',
+    description: '+1 {gold}. Coastal. Worked water tiles gain +1 {gold} from this relay beacon.',
   }),
 
   // ───────── Era 1 · Classical ─────────
   building({
-    id: 'library', name: 'Library', era: 1, cost: 70, tech: 'writing', maintenance: 1, pillar: 'discovery', model: 'bld_library',
+    id: 'library', name: 'Data Archive', era: 1, cost: 70, tech: 'writing', maintenance: 1, pillar: 'discovery', model: 'bld_library',
     yields: { sci: 2 }, perPop: { sci: 0.25 },
-    description: '+2 {sci}, plus +1 {sci} for every 4 citizens.',
+    description: '+2 {sci}, plus +1 {sci} for every 4 citizens. Backups are civilization’s least dramatic survivors.',
   }),
   building({
-    id: 'temple', name: 'Temple', era: 1, cost: 70, tech: 'calendar', maintenance: 2, pillar: 'arts', model: 'bld_temple', requires: 'shrine',
+    id: 'temple', name: 'Memorial Chapel', era: 1, cost: 70, tech: 'calendar', maintenance: 2, pillar: 'arts', model: 'bld_temple', requires: 'shrine',
     yields: { cul: 2 }, happiness: 2,
-    description: '+2 {cul}, +2 {happy}. Requires a Shrine. Keeps the faithful calm through schisms.',
+    description: '+2 {cul}, +2 {happy}. Requires an Earth Shrine. A room for mourning that does not leak.',
   }),
   building({
-    id: 'market', name: 'Market', era: 1, cost: 75, tech: 'currency', maintenance: 0, pillar: 'commerce', model: 'bld_market',
+    id: 'market', name: 'Exchange', era: 1, cost: 75, tech: 'currency', maintenance: 0, pillar: 'commerce', model: 'bld_market',
     yields: { gold: 2 }, pct: { gold: 20 },
-    description: '+2 {gold} and +20% {gold}. No upkeep: the stalls pay for themselves.',
+    description: '+2 {gold} and +20% {gold}. No upkeep: the stalls pay for themselves, somehow.',
   }),
   building({
-    id: 'forge', name: 'Forge', era: 1, cost: 75, tech: 'iron_working', maintenance: 1, pillar: 'glory',
+    id: 'forge', name: 'Alloy Foundry', era: 1, cost: 75, tech: 'iron_working', maintenance: 1, pillar: 'glory',
     yields: { prod: 1 },
     effects: { tileYield: localTileBonus((t) => improved(t, 'mine'), 'prod') },
-    description: '+1 {prod}. Every Mine worked by this city yields +1 {prod}.',
+    description: '+1 {prod}. Every Regolith Mine worked by this colony yields +1 {prod}.',
   }),
   building({
-    id: 'amphitheater', name: 'Amphitheater', era: 1, cost: 85, tech: 'mathematics', maintenance: 2, pillar: 'arts', model: 'bld_amphitheater',
+    id: 'amphitheater', name: 'Holo-Theater', era: 1, cost: 85, tech: 'mathematics', maintenance: 2, pillar: 'arts', model: 'bld_amphitheater',
     yields: { cul: 3 }, happiness: 2,
-    description: '+3 {cul}, +2 {happy}. Tragedy, comedy and gladiators under the open sky.',
+    description: '+3 {cul}, +2 {happy}. Drama, comedy and the occasional evacuation notice.',
   }),
 
   // ───────── Era 2 · Medieval ─────────
   building({
-    id: 'harbor', name: 'Harbor', era: 2, cost: 110, tech: 'cartography', maintenance: 2, pillar: 'prosperity', model: 'bld_harbor',
+    id: 'harbor', name: 'Skiff Dock', era: 2, cost: 110, tech: 'cartography', maintenance: 2, pillar: 'prosperity', model: 'bld_harbor',
     yields: { gold: 1 }, coastal: true,
     effects: {
       tileYield(ctx, a) {
@@ -126,31 +155,31 @@ const LIST: BuildingDef[] = [
         if (hasRes(['fish', 'whales', 'pearls'])(a.tile)) a.yields.prod += 1;
       },
     },
-    description: '+1 {gold}. Coastal. Water tiles worked by this city yield +1 {food}; Fish, Whales and Pearls +1 {prod}.',
+    description: '+1 {gold}. Coastal. Water tiles worked by this colony yield +1 {food}; Regolith Silt, Orbital Debris and Hematite Blueberries +1 {prod}.',
   }),
   building({
-    id: 'aqueduct', name: 'Aqueduct', era: 2, cost: 110, tech: 'engineering', maintenance: 1, pillar: 'prosperity', model: 'bld_aqueduct',
+    id: 'aqueduct', name: 'Water Reclaimer', era: 2, cost: 110, tech: 'engineering', maintenance: 1, pillar: 'prosperity', model: 'bld_aqueduct',
     yields: { food: 2 },
     effects: {
       growthThreshold(ctx, a) {
         if (isLocal(ctx, a.city)) a.value = Math.round(a.value * 0.75);
       },
     },
-    description: '+2 {food}. This city needs 25% less {food} to grow. Clean water wards off Plague.',
+    description: '+2 {food}. This colony needs 25% less {food} to grow. Drink responsibly; the loop is closed.',
   }),
   building({
-    id: 'castle', name: 'Castle', era: 2, cost: 120, tech: 'steel', maintenance: 2, pillar: 'conquest', model: 'bld_castle', requires: 'walls',
+    id: 'castle', name: 'Bastion Dome', era: 2, cost: 120, tech: 'steel', maintenance: 2, pillar: 'conquest', model: 'bld_castle', requires: 'walls',
     yields: { cul: 1 }, cityHp: 100, cityStrength: 8,
-    description: '+100 city HP, +8 city strength, +1 {cul}. Requires Walls. A keep that turns sieges into legends.',
+    description: '+100 colony HP, +8 colony strength, +1 {cul}. Requires Blast Walls. A pressure-rated fortress.',
   }),
   building({
-    id: 'workshop', name: 'Workshop', era: 2, cost: 120, tech: 'machinery', maintenance: 2, pillar: 'glory', model: 'bld_workshop',
+    id: 'workshop', name: 'Fabricator', era: 2, cost: 120, tech: 'machinery', maintenance: 2, pillar: 'glory', model: 'bld_workshop',
     yields: { prod: 2 }, pct: { prod: 10 },
     effects: { tileYield: localTileBonus((t) => improved(t, 'lumbermill'), 'prod') },
-    description: '+2 {prod} and +10% {prod}. Lumber Mills worked by this city yield +1 {prod}.',
+    description: '+2 {prod} and +10% {prod}. Sinter Works tiles worked by this colony yield +1 {prod}.',
   }),
   building({
-    id: 'stable', name: 'Stable', era: 2, cost: 90, tech: 'chivalry', maintenance: 1, pillar: 'conquest',
+    id: 'stable', name: 'Rover Bay', era: 2, cost: 90, tech: 'chivalry', maintenance: 1, pillar: 'conquest',
     yields: {},
     effects: {
       ...trainingXp(15, ['mounted', 'armor']),
@@ -161,99 +190,117 @@ const LIST: BuildingDef[] = [
         if (cls === 'mounted' || cls === 'armor') a.cost = Math.round(a.cost * 0.75);
       },
     },
-    description: 'Mounted and armor units cost 25% less {prod} here and start with **+15 XP**. Pastures +1 {prod}.',
+    description: 'Mounted and armor units cost 25% less {prod} here and start with **+15 XP**. Bioreactors yield +1 {prod}.',
   }),
   building({
-    id: 'cathedral', name: 'Cathedral', era: 2, cost: 140, tech: 'theology', maintenance: 3, pillar: 'arts', model: 'bld_cathedral', requires: 'temple',
+    id: 'cathedral', name: 'Cathedral of Earth', era: 2, cost: 140, tech: 'theology', maintenance: 3, pillar: 'arts', model: 'bld_cathedral', requires: 'temple',
     yields: { cul: 3 }, happiness: 3, influence: 1,
-    description: '+3 {cul}, +3 {happy}, +1 {influence} every chapter. Requires a Temple. Pilgrims bring gifts to your Council.',
+    description: '+3 {cul}, +3 {happy}, +1 {influence} every chapter. Requires a Memorial Chapel; pilgrims bring gifts to the Uplink.',
   }),
 
   // ───────── Era 3 · Renaissance ─────────
   building({
-    id: 'university', name: 'University', era: 3, cost: 180, tech: 'education', maintenance: 3, pillar: 'discovery', model: 'bld_university', requires: 'library',
+    id: 'university', name: 'Research Institute', era: 3, cost: 180, tech: 'education', maintenance: 3, pillar: 'discovery', model: 'bld_university', requires: 'library',
     yields: { sci: 3 }, pct: { sci: 25 },
     effects: { tileYield: localTileBonus((t) => t.feature === 'jungle', 'sci') },
-    description: '+3 {sci} and +25% {sci}. Requires a Library. Jungle tiles worked by this city yield +1 {sci}.',
+    description: '+3 {sci} and +25% {sci}. Requires a Data Archive. Lava Tube tiles worked by this colony yield +1 {sci}.',
   }),
   building({
-    id: 'observatory', name: 'Observatory', era: 3, cost: 170, tech: 'astronomy', maintenance: 2, pillar: 'discovery', model: 'bld_observatory',
+    id: 'observatory', name: 'Deep Space Array', era: 3, cost: 170, tech: 'astronomy', maintenance: 2, pillar: 'discovery', model: 'bld_observatory',
     yields: { sci: 2 }, pct: { sci: 20 },
     effects: { tileYield: localTileBonus((t) => t.elevation === 'hills', 'sci') },
-    description: '+2 {sci} and +20% {sci}. Hill tiles worked by this city yield +1 {sci}.',
+    description: '+2 {sci} and +20% {sci}. Ridges worked by this colony yield +1 {sci}.',
   }),
   building({
-    id: 'bank', name: 'Bank', era: 3, cost: 180, tech: 'banking', maintenance: 0, pillar: 'commerce', model: 'bld_bank', requires: 'market',
+    id: 'bank', name: 'Credit Vault', era: 3, cost: 180, tech: 'banking', maintenance: 0, pillar: 'commerce', model: 'bld_bank', requires: 'market',
     yields: { gold: 3 }, pct: { gold: 25 },
-    description: '+3 {gold} and +25% {gold}. Requires a Market. No upkeep.',
+    description: '+3 {gold} and +25% {gold}. Requires an Exchange. No upkeep.',
   }),
   building({
-    id: 'museum', name: 'Museum', era: 3, cost: 190, tech: 'architecture', maintenance: 3, pillar: 'arts', requires: 'amphitheater',
+    id: 'museum', name: 'Holo-Archive', era: 3, cost: 190, tech: 'architecture', maintenance: 3, pillar: 'arts', requires: 'amphitheater',
     yields: { cul: 5 }, happiness: 1, influence: 1,
-    description: '+5 {cul}, +1 {happy}, +1 {influence} every chapter. Requires an Amphitheater.',
+    description: '+5 {cul}, +1 {happy}, +1 {influence} every chapter. Requires a Holo-Theater.',
   }),
   building({
-    id: 'armory', name: 'Armory', era: 3, cost: 150, tech: 'gunpowder', maintenance: 2, pillar: 'conquest', requires: 'barracks',
+    id: 'armory', name: 'Weapons Foundry', era: 3, cost: 150, tech: 'gunpowder', maintenance: 2, pillar: 'conquest', requires: 'barracks',
     yields: { prod: 1 },
     effects: trainingXp(15),
-    description: '+1 {prod}. Requires Barracks. Land units trained here gain another **+15 XP**.',
+    description: '+1 {prod}. Requires an Armory. Land units trained here gain another **+15 XP**.',
   }),
 
   // ───────── Era 4 · Industrial ─────────
   building({
-    id: 'factory', name: 'Factory', era: 4, cost: 260, tech: 'industrialization', maintenance: 3, pillar: 'glory', model: 'bld_factory', requires: 'workshop',
+    id: 'factory', name: 'Foundry', era: 4, cost: 260, tech: 'industrialization', maintenance: 3, pillar: 'glory', model: 'bld_factory', requires: 'workshop',
     yields: { prod: 3 }, pct: { prod: 25 },
     effects: { tileYield: localTileBonus(hasRes(['coal', 'iron']), 'prod') },
-    description: '+3 {prod} and +25% {prod}. Requires a Workshop. Coal and Iron worked by this city +1 {prod}.',
+    description: '+3 {prod} and +25% {prod}. Requires a Fabricator. Thorium and Nickel-Iron tiles yield +1 {prod}.',
   }),
   building({
-    id: 'stock_exchange', name: 'Stock Exchange', era: 4, cost: 250, tech: 'economics', maintenance: 0, pillar: 'commerce', requires: 'bank',
+    id: 'stock_exchange', name: 'Scrip Exchange', era: 4, cost: 250, tech: 'economics', maintenance: 0, pillar: 'commerce', requires: 'bank',
     yields: { gold: 4 }, pct: { gold: 33 },
-    description: '+4 {gold} and +33% {gold}. Requires a Bank. No upkeep.',
+    description: '+4 {gold} and +33% {gold}. Requires a Credit Vault. No upkeep.',
   }),
   building({
-    id: 'powerplant', name: 'Power Plant', era: 4, cost: 280, tech: 'electricity', maintenance: 4, pillar: 'glory', model: 'bld_powerplant', requires: 'factory',
+    id: 'powerplant', name: 'Fusion Plant', era: 4, cost: 280, tech: 'electricity', maintenance: 4, pillar: 'glory', model: 'bld_powerplant', requires: 'factory',
     yields: { prod: 3 }, pct: { prod: 25 },
-    description: '+3 {prod} and +25% {prod}. Requires a Factory.',
+    description: '+3 {prod} and +25% {prod}. Requires a Foundry.',
   }),
   building({
-    id: 'hospital', name: 'Hospital', era: 4, cost: 240, tech: 'electricity', maintenance: 3, pillar: 'prosperity', requires: 'aqueduct',
+    id: 'hospital', name: 'Med Bay', era: 4, cost: 240, tech: 'electricity', maintenance: 3, pillar: 'prosperity', requires: 'aqueduct',
     yields: { food: 3 }, happiness: 2,
     effects: {
       growthThreshold(ctx, a) {
         if (isLocal(ctx, a.city)) a.value = Math.round(a.value * 0.85);
       },
     },
-    description: '+3 {food}, +2 {happy}. Requires an Aqueduct. This city needs 15% less {food} to grow.',
+    description: '+3 {food}, +2 {happy}. Requires a Water Reclaimer. This colony needs 15% less {food} to grow.',
   }),
   building({
-    id: 'military_academy', name: 'Military Academy', era: 4, cost: 230, tech: 'military_science', maintenance: 3, pillar: 'conquest', requires: 'armory',
+    id: 'military_academy', name: 'Tactical School', era: 4, cost: 230, tech: 'military_science', maintenance: 3, pillar: 'conquest', requires: 'armory',
     yields: { sci: 2 }, cityStrength: 4,
     effects: trainingXp(20),
-    description: '+2 {sci}, +4 city strength. Requires an Armory. Land units trained here gain another **+20 XP**.',
+    description: '+2 {sci}, +4 colony strength. Requires a Weapons Foundry. Land units trained here gain another **+20 XP**.',
   }),
 
   // ───────── Era 5 · Modern ─────────
   building({
     id: 'research_lab', name: 'Research Lab', era: 5, cost: 360, tech: 'computers', maintenance: 4, pillar: 'discovery', requires: 'university',
     yields: { sci: 4 }, pct: { sci: 50 },
-    description: '+4 {sci} and +50% {sci}. Requires a University.',
+    description: '+4 {sci} and +50% {sci}. Requires a Research Institute.',
   }),
   building({
     id: 'broadcast_tower', name: 'Broadcast Tower', era: 5, cost: 330, tech: 'radio', maintenance: 4, pillar: 'arts', requires: 'museum',
     yields: { cul: 4 }, pct: { cul: 33 }, influence: 1,
-    description: '+4 {cul}, +33% {cul}, +1 {influence} every chapter. Requires a Museum.',
+    description: '+4 {cul}, +33% {cul}, +1 {influence} every chapter. Requires a Holo-Archive.',
   }),
   building({
-    id: 'stadium', name: 'Stadium', era: 5, cost: 310, tech: 'radio', maintenance: 3, pillar: 'glory', model: 'bld_stadium',
+    id: 'stadium', name: 'Arena', era: 5, cost: 310, tech: 'radio', maintenance: 3, pillar: 'glory', model: 'bld_stadium',
     yields: { cul: 2 }, happiness: 4,
-    description: '+4 {happy}, +2 {cul}. Roaring crowds on match day.',
+    description: '+4 {happy}, +2 {cul}. The scoreboard says "viable." The crowd knows better.',
   }),
   building({
-    id: 'supermarket', name: 'Supermarket', era: 5, cost: 290, tech: 'combustion', maintenance: 3, pillar: 'prosperity', requires: 'granary',
+    id: 'supermarket', name: 'Supply Depot', era: 5, cost: 290, tech: 'combustion', maintenance: 3, pillar: 'prosperity', requires: 'granary',
     yields: { food: 2 }, pct: { food: 15 },
     effects: { tileYield: localTileBonus((t) => improved(t, 'farm'), 'food') },
-    description: '+2 {food} and +15% {food}. Requires a Granary. Farms worked by this city yield +1 {food}.',
+    description: '+2 {food} and +15% {food}. Requires a Seed Silo. Greenhouse Domes worked by this colony yield +1 {food}.',
+  }),
+  building({
+    id: 'wind_farm', name: 'Wind Farm', era: 2, cost: 65, tech: 'engineering', maintenance: 1, pillar: 'glory',
+    yields: {},
+    effects: windFarmEffects(),
+    description: 'Wind turbines turn dust-storm power into +1 {prod} per storm power on tiles worked by this colony. The forecast is now an energy bill.',
+  }),
+  building({
+    id: 'storm_shelter', name: 'Storm Shelter', era: 2, cost: 115, tech: 'engineering', maintenance: 1, pillar: 'prosperity',
+    yields: { food: 1 },
+    effects: stormShelterEffects(),
+    description: 'A buried refuge halves dust-storm damage to your units within this colony or one hex of it.',
+  }),
+  building({
+    id: 'dust_scrubbers', name: 'Dust Scrubbers', era: 4, cost: 185, tech: 'industrialization', maintenance: 2, pillar: 'prosperity',
+    yields: { prod: 1 },
+    effects: stormScrubberEffects(),
+    description: '+1 {prod}. Scrubbers reclaim storm-blown fines: +1 {food} per storm power on this colony’s tiles.',
   }),
 ];
 
