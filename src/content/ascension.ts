@@ -1,9 +1,10 @@
 // OWNER: ContentRogue. Ascension — the Balatro stakes. Levels are cumulative: every level ≤ the run's
 // ascension applies. Hooks are collected for the human only, so buffs to rivals are applied from here.
 import type { AscensionDef, CombatArgs, Scalar } from '../sim/defs';
-import { BARBARIAN, HUMAN, YIELD_KEYS } from '../sim/types';
+import { BARBARIAN, HUMAN } from '../sim/types';
 import { round1, sciencePerTurn } from '../sim/economy';
 import { CRISIS_CHAPTER } from '../sim/roguelite/constants';
+import { DARK_AGE_LABEL, DARK_AGE_TARGET_MUL } from '../sim/roguelite/darkAge';
 import { enemyOwnerOf, repriceCouncil } from './doctrines';
 
 /** push a modifier onto the side opposing the hook owner */
@@ -76,12 +77,15 @@ export const ASCENSIONS: AscensionDef[] = [
     },
   },
   {
-    level: 7, name: 'Extended Blackout',
-    description: 'Blackout chapters cost a further **−10%** of every yield, and rivals research **+20%** faster.',
+    level: 7, name: 'No Lifeline',
+    description: 'Missed Sol Reports bring no Lifeline (no target relief, no relief {influence}), and rivals research **+20%** faster.',
     effects: {
-      cityYield(ctx, a) {
-        if (!ctx.state.run.darkAge) return;
-        for (const k of YIELD_KEYS) a.pct[k] -= 10;
+      target(ctx, a) {
+        if (ctx.state.run.darkAge) a.value /= DARK_AGE_TARGET_MUL;
+      },
+      influenceIncome(_ctx, a) {
+        const relief = a.lines.find((l) => l.label === DARK_AGE_LABEL && l.amount > 0);
+        if (relief) a.lines.push({ label: 'No Lifeline', amount: -relief.amount });
       },
       turnStart(ctx) {
         for (const p of ctx.state.players) {
@@ -94,14 +98,15 @@ export const ASCENSIONS: AscensionDef[] = [
   },
   {
     level: 8, name: 'No Return Trajectory',
-    description: 'Triumphs grant no {influence}, and Sol Report targets rise a further **+20%**.',
+    description: 'Triumphs and Overdrives grant no {influence}, and Sol Report targets rise a further **+20%**.',
     effects: {
       target(_ctx, a) {
         a.value *= 1.2;
       },
       influenceIncome(_ctx, a) {
-        const triumph = a.lines.find((l) => l.label === 'Triumph' && l.amount > 0);
-        if (triumph) a.lines.push({ label: "Aeon's End", amount: -triumph.amount });
+        const bonus = a.lines.filter((l) => (l.label === 'Triumph' || l.label.startsWith('Overdrive')) && l.amount > 0)
+          .reduce((s, l) => s + l.amount, 0);
+        if (bonus) a.lines.push({ label: "Aeon's End", amount: -bonus });
       },
     },
   },

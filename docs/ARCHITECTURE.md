@@ -28,7 +28,7 @@ Read `docs/DESIGN.md` first. This file is the binding contract between parallel 
 - `ChapterStats.extra` keys written by the sim: `stormHits stormKills drops thaws rerolls`.
 - Pace: sim-side multipliers `TECH_PACE PRODUCTION_PACE GROWTH_PACE BORDER_PACE` (≈1/1.6); content costs stay
   as authored. Targets in `roguelite/constants.ts` tuned with `bun scripts/sim.ts --runs 24 --size small`
-  (bot win rate ≈33%).
+  (bot win rate ≈40%).
 - Game start = Landfall: capitals pre-founded; start units `warrior` + `scout`. `settler` = Hab Crawler.
 - Renderer draws storms from `state.storms` (eye = `path[step]`, forecast = next 2 path entries) and plays
   `podLanded` (orbital streak → impact) before `cityFounded`. New model key: `drop_pod`.

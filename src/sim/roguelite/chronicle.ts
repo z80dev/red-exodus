@@ -10,8 +10,8 @@ import {
 import {
   CHAPTER_NAMES, CHAPTER_TARGET_MUL, CITY_RENOWN_PER_POP, CITY_RENOWN_PER_WONDER, CRISIS_CHAPTER, ENDLESS_ERA_MUL,
   ERA_TARGETS, FINAL_CRISIS_TARGET_MUL, FINAL_ERA, FOCUS_RENOWN_MUL, GILDED_RENOWN_BASE, GILDED_RENOWN_PER_ERA, INCOME_BASE,
-  INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, MANDATE_LOSS_CRISIS_FAIL, MANDATE_LOSS_FAIL, PRISMATIC_SPLENDOR_MUL,
-  RADIANT_SPLENDOR, TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
+  INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, LIFELINE_INFLUENCE, MANDATE_LOSS_CRISIS_FAIL, MANDATE_LOSS_FAIL,
+  OVERDRIVE_INFLUENCE_CAP, PRISMATIC_SPLENDOR_MUL, RADIANT_SPLENDOR, TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
 } from './constants';
 import { DARK_AGE_LABEL } from './darkAge';
 import { humanCities } from './stats';
@@ -210,11 +210,16 @@ function influenceIncome(state: GameState, r: ChronicleResult, effects: ActiveEf
   const run = state.run;
   const lines: { label: string; amount: number }[] = [{ label: 'Ark stipend', amount: INCOME_BASE }];
   if (r.passed) lines.push({ label: `${CHAPTER_NAMES[Math.min(r.chapter, CHAPTER_NAMES.length - 1)]} bonus`, amount: INCOME_CHAPTER_BONUS[Math.min(r.chapter, INCOME_CHAPTER_BONUS.length - 1)] });
+  else lines.push({ label: DARK_AGE_LABEL, amount: LIFELINE_INFLUENCE });
   const cap = { value: INTEREST_CAP };
   runHook(state, HUMAN, 'interestCap', emit, effects, cap);
   const interest = Math.min(Math.max(0, Math.floor(cap.value)), Math.floor(Math.max(0, run.influence) / INTEREST_PER));
   if (interest > 0) lines.push({ label: 'Interest', amount: interest });
-  if (r.triumph) lines.push({ label: 'Triumph', amount: TRIUMPH_INFLUENCE });
+  if (r.triumph) {
+    lines.push({ label: 'Triumph', amount: TRIUMPH_INFLUENCE });
+    const overdrive = Math.min(OVERDRIVE_INFLUENCE_CAP, Math.floor(r.score / r.target) - TRIUMPH_RATIO);
+    if (overdrive > 0) lines.push({ label: `Overdrive ×${Math.floor(r.score / r.target)}`, amount: overdrive });
+  }
   const crisis = r.chapter === CRISIS_CHAPTER && run.crisis ? CRISES[run.crisis] : undefined;
   if (r.passed && crisis && crisis.reward > 0) lines.push({ label: `${crisis.name} overcome`, amount: crisis.reward });
   // buildings with `influence` pay out every chapter (one line per building type)

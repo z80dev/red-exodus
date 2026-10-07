@@ -168,7 +168,7 @@ export function ackChronicle(state: GameState, emit: Emit): string | null {
   run.stats = emptyStats();
   run.omen = null;
   if (run.mandate <= 0) {
-    defeatRun(state, 'Charter revoked. The Ark Council has cut your colony loose — the uplink goes quiet.', emit);
+    defeatRun(state, 'Charter revoked. The Ark has cut your colony loose — the uplink goes quiet.', emit);
   } else if (r.era === FINAL_ERA && r.chapter === CRISIS_CHAPTER) {
     if (r.passed) {
       run.phase = 'victory';

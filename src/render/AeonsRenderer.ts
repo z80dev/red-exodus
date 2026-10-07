@@ -128,6 +128,7 @@ export class AeonsRenderer implements Renderer {
     });
     this.rig.attach(canvas);
     this.overlay.onTap = (tile) => this.cb.onTileTap(tile);
+    this.overlay.onCityTap = (tile) => (this.cb.onCityTap ?? this.cb.onTileTap)(tile);
     this.modelMat = new MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0 });
     patchModelMaterial(this.modelMat, {});
     this.terrainMat = createTerrainMaterial();

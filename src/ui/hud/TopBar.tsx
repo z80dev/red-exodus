@@ -8,8 +8,8 @@ import { T, YIELD_NAMES } from '../terms';
 import { useGame, useSim } from '../../game/store';
 import { startOrbitalDrop } from '../../game/interaction';
 import {
-  DARK_AGE_YIELD_PCT, INCOME_BASE, INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, MANDATE_LOSS_CRISIS_FAIL, MANDATE_LOSS_FAIL,
-  TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
+  DARK_AGE_TARGET_MUL, INCOME_BASE, INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, LIFELINE_INFLUENCE, MANDATE_LOSS_CRISIS_FAIL,
+  MANDATE_LOSS_FAIL, OVERDRIVE_INFLUENCE_CAP, TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
 } from '../../sim/roguelite';
 import { empireYields, goldBreakdown, happinessBreakdown, humanCities } from '../../sim/selectors';
 import type { EmpireYields } from '../../sim/selectors';
@@ -202,6 +202,7 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
           <Line label="Chapter income" value={`+${INCOME_BASE + (INCOME_CHAPTER_BONUS[run.chapter] ?? 0)}◈`} />
           <Line label={`Interest (1 per ${INTEREST_PER} unspent, max ${INTEREST_CAP})`} value={`+${Math.min(INTEREST_CAP, Math.floor(run.influence / INTEREST_PER))}◈`} />
           <Line label={`Triumph (score ≥ ${TRIUMPH_RATIO}× target)`} value={`+${TRIUMPH_INFLUENCE}◈`} tone="dim" />
+          <Line label={`Overdrive (each full target beyond ${TRIUMPH_RATIO}×, max ${OVERDRIVE_INFLUENCE_CAP})`} value="+1◈" tone="dim" />
         </>
       );
     case 'mandate':
@@ -210,8 +211,8 @@ function PopBody({ kind, y, onClose }: { kind: PopKind; y: EmpireYields; onClose
           <PopTitle icon="mandate" color="var(--mandate)" value={`${run.mandate}/${run.maxMandate}`}>{T.mandate}</PopTitle>
           <Ornament />
           <div className="pop-hearts"><Hearts value={run.mandate} max={run.maxMandate} size={26} /></div>
-          <p className="pop-note">Missing a chapter's {T.score} target costs <b>{MANDATE_LOSS_FAIL} {T.mandate}</b> ({MANDATE_LOSS_CRISIS_FAIL} in a Crisis chapter) and brings a {T.darkAge}. At 0, the Ark cuts you off.</p>
-          {run.darkAge && <p className="pop-note pop-note--bad">{T.darkAge}: all yields {signed(DARK_AGE_YIELD_PCT)}% this chapter.</p>}
+          <p className="pop-note">Missing a chapter's {T.score} target costs <b>{MANDATE_LOSS_FAIL} {T.mandate}</b> ({MANDATE_LOSS_CRISIS_FAIL} in a Crisis chapter). At 0, the Ark cuts you off. Each miss also sends a {T.darkAge}: <b>+{LIFELINE_INFLUENCE}◈</b> and a −{Math.round((1 - DARK_AGE_TARGET_MUL) * 100)}% target next chapter.</p>
+          {run.darkAge && <p className="pop-note">{T.darkAge} active: this chapter's target is {Math.round((1 - DARK_AGE_TARGET_MUL) * 100)}% lower.</p>}
         </>
       );
     case 'clock': {

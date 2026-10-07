@@ -103,9 +103,9 @@ describe('computeChronicle', () => {
     expect(r.influenceEarned.find((l) => l.label === 'Test Crisis overcome')).toBeUndefined();
   });
 
-  it('influence: stipend, chapter bonus, capped interest, triumph', () => {
+  it('influence: stipend, chapter bonus, capped interest, triumph, capped overdrive', () => {
     state.run.influence = 40;
-    state.run.stats.culture = 1000; // 2000 + 22 = 2022 × 2 = 4044, comfortably above Triumph.
+    state.run.stats.culture = 1000; // 2000 + 22 = 2022 × 2 = 4044 = 8× the 500 target
     const r = computeChronicle(state, () => {});
     expect(r.triumph).toBe(true);
     expect(r.influenceEarned).toEqual([
@@ -113,7 +113,25 @@ describe('computeChronicle', () => {
       { label: 'Dawn bonus', amount: 1 },
       { label: 'Interest', amount: 5 },
       { label: 'Triumph', amount: 3 },
+      { label: 'Overdrive ×8', amount: 4 },
     ]);
+  });
+
+  it('overdrive pays +1 per full target beyond the triumph ratio', () => {
+    state.run.stats.culture = 300; // (600 + 22) × 2 = 1244 = 2.49× → triumph, no overdrive
+    expect(computeChronicle(structuredClone(state), () => {}).influenceEarned.map((l) => l.label)).not.toContain('Overdrive ×2');
+    state.run.stats.culture = 400; // (800 + 22) × 2 = 1644 = 3.29× → +1
+    expect(computeChronicle(state, () => {}).influenceEarned).toContainEqual({ label: 'Overdrive ×3', amount: 1 });
+  });
+
+  it('a miss wires Lifeline Scrip instead of the chapter bonus; Hazard 7 cancels it', () => {
+    state.run.stats.culture = 10; // (20 + 22) × 2 = 84 < 500
+    const r = computeChronicle(structuredClone(state), () => {});
+    expect(r.passed).toBe(false);
+    expect(r.influenceEarned).toEqual([{ label: 'Ark stipend', amount: 3 }, { label: 'Lifeline', amount: 3 }]);
+    state.run.ascension = 7;
+    const hard = computeChronicle(state, () => {});
+    expect(hard.influenceEarned.reduce((s, l) => s + l.amount, 0)).toBe(3);
   });
 
   it('cities score capital first, then by founding order', () => {
@@ -157,5 +175,15 @@ describe('chronicleTarget', () => {
     expect(chronicleTarget(state, 0, 2)).toBeCloseTo(regular * 1.5);
     expect(chronicleTarget(state, 0, 1)).toBe(trial);
     expect(chronicleTarget(state, 1, 2)).toBe(nextEra);
+  });
+
+  it('the Lifeline cuts the target after a miss unless Hazard 7 is active', () => {
+    const normal = chronicleTarget(state, 1, 1);
+    state.run.darkAge = true;
+    expect(chronicleTarget(state, 1, 1)).toBe(Math.round(normal * 0.75));
+    state.run.ascension = 7;
+    const hazard7 = chronicleTarget(state, 1, 1);
+    state.run.darkAge = false;
+    expect(hazard7).toBe(chronicleTarget(state, 1, 1));
   });
 });

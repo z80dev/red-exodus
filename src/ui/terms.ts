@@ -28,7 +28,7 @@ export const T = {
   omens: 'Directives',
   crisis: 'Crisis',
   ascension: 'Hazard',
-  darkAge: 'Blackout',
+  darkAge: 'Lifeline',
   triumph: 'Triumph',
   leader: 'Nation',
   leaders: 'Nations',

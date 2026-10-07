@@ -23,6 +23,8 @@ export const EMPTY_HIGHLIGHTS: Highlights = { selected: null, move: [], attack: 
 export interface RendererCallbacks {
   onTileTap(idx: TileIdx): void;
   onTileLongPress(idx: TileIdx): void;
+  /** city banner tapped (defaults to onTileTap) */
+  onCityTap?(idx: TileIdx): void;
   /** hovering (desktop) for path previews */
   onTileHover?(idx: TileIdx | null): void;
 }

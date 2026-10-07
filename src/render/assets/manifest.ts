@@ -54,9 +54,10 @@ export const MODEL_KEYS: Record<ModelGroup, string[]> = {
 
 export const ALL_MODEL_KEYS: string[] = MODEL_GROUPS.flatMap((g) => MODEL_KEYS[g]);
 
+/** manifests list `/models/<file>`; resolve against Vite's base so the build works under a sub-path (GitHub Pages) */
 export function modelUrl(file: string): string {
-  if (/^(https?:)?\//.test(file)) return file;
-  return `/models/${file.replace(/^\.?\/?(models\/)?/, '')}`;
+  if (/^(https?:)?\/\//.test(file)) return file;
+  return `${import.meta.env.BASE_URL}models/${file.replace(/^\.?\/?(models\/)?/, '')}`;
 }
 
 /** fetch all group manifests; missing/invalid manifests are skipped (models then fall back to stand-ins) */
@@ -65,7 +66,7 @@ export async function loadManifests(): Promise<Map<string, ManifestEntry>> {
   await Promise.all(
     MODEL_GROUPS.map(async (g) => {
       try {
-        const res = await fetch(`/models/manifest.${g}.json`, { cache: 'no-cache' });
+        const res = await fetch(`${import.meta.env.BASE_URL}models/manifest.${g}.json`, { cache: 'no-cache' });
         if (!res.ok || !(res.headers.get('content-type') ?? '').includes('json')) return;
         const list = (await res.json()) as ManifestEntry[];
         if (!Array.isArray(list)) return;

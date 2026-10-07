@@ -149,7 +149,7 @@
 .rcs-status { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin-top: 2px; }
 .rcs-turns { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--text-dim); }
 .rcs-warn { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; border: 1px solid; background: rgba(0,0,0,0.4); min-height: 28px; }
-.rcs-warn--dark { color: #c9b8ff; border-color: rgba(160,130,255,0.5); }
+.rcs-warn--lifeline { color: #8fe3a1; border-color: rgba(120,220,140,0.55); }
 .rcs-warn--crisis { color: #ffb3a6; border-color: rgba(255,90,79,0.6); cursor: pointer; animation: ro-breathe 2s ease-in-out infinite; }
 
 .rcs-section { display: flex; flex-direction: column; gap: 8px; }

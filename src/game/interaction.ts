@@ -205,6 +205,21 @@ export function onTileTap(idx: TileIdx): void {
   tapFresh(s, idx);
 }
 
+/** City banner tap: opens your colony directly instead of picking a unit parked on its tile. With a unit selected
+ * or a targeting mode active the banner behaves like its tile (move / attack / aim there). */
+export function onCityTap(idx: TileIdx): void {
+  const s = game();
+  if (!s || inputBlocked()) return;
+  const g = useGame.getState();
+  const ui = useInteraction.getState();
+  const sel = g.selection;
+  const busyMode = g.mode.kind !== 'normal' || ui.dropTargeting || ui.strikeCity != null;
+  const unitSelected = sel?.kind === 'unit' && s.units[sel.id]?.owner === HUMAN;
+  const city = cityOnTile(s, idx);
+  if (busyMode || unitSelected || !city || city.owner !== HUMAN) return onTileTap(idx);
+  selectCity(city.id);
+}
+
 export function onTileLongPress(idx: TileIdx): void {
   const s = game();
   if (!s || idx < 0 || idx >= s.map.tiles.length) return;

@@ -68,6 +68,7 @@ export class OverlayStore {
   readonly elements = new Map<string, HTMLElement>();
   private popId = 1;
   onTap: ((tile: number) => void) | null = null;
+  onCityTap: ((tile: number) => void) | null = null;
 
   subscribe = (fn: () => void): (() => void) => {
     this.subs.add(fn);

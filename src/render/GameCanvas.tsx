@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { setRenderer } from '../game/bridge';
 import { bus } from '../game/bus';
-import { onTileHover, onTileLongPress, onTileTap } from '../game/interaction';
+import { onCityTap, onTileHover, onTileLongPress, onTileTap } from '../game/interaction';
 import { useGame } from '../game/store';
 import { LEADERS } from '../content';
 import { loadProfile } from '../meta/profile';
@@ -47,7 +47,7 @@ export function GameCanvas() {
     const canvas = canvasRef.current;
     if (!host || !canvas) return;
     const prefs = settings();
-    const r = new AeonsRenderer(canvas, { onTileTap, onTileLongPress, onTileHover }, prefs.quality);
+    const r = new AeonsRenderer(canvas, { onTileTap, onTileLongPress, onTileHover, onCityTap }, prefs.quality);
     r.setFastAnimations(prefs.fast);
     setRenderer(r);
     setR(r);

@@ -31,7 +31,8 @@ const STARTER_LEADER_COUNT = 2;
 const memoryStore: Record<string, string> = {};
 function storage(): Pick<Storage, 'getItem' | 'setItem'> {
   try {
-    if (typeof localStorage !== 'undefined') return localStorage;
+    // Node ≥25 exposes a stub `localStorage` without methods unless --localstorage-file is set
+    if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') return localStorage;
   } catch {
     // access denied (private mode / sandboxed iframe) → in-memory
   }

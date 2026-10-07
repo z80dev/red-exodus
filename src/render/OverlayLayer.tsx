@@ -24,7 +24,7 @@ const Banner = memo(function Banner({ b, store }: { b: BannerData; store: Overla
         type="button"
         className={`ae-banner${b.human ? ' ae-banner--human' : ''}${b.ghost ? ' ae-banner--ghost' : ''}`}
         style={{ '--pc': b.primary, '--sc': b.secondary } as CSSProperties}
-        onClick={() => store.onTap?.(b.tile)}
+        onClick={() => (store.onCityTap ?? store.onTap)?.(b.tile)}
       >
         <span className="ae-banner__pop">{b.pop}</span>
         <span className="ae-banner__name">

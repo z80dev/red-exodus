@@ -47,7 +47,8 @@ RUN (~78 turns, 45–75 min)
        └ THE UPLINK (shop): the Ark passes overhead; spend Scrip on Crew / Salvage / Blueprints / Supply Drops / Ark Modules
 ```
 - Each era's Crisis is revealed at era start. **Charter** = lives (the Ark Council's backing). Missing a target
-  costs Charter and triggers a **Blackout** (−15% yields) next chapter. 0 Charter → the Ark cuts you off → run lost.
+  costs Charter and sends a **Lifeline**: +3 Scrip on that report and the next chapter's target −25% (the comeback
+  lever; Hazard 7 removes it). 0 Charter → the Ark cuts you off → run lost.
   Losing the Ark Hab (capital) → immediate collapse.
 - Every new era the Ark thaws **+1 Cryo pod** for you.
 - Victory: survive New Earth's Crisis. Endless "Beyond" after.
@@ -73,7 +74,7 @@ RUN (~78 turns, 45–75 min)
 | Omens | **Directives** | |
 | Crises | **Crises** | |
 | Ascension | **Hazard** 1–8 | |
-| Dark Age | **Blackout** | |
+| Dark Age | **Lifeline** | catch-up after a miss |
 | Leaders / civs | **Nations** (an Ark + its commander) | |
 | Cities / capital | **Colonies** / **Ark Hab** | |
 | Settler | **Hab Crawler** | the slow way to expand |
@@ -118,8 +119,8 @@ hovertanks, siege = mortars → mass drivers, naval = dust skiffs.
 ## 5. The Sol Report (scoring)
 
 Unchanged math, reskinned: pillar Output → Priority ×2 → Hope base → colonies left-to-right → Crew
-left-to-right → editions → Crisis/Blackout → Viability = floor(Output × Hope). Pass ≥ target;
-≥2× = Triumph (+Scrip). Blueprints level pillars. Targets retuned for the 78-turn pace by headless sim.
+left-to-right → editions → Crisis → Viability = floor(Output × Hope). Pass ≥ target;
+≥2× = Triumph (+3 Scrip), plus **Overdrive** +1 Scrip per further full target (max +4). Blueprints level pillars. Targets retuned for the 78-turn pace by headless sim.
 
 ## 6. The Uplink (shop)
 

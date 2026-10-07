@@ -4,7 +4,7 @@ import { T } from '../terms';
 import type { CSSProperties } from 'react';
 import { OMENS } from '../../content';
 import { useGame, useSim } from '../../game/store';
-import { chronicleTarget, projectPillars } from '../../sim/roguelite';
+import { chronicleTarget, DARK_AGE_TARGET_MUL, projectPillars } from '../../sim/roguelite';
 import { PILLARS } from '../../sim/types';
 import type { OmenId, PillarId } from '../../sim/types';
 import { Button } from '../kit';
@@ -78,7 +78,7 @@ export function ChapterStart() {
             <span className="rcs-turns"><Icon name="hourglass" size={14} /> {run.chapterLength} sols</span>
             <span className="rcs-warn rcs-warn--cryo"><Icon name="cryo" size={14} /> {player.cryo} {T.cryo}</span>
             {stormPressure > 0 && <span className="rcs-warn rcs-warn--storm"><Icon name="storm" size={14} /> {T.storm} pressure {stormPressure}</span>}
-            {run.darkAge && <span className="rcs-warn rcs-warn--dark"><Icon name="skull" size={14} /> Blackout: −15% yields</span>}
+            {run.darkAge && <span className="rcs-warn rcs-warn--lifeline"><Icon name="mandate" size={14} /> {T.darkAge}: target −{Math.round((1 - DARK_AGE_TARGET_MUL) * 100)}%</span>}
             {crisisChapter && run.crisis && (
               <button type="button" className="rcs-warn rcs-warn--crisis" onClick={() => { sfx('open'); setZoomCrisis(true); }}>
                 <Icon name="crisis" size={14} /> {crisisCard(run.crisis).title}

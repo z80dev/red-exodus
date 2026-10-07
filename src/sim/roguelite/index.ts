@@ -16,7 +16,7 @@ export {
   addInfluence, changeMandate, defeatRun, grantDoctrine, initRun, isEndless, mapActionsAllowed, onTurnEnd,
 } from './run';
 export { addExtraStat, addStat, emptyStats, trackEvent } from './stats';
-export { DARK_AGE_EFFECTS, DARK_AGE_LABEL, DARK_AGE_YIELD_PCT } from './darkAge';
+export { DARK_AGE_EFFECTS, DARK_AGE_LABEL, DARK_AGE_TARGET_MUL } from './darkAge';
 export * from './constants';
 
 const RUN_ACTIONS: Record<string, true> = {

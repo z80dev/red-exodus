@@ -18,9 +18,9 @@ export const START_DOCTRINE_SLOTS = 5;
 export const START_EDICT_SLOTS = 2;
 
 // ── chronicle targets ──
-/** first retune for 13-turn eras (was 20): ×0.65 of the 20-turn table; final balance via `bun scripts/sim.ts` */
-export const ERA_TARGETS = [500, 2600, 8500, 21000, 45000, 100000] as const;
-export const CHAPTER_TARGET_MUL = [1, 1.1, 2.7] as const;
+/** tuned with `bun scripts/sim.ts --runs 60 --size small` alongside the Lifeline: gentler Foothold, steeper late eras */
+export const ERA_TARGETS = [500, 2300, 8500, 23000, 52000, 110000] as const;
+export const CHAPTER_TARGET_MUL = [1, 1.15, 2.4] as const;
 /** The terminal Crisis is a slightly gentler check than recurring Crisis chapters. */
 export const FINAL_CRISIS_TARGET_MUL = 2.2;
 /** each endless era multiplies the previous era's base target */
@@ -40,6 +40,8 @@ export const PRISMATIC_SPLENDOR_MUL = 1.5;
 // ── mandate ──
 export const MANDATE_LOSS_FAIL = 1;
 export const MANDATE_LOSS_CRISIS_FAIL = 2;
+/** Scrip the Council wires after a missed Sol Report (the Lifeline also cuts the next target) */
+export const LIFELINE_INFLUENCE = 3;
 
 // ── influence income ──
 export const INCOME_BASE = 3;
@@ -47,6 +49,8 @@ export const INCOME_CHAPTER_BONUS = [1, 2, 3] as const;
 export const INTEREST_PER = 5;
 export const INTEREST_CAP = 5;
 export const TRIUMPH_INFLUENCE = 3;
+/** Overdrive: +1 Scrip for every full target beyond the Triumph ratio, capped */
+export const OVERDRIVE_INFLUENCE_CAP = 4;
 
 // ── council ──
 export const SHOP_DOCTRINE_SLOTS = 2;
