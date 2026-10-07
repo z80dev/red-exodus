@@ -7,7 +7,7 @@ import { changePop } from '../../sim/cities';
 import { changeCryo } from '../../sim/mars';
 import { chance } from '../../sim/rng';
 import { registerCrew } from '../doctrineRegistry';
-import { cityHas, countBuildings, coastalCount, ownMod, ownTile, ownUnit, unitClassOf } from '../doctrines';
+import { cityHas, coastalCount, ownMod, ownTile, ownUnit, unitClassOf } from '../doctrines';
 
 export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
   sweden: {
