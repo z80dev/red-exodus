@@ -110,6 +110,16 @@ for (const [id, [body, accent, shape]] of Object.entries(RESOURCE_SYMBOLS)) {
 for (const [id, [body, accent, crest]] of Object.entries(CODE_PALETTES)) {
   MARS_GLYPHS[`nation_${id}`] = glyph(body, accent, crest);
 }
+
+const DERIVED_CRESTS = [star(12, 12, 3, 1.5, 5), shield, circle(12, 12, 2.5), 'M12 8 16 12 12 16 8 12Z', orbital, 'M10.8 8h2.4v3h3v2.4h-3v3h-2.4v-3h-3V11h3Z'];
+/** crest glyph for nations without a hand-tuned palette: flag colors + a crest shape picked from the id */
+export function derivedNationGlyph(id: string, flagColors: string[]): Glyph {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const body = flagColors[0] ?? '#b5473c';
+  const accent = flagColors.find((c, i) => i > 0 && c.toLowerCase() !== body.toLowerCase()) ?? '#e9dfc1';
+  return glyph(body, accent, DERIVED_CRESTS[h % DERIVED_CRESTS.length]);
+}
 const INSTALLATIONS: Record<string, [string, string, string]> = {
   farm: ['#b0a177', '#9cc36c', 'mat'],
   mine: ['#575653', '#c17b4b', 'ore'],

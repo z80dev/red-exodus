@@ -43,7 +43,7 @@ export default function MapGenPreview() {
       @media(max-width:600px) { .atlas { padding:18px 12px; } .atlas h1 { font-size:25px; } .atlas form { width:100%; } .atlas input { flex:1;min-width:80px;width:90px; } .atlas select { width:100px;padding:0 8px; } .atlas .chart { margin-top:18px; } .atlas svg { min-height:350px; } .atlas .legend { margin-left:0; } }
       @media(max-height:500px) and (min-width:600px) { .atlas { padding:12px 18px; } .atlas h1 { font-size:20px; } .atlas .subtitle,.atlas .eyebrow { display:none; } .atlas .chart { margin-top:12px; } .atlas svg { min-height:220px;max-height:calc(100dvh - 115px); } .atlas footer { margin-top:8px;font-size:11px; } }
     `}</style>
-    <header><div><p className="eyebrow">RED EXODUS / Survey laboratory</p><h1>Orbital Survey</h1><p className="subtitle">Twelve Arks. One planet. Zero refunds.</p></div>
+    <header><div><p className="eyebrow">RED EXODUS / Survey laboratory</p><h1>Orbital Survey</h1><p className="subtitle">Fifty-one Arks. One planet. Zero refunds.</p></div>
       <form onSubmit={e => { e.preventDefault(); setSeed(input); }}>
         <input aria-label="Survey seed" value={input} onChange={e => setInput(e.target.value)} />
         <select aria-label="Survey map size" value={size} onChange={e => setSize(e.target.value as MapSize)}><option value="small">Small</option><option value="standard">Standard</option><option value="large">Large</option></select>

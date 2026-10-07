@@ -1,10 +1,10 @@
 # RED EXODUS — A Roguelike Colony Game on a Dying World's Last Hope
 
-> "Earth went dark on a Tuesday. Twelve Arks made it out. This is what landed."
+> "Earth went dark on a Tuesday. Fifty-one Arks made it out. This is what landed."
 
 Mobile-first, pause-anywhere, **45–75 minute runs**. A fast, tactical colony builder on Mars wrapped in
 a Balatro engine-building loop. You are not building a civilization over 6,000 years: you are one of
-twelve national Arks that escaped Earth's collapse, racing the dust, the cold, the other survivors and
+fifty-one national Arks that escaped Earth's collapse, racing the dust, the cold, the other survivors and
 your own dwindling cryo-sleeping passengers to prove your colony is *viable*.
 
 Code name stays `aeons` (package, ids, save keys). Display title is **RED EXODUS**.
@@ -16,12 +16,12 @@ Code name stays `aeons` (package, ids, save keys). Display title is **RED EXODUS
    arrive by **Orbital Drop**.
 2. **The Sol Report is the dopamine machine.** Every chapter your colony is scored:
    **Viability = Output × Hope** (Balatro chips × mult). Crew fire left-to-right, numbers fly.
-3. **Crew are the jokers.** You collect named survivors from all twelve nations — a disgraced oligarch,
+3. **Crew are the jokers.** You collect named survivors from the original twelve nations — a disgraced oligarch,
    a Svalbard seed-vault keeper, a K-pop idol, an ex-NASA flight director. Each bends a rule or feeds
    the report. Order matters. Synergies make each run its own logic.
 4. **Mars is the boss.** Telegraphed **dust storms** sweep the map every turn; eras end in Crises (solar
    flares, Phobos debris, Earth's final broadcast). Hard, fair, readable.
-5. **Your nation is your deck.** Twelve Arks, each an asymmetric rule-breaker (Balatro decks), not a
+5. **Your nation is your deck.** Fifty-one Arks, each an asymmetric rule-breaker (Balatro decks), not a
    +10% bonus.
 
 ## 2. What makes it *not* Civilization
@@ -174,9 +174,9 @@ Landing, Martian Winter…
   something every 2–4 turns and a healthy run researches ~24 of 36 techs by the end.
 - Default map: small; 3 rivals.
 
-## 8. The twelve Arks (nations = Balatro decks)
+## 8. The Arks (nations = Balatro decks)
 
-Six open from the start, six unlocked by meta progression. Commanders are fictional people.
+The original twelve: six open from the start, six unlocked by meta progression. Commanders are fictional people.
 Rivals are drawn from the other eleven.
 
 | id | Nation · Ark | Commander | Rule-breaker | UU / UB | Start Crew | AI |
@@ -193,6 +193,53 @@ Rivals are drawn from the other eleven.
 | `switzerland` | Switzerland · **Helvetia Vault** | Federal Councillor Anna Brunner | **Armed Neutrality**: rival nations can never declare war on you and you can never declare war; colonies +50% defense; Scrip interest cap doubled. | Alpine Guard (anti-cavalry) · Bunker Bank (bank) | The Private Banker | builder |
 | `north_korea` | North Korea · **Juche Ark** (challenge deck) | Marshal Ri Song-hwa, "the Dear Commander" | **Hermit Kingdom**: the Uplink cannot be rerolled; military units −30% Industry and +15% strength; −25% Morale. Start with *Eternal Leader* (×2 Hope; cannot be sold). | Songun Trooper (melee era1) · Mass Games Arena (stadium) | Eternal Leader | warmonger |
 | `vatican` | Holy See · **The Last Conclave** | Pope Innocent XIV | **Faith Beyond Earth**: +2 Hope in every Sol Report; Salvage has a 1-in-3 chance not to be consumed ("Miracle"); +1 Charter. | Swiss Guard (anti-cavalry) · Basilica of the Red Planet (cathedral) | The Cardinal | builder |
+
+### Expansion Arks (39 more; open from the start)
+Content lives in `src/content/nations/<region>.ts` (leaders + starting Crew) and `<region>.uniques.ts` (literal unique
+unit/building defs), spread into `LEADERS` / `UNIQUE_UNITS` / `UNIQUE_BUILDINGS`. Rule-breakers are in each file's `bonus`.
+Nations without a hand-tuned crest palette derive their `nation_<id>` icon from `flagColors`.
+
+| id | Nation · Ark | Commander | UU · UB | Start Crew | AI |
+|---|---|---|---|---|---|
+| `germany` | Germany · **Arche Ordnung** | Dr. Katharina Weidner, Chief Engineer of the Ordnung Ark | Eisenfaust Driver · Mittelstand Works | The Safety Inspector | builder |
+| `uk` | United Kingdom · **Albion Ark** | Dame Imogen Hartley-Pryce, Admiral-Governor of the Albion Ark | Longbow Coilgunner · Royal Dockyard | The Tea Lady | expansionist |
+| `italy` | Italy · **Arca Rinascimento** | Dr. Giulia Ferrante, Curator-General of the Rinascimento Ark; Superintendent of Eternal Restoration | Codex Mortar · Grand Galleria | The Barista | builder |
+| `spain` | Spain · **Arca del Sol** | Capitana Lucía Navarro, Capitana of the Sol Ark; Director of the Great Survey | Matador Hover Bike · Plaza Mayor | El Cartógrafo | warmonger |
+| `netherlands` | Netherlands · **Polder Ark** | Dr. Fenna de Vries, Dike-Warden of the Polder Ark | Dijkwacht Squad · Polder Pump | The Pump Engineer | expansionist |
+| `belgium` | Belgium · **Atomium Ark** | Commissaire Hélène Van den Berg, Commissioner of the Atomium Ark; Chair of the Subcommittee on Subcommittees | Ardennes Ranger · Chocolaterie | The Chocolatier | scientist |
+| `ireland` | Ireland · **Emerald Ark** | Siobhán Gallagher, Skipper of the Emerald Ark | Sliotar Slinger · Last Orders Pub | The Publican | expansionist |
+| `portugal` | Portugal · **Arca Navegante** | Inês Carvalho, Navigator-General of the Navegante Ark | Navegador Rover · Sagres Beacon | The Fadista | expansionist |
+| `austria` | Austria · **Edelweiss Ark** | Dr. Theresia Gruber, Director of the Edelweiss Ark; Chair of the Philharmonic Hab | Edelweiss Jäger · Kaffeehaus | The Kapellmeister | scientist |
+| `denmark` | Denmark · **Hygge Ark** | Kaptajn Freja Madsen, Jarl-Director of the Hygge Ark | Viking Raider · Hygge Lounge | The Windsmith | warmonger |
+| `sweden` | Sweden · **Folkhem Ark** | Astrid Lindqvist, Chair of the Prize Committee; Chief Safety Inspector | Carolean Marcher · Prize Hall | The Laureate | scientist |
+| `norway` | Norway · **Fjord Ark** | Ingrid Solheim, Harbour Admiral of the Fjord Ark | Ski Patrol · Fjord Pier | The Fjord Pilot | expansionist |
+| `finland` | Finland · **Sisu Ark** | Aino Virtanen, Reservist General and Sauna Warden of the Sisu Ark | Sisu Sharpshooter · Sauna | The Winter Sniper | builder |
+| `poland` | Poland · **Feniks Ark** | Katarzyna Nowak, Marshal of the Feniks Ark; Union Steward | Winged Hussar Rover · Bastion of the Hill | The Pierogi Chef | warmonger |
+| `czechia` | Czechia · **Orloj Ark** | Marta Novotná, Master Horologist and Chief Brewmaster of the Orloj Ark | Wagon-Fort Crew · Orloj Tower | The Brewmaster | builder |
+| `romania` | Romania · **Carpathian Ark** | Ileana Munteanu, Voivode of the Carpathian Ark; Keeper of the Pods | Haiduk Raider · Bran Keep | The Count | expansionist |
+| `turkey` | Türkiye · **Crossroads Ark** | Deniz Aksoy, Caravanserai Warden of the Crossroads Ark | Janissary Bombardier · Covered Bazaar | The Tea Seller | warmonger |
+| `israel` | Israel · **Negev Ark** | Noa Ben-David, Chief Technology Officer of the Negev Ark; Drip-Line Engineer | Skyshield Interceptor · Drip-Line Works | The Startup Founder | scientist |
+| `kazakhstan` | Kazakhstan · **Baikonur Ark** | Aigerim Sarsenova, Launch Director of the Baikonur Ark; Marshal of the Steppe | Steppe Batyr · Cosmodrome Gantry | The Launch Director | expansionist |
+| `canada` | Canada · **Aurora Ark** | Marguerite Beaulieu, Search-and-Rescue Commander of the Aurora Ark | Mountie Sled Rover · Universal Med Bay | The Maple Tapper | builder |
+| `mexico` | Mexico · **Arca Quinto Sol** | Itzel Navarro Cruz, Commander of the Quinto Sol Ark | Luchador Trooper · Sun Stone Chapel | La Catrina | warmonger |
+| `argentina` | Argentina · **Arca Pampa** | Lucía Benedetti, Comandante of the Pampa Ark | Gaucho Hover Bike · Estancia | The Gaucho | expansionist |
+| `colombia` | Colombia · **Arca Esmeralda** | Valeria Quintero Montoya, Coffee Grower and Commander of the Arca Esmeralda | Chiva Rover · Cafetería Exchange | The Cafetero | expansionist |
+| `chile` | Chile · **Arca Cordillera** | Dr. Ignacia Carrasco Millán, Chief Astronomer of the Cordillera Ark | Andean Sentinel · Atacama Array | The Seismologist | scientist |
+| `australia` | Australia · **Southern Cross Ark** | Bronwyn Hartigan, Chief Ranger of the Southern Cross Ark | Boomerang Mortar · Shell Harbour | The Wildlife Ranger | expansionist |
+| `south_africa` | South Africa · **Rainbow Ark** | Thandiwe van Wyk, Convener of the Rainbow Ark | Springbok Scrum · Reef Foundry | The Braai Master | builder |
+| `egypt` | Egypt · **Sphinx Ark** | Dr. Amira Khalil, Curator-General of the Sphinx Ark | Medjay Sentry · House of Life | The Royal Scribe | builder |
+| `iran` | Iran · **Pardis Ark** | Dr. Shirin Karimi-Nejad, Astronomer-Poet and Navigator of the Pardis Ark | Immortal Guard · Qanat Reclaimer | The Garden Keeper | builder |
+| `pakistan` | Pakistan · **Karakoram Ark** | Major Ayesha Chaudhry, Expedition Leader of the Karakoram Ark | Karakoram Marksman · Karakoram Ramparts | The Truck Artist | warmonger |
+| `south_korea` | South Korea · **Hanbit Ark** | Park Ha-neul, Producer-General of the Hanbit Ark | Hwacha Swarm Rack · Hallyu Broadcast Hub | The Idol Trainee | scientist |
+| `indonesia` | Indonesia · **Nusantara Ark** | Dewi Kusuma, Harbourmaster-General of the Nusantara Ark | Silat Skirmisher · Pinisi Harbor | The Spice Trader | expansionist |
+| `saudi_arabia` | Saudi Arabia · **Najd Ark** | Reem Al-Harbi, Director-General of the Najd Ark | Dromedary Courser · Deuterium Refinery | The Wildcatter | builder |
+| `taiwan` | Taiwan · **Yushan Ark** | Chen Yu-ting, Chief Fab Engineer of the Yushan Ark | Typhoon Battery · Semiconductor Fab | The Chip Designer | scientist |
+| `thailand` | Thailand · **Suvarnabhumi Ark** | Nattaya Chaiyasit, Director of the Suvarnabhumi Ark | Elephant Walker · Spirit House Garden | The Night Market Chef | builder |
+| `singapore` | Singapore · **Merlion Ark** | Dr. Grace Tan, Port Director of the Merlion Ark | Lion-City Sentinel · Free Port Exchange | The Harbourmaster | scientist |
+| `philippines` | Philippines · **Perlas Ark** | Marisol Dela Cruz, Chief Nurse of the Perlas Ark | Eskrima Duelist · Nurse Corps Clinic | The Balikbayan Courier | expansionist |
+| `vietnam` | Vietnam · **Hồng Hà Ark** | Trần Minh Anh, Chief Tunnel Engineer of the Hồng Hà Ark | Tunnel Sniper · Tunnel Network | The Tunnel Scout | warmonger |
+| `bangladesh` | Bangladesh · **Padma Ark** | Tahmina Haque, Delta Commissioner of the Padma Ark | Lathial Guard · Embankment Works | The Textile Foreman | expansionist |
+| `malaysia` | Malaysia · **Muhibbah Ark** | Zahra Ibrahim, Convener of the Muhibbah Ark | Keris Vanguard · Canopy Institute | The Teh Tarik Mediator | builder |
 
 ## 9. Presentation
 

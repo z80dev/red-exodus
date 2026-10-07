@@ -7,6 +7,10 @@ import { addEdict } from '../sim/roguelite/council';
 import { EDICTS } from './edicts';
 import { UNITS } from './units';
 import { pushDoctrineCard } from './doctrines';
+import { LEADERS_AMERICAS } from './nations/americas';
+import { LEADERS_ASIA } from './nations/asia';
+import { LEADERS_NORTHEAST } from './nations/northeast';
+import { LEADERS_WESTEUROPE } from './nations/westeurope';
 
 export const LEADERS: Record<string, LeaderDef> = {
   usa: {
@@ -184,4 +188,9 @@ export const LEADERS: Record<string, LeaderDef> = {
       onEvent(ctx, ev) { if (ev.type === 'edictUsed' && ctx.player.isHuman && chance(ctx.state.rng, 1 / 3)) addEdict(ctx.state, ev.id); },
     },
   },
+  // expansion Arks (content/nations/*): open from the start, ordered by region file
+  ...LEADERS_WESTEUROPE,
+  ...LEADERS_NORTHEAST,
+  ...LEADERS_AMERICAS,
+  ...LEADERS_ASIA,
 };

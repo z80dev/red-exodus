@@ -28,6 +28,8 @@ export function NewRun() {
   const [seed, setSeed] = useState(() => daily ? dailyDate() : randomSeed());
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState('');
+  const [browsing, setBrowsing] = useState(false);
+  const [query, setQuery] = useState('');
   const touchStart = useRef<number | null>(null);
   const leader = leaders[index];
   if (!leader) return <MenuFrame eyebrow="Landfall protocol" title="Choose your Ark"><p className="ae-error">The Ark registry is unavailable.</p></MenuFrame>;
@@ -50,12 +52,18 @@ export function NewRun() {
   const building = leader.uniqueBuilding ? BUILDINGS[leader.uniqueBuilding] : null;
   const crew = leader.startDoctrine ? DOCTRINES[leader.startDoctrine] : null;
   const arkName = leader.civName;
-  return <MenuFrame eyebrow={daily ? 'Daily Landfall · One attempt' : 'A world waits below'} title="Choose your Ark" subtitle="Twelve nations escaped Earth. Mars has room for none of their old excuses.">
+  return <MenuFrame eyebrow={daily ? 'Daily Landfall · One attempt' : 'A world waits below'} title="Choose your Ark" subtitle="Fifty-one nations escaped Earth. Mars has room for none of their old excuses.">
     <div className="ae-newrun-layout" style={{ '--leader-color': leader.colors.primary } as CSSProperties}>
       <section className={`ae-leader-stage ${!unlocked ? 'is-locked' : ''}`} aria-label="Choose a nation" onTouchStart={(e) => { touchStart.current = e.touches[0].clientX; }} onTouchEnd={(e) => { if (touchStart.current !== null) { const delta = e.changedTouches[0].clientX - touchStart.current; if (Math.abs(delta) > 45) changeLeader(index + (delta < 0 ? 1 : -1)); } touchStart.current = null; }}>
         <div className="ae-leader-art" key={leader.id}><LeaderPortrait leader={leader} shape="card" className="ae-leader-portrait" /><div className="ae-leader-art-shade" /><span className="ae-leader-civ ae-eyebrow">{leader.country}</span><div className="ae-leader-art-name"><span className="ae-eyebrow">{leader.title}</span><h2>{leader.name}</h2></div><div className="ae-ark-badge" aria-label={`${leader.code} Ark colors`}>{leader.flagColors.map((color, stripe) => <i key={stripe} style={{ backgroundColor: color }} />)}<b>{leader.code}</b></div>{!unlocked && <div className="ae-leader-lock"><Icon name="lock" size={36} /><span>ARK NOT CLEARED</span></div>}</div>
-        <div className="ae-carousel-controls"><button className="ae-icon-button" aria-label="Previous nation" onClick={() => changeLeader(index - 1)}><Icon name="chevronLeft" /></button><div className="ae-leader-dots" aria-label="Nations">{leaders.map((entry, i) => <button key={entry.id} aria-label={`Choose ${entry.country}`} aria-pressed={i === index} onClick={() => changeLeader(i)}><span className={i === index ? 'active' : ''} /></button>)}</div><button className="ae-icon-button" aria-label="Next nation" onClick={() => changeLeader(index + 1)}><Icon name="chevronRight" /></button></div>
+        <div className="ae-carousel-controls"><button className="ae-icon-button" aria-label="Previous nation" onClick={() => changeLeader(index - 1)}><Icon name="chevronLeft" /></button><button className="ae-nation-browse" aria-label="Browse all nations" aria-expanded={browsing} onClick={() => { setBrowsing(true); setQuery(''); audio.sfx('open'); }}><span>All Arks</span><small>{index + 1} / {leaders.length}</small></button><button className="ae-icon-button" aria-label="Next nation" onClick={() => changeLeader(index + 1)}><Icon name="chevronRight" /></button></div>
       </section>
+      {browsing && <div className="ae-nation-sheet" role="dialog" aria-label="All nations" onClick={(e) => { if (e.target === e.currentTarget) setBrowsing(false); }}>
+        <div className="ae-nation-sheet-panel">
+          <div className="ae-nation-sheet-head"><h3>Choose an Ark</h3><input aria-label="Search nations" placeholder="Search nations…" value={query} autoFocus onChange={(e) => setQuery(e.target.value)} /><button className="ae-icon-button" aria-label="Close" onClick={() => setBrowsing(false)}><Icon name="close" /></button></div>
+          <div className="ae-nation-grid">{leaders.map((entry, i) => ({ entry, i })).filter(({ entry }) => !query.trim() || `${entry.country} ${entry.code} ${entry.civName} ${entry.name}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => a.entry.country.localeCompare(b.entry.country)).map(({ entry, i }) => <button key={entry.id} aria-label={`Choose ${entry.country}`} aria-pressed={i === index} className={`${i === index ? 'active' : ''}${isLeaderUnlocked(profile, entry.id) ? '' : ' is-locked'}`} style={{ '--nation-color': entry.colors.primary } as CSSProperties} onClick={() => { changeLeader(i); setBrowsing(false); }}><span className="ae-nation-stripes">{entry.flagColors.map((color, stripe) => <i key={stripe} style={{ backgroundColor: color }} />)}</span><b>{entry.code}</b><span className="ae-nation-name">{entry.country}</span>{!isLeaderUnlocked(profile, entry.id) && <Icon name="lock" size={12} />}</button>)}</div>
+        </div>
+      </div>}
       <section className="ae-leader-details">
         <div className="ae-nation-heading"><span className="ae-eyebrow">{leader.country} · {leader.code}</span><h2>{arkName}</h2><p className="ae-leader-description">Commander {leader.name}. {leader.description}</p></div>
         <div className="ae-ability"><span className="ae-eyebrow"><Icon name="bolt" size={16} />Rule-breaker</span><RichText text={leader.bonus} /></div>

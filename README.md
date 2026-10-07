@@ -1,6 +1,6 @@
 # RED EXODUS
 
-Earth went dark. Twelve national Arks made it to Mars. A fast (~78-turn) roguelike colony game:
+Earth went dark. Fifty-one national Arks made it to Mars. A fast (~78-turn) roguelike colony game:
 orbital drops instead of walking settlers, telegraphed dust storms, a Breakthrough research draft, and
 Crew cards that bend the rules like Balatro jokers — every chapter your colony is scored in the
 **Sol Report**: Viability = Output × Hope.

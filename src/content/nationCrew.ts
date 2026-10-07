@@ -1,4 +1,4 @@
-// OWNER: Nations. Starting Crew of the twelve nations (noShop), registered in the shared Doctrine registry.
+// OWNER: Nations. Starting Crew of the original twelve nations (the rest live in content/nations/*) (noShop), registered in the shared Doctrine registry.
 import type { DoctrineDef } from '../sim/defs';
 import { registerCrew } from './doctrineRegistry';
 import { addGold } from '../sim/economy';

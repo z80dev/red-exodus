@@ -1,13 +1,12 @@
 // OWNER: SimMechanics. Shared helpers for sim tests (not imported by game code).
 import type { Action, GameState } from './types';
 import { HUMAN } from './types';
-import { LEADERS } from '../content';
 import { applyAction, createGame } from './engine';
 import { autoplayNextAction } from './ai';
 import { refreshAllCities } from './cities';
 
 export function newGame(seed: string, rivals = 3): GameState {
-  const leaderId = Object.keys(LEADERS).sort()[0];
+  const leaderId = 'brazil';
   return createGame({ seed, leaderId, ascension: 0, mapSize: 'standard', rivals, tutorial: false, daily: false }).state;
 }
 

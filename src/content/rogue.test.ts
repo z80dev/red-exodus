@@ -78,18 +78,19 @@ describe('doctrines', () => {
 
 describe('leaders & uniques', () => {
   const leaders = Object.values(LEADERS);
-  it('has 12 nations; six open at launch, the rest have valid unlock rules', () => {
-    expect(leaders.length).toBe(12);
+  it('has 51 nations; the original six plus every expansion Ark open at launch, locked ones have valid unlock rules', () => {
+    expect(leaders.length).toBe(51);
     leaders.forEach((l, i) => {
       if (i < 6) expect(l.unlock, l.id).toBeUndefined();
-      else expect(UNLOCK_RULES.has(l.unlock?.rule ?? ''), l.id).toBe(true);
+      if (l.unlock) expect(UNLOCK_RULES.has(l.unlock.rule ?? ''), l.id).toBe(true);
     });
+    expect(leaders.filter((l) => !l.unlock).length).toBe(45);
   });
 
 
   it('has distinct colors, 12+ unique city names, valid portrait, start doctrine and unique', () => {
     const colors = new Set(leaders.map((l) => l.colors.primary.toLowerCase()));
-    expect(colors.size).toBe(12);
+    expect(colors.size).toBe(leaders.length);
     for (const l of leaders) {
       expect(l.colors.primary).toMatch(/^#[0-9a-f]{6}$/i);
       expect(l.colors.secondary).toMatch(/^#[0-9a-f]{6}$/i);
@@ -124,7 +125,7 @@ describe('leaders & uniques', () => {
       }
     }
     // every leader's start doctrine is unique to it
-    expect(new Set(leaders.map((l) => l.startDoctrine)).size).toBe(12);
+    expect(new Set(leaders.map((l) => l.startDoctrine)).size).toBe(leaders.length);
   });
 });
 
@@ -449,7 +450,7 @@ describe('full pipeline', () => {
     const all = shop.map((d) => d.id);
     const leaders = Object.keys(LEADERS);
     leaders.forEach((leaderId, li) => {
-      const { state } = createGame({ seed: `ROGUE-RUN-${li}`, leaderId, ascension: li, mapSize: 'small', rivals: 3, tutorial: false, daily: false });
+      const { state } = createGame({ seed: `ROGUE-RUN-${li}`, leaderId, ascension: li % 9, mapSize: 'small', rivals: 3, tutorial: false, daily: false });
       const loadout = all.slice((li * 5) % all.length, (li * 5) % all.length + 5);
       state.run.doctrines.push(...loadout.map((id, i): DoctrineInstance => ({ uid: 50_000 + i, id, edition: 'base', counters: {}, disabled: false, sellValue: 2 })));
       const startTurn = state.turn;
@@ -457,5 +458,5 @@ describe('full pipeline', () => {
       expect(state.turn, leaderId).toBeGreaterThan(startTurn + 10);
       expect(findNonFinite(state), leaderId).toEqual([]);
     });
-  });
+  }, 120_000);
 });

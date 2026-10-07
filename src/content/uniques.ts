@@ -2,6 +2,10 @@
 // Literal defs only: units.ts/buildings.ts import this module at evaluation time, so nothing here may
 // read UNITS/BUILDINGS while the module evaluates. Unique units reuse the replaced unit's model.
 import type { BuildingDef, UnitDef } from '../sim/defs';
+import { UNIQUE_BUILDINGS_AMERICAS, UNIQUE_UNITS_AMERICAS } from './nations/americas.uniques';
+import { UNIQUE_BUILDINGS_ASIA, UNIQUE_UNITS_ASIA } from './nations/asia.uniques';
+import { UNIQUE_BUILDINGS_NORTHEAST, UNIQUE_UNITS_NORTHEAST } from './nations/northeast.uniques';
+import { UNIQUE_BUILDINGS_WESTEUROPE, UNIQUE_UNITS_WESTEUROPE } from './nations/westeurope.uniques';
 
 export const UNIQUE_UNITS: Record<string, UnitDef> = {
   marine_raider: {
@@ -76,6 +80,10 @@ export const UNIQUE_UNITS: Record<string, UnitDef> = {
     uniqueTo: 'vatican', replaces: 'spearman', model: 'u_spearman', icon: 'antiCavalry',
     description: 'The smallest army still taking its oath seriously. Replaces the Breacher with a stout anti-vehicle guard in unmistakable colors.',
   },
+  ...UNIQUE_UNITS_WESTEUROPE,
+  ...UNIQUE_UNITS_NORTHEAST,
+  ...UNIQUE_UNITS_AMERICAS,
+  ...UNIQUE_UNITS_ASIA,
 };
 
 export const UNIQUE_BUILDINGS: Record<string, BuildingDef> = {
@@ -139,4 +147,8 @@ export const UNIQUE_BUILDINGS: Record<string, BuildingDef> = {
     uniqueTo: 'vatican', replaces: 'cathedral', requires: 'temple', model: 'bld_cathedral', pillar: 'glory', icon: 'cathedral',
     description: 'Replaces the Cathedral of Earth: +5 {cul}, +2 {sci}, +3 {happy}. The ceiling is a pressure dome; the heavens are still included.',
   },
+  ...UNIQUE_BUILDINGS_WESTEUROPE,
+  ...UNIQUE_BUILDINGS_NORTHEAST,
+  ...UNIQUE_BUILDINGS_AMERICAS,
+  ...UNIQUE_BUILDINGS_ASIA,
 };

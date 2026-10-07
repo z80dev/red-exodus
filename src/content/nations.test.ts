@@ -6,23 +6,33 @@ import { HUMAN } from '../sim/types';
 // Nation hooks run for every player that leads that nation (AIs included). Run-level perks (pillar
 // levels, Salvage, Charter) must only ever land on the human's run, whoever the rivals are.
 describe('nation perks stay with their own player', () => {
-  const rivalsOf = (id: string) => createGame({ seed: `iso-${id}`, leaderId: 'usa', ascension: 0, mapSize: 'small', rivals: 3, tutorial: false, daily: false }).state;
-
-  it('AI France/Russia/Vatican never touch the human run', () => {
-    for (let i = 0; i < 40; i++) {
-      const state = rivalsOf(String(i));
-      const rivals = state.players.filter((p) => p.id !== HUMAN).map((p) => p.leaderId);
-      if (rivals.includes('france')) expect(state.run.pillarLevels.arts).toBe(1);
-      if (rivals.includes('russia')) expect(state.run.edicts.map((e) => e.id)).not.toContain('tsar_charge');
-      if (rivals.includes('vatican')) expect(state.run.maxMandate).toBe(createGame({ seed: 'base', leaderId: 'usa', ascension: 0, mapSize: 'small', rivals: 1, tutorial: false, daily: false }).state.run.maxMandate);
+  it('no rival nation changes the human run or the human player at landfall', () => {
+    const signature = (seed: string) => {
+      const state = createGame({ seed, leaderId: 'usa', ascension: 0, mapSize: 'small', rivals: 3, tutorial: false, daily: false }).state;
+      const r = state.run;
+      const h = state.players[HUMAN];
+      const sig = JSON.stringify({
+        pillarLevels: r.pillarLevels, edicts: r.edicts.map((e) => e.id), doctrines: r.doctrines.map((d) => d.id),
+        mandate: r.mandate, maxMandate: r.maxMandate, influence: r.influence, doctrineSlots: r.doctrineSlots,
+        edictSlots: r.edictSlots, gold: h.gold, cryo: h.cryo, techs: h.techs,
+      });
+      return { sig, rivals: state.players.filter((p) => p.id !== HUMAN && p.leaderId !== undefined).map((p) => p.leaderId) };
+    };
+    const baseline = signature('iso-all-0').sig;
+    const unseen = new Set(Object.keys(LEADERS).filter((id) => id !== 'usa'));
+    for (let i = 0; i < 600 && unseen.size; i++) {
+      const { sig, rivals } = signature(`iso-all-${i}`);
+      expect(sig, `rivals ${rivals.join(', ')}`).toBe(baseline);
+      for (const id of rivals) unseen.delete(id);
     }
-  });
+    expect([...unseen]).toEqual([]);
+  }, 120_000);
 
   it('the human nation gets its own perks', () => {
     const make = (leaderId: string) => createGame({ seed: 'own', leaderId, ascension: 0, mapSize: 'small', rivals: 1, tutorial: false, daily: false }).state;
     expect(make('france').run.pillarLevels.arts).toBe(2);
     expect(make('russia').run.edicts.map((e) => e.id)).toContain('tsar_charge');
     expect(make('vatican').run.maxMandate).toBe(make('usa').run.maxMandate + 1);
-    expect(Object.keys(LEADERS)).toHaveLength(12);
+    expect(Object.keys(LEADERS)).toHaveLength(51);
   });
 });

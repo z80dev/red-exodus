@@ -7,7 +7,7 @@ import { MOTIF_GLYPHS } from './glyphs/motifs';
 import { RESOURCE_GLYPHS } from './glyphs/resources';
 import { BUILDING_GLYPHS } from './glyphs/buildings';
 import { WONDER_GLYPHS } from './glyphs/wonders';
-import { MARS_GLYPHS } from './glyphs/mars';
+import { derivedNationGlyph, MARS_GLYPHS } from './glyphs/mars';
 import {
   BUILDINGS, CRISES, DOCTRINES, EDICTS, IMPROVEMENTS, LEADERS, NATURAL_WONDERS, OMENS, PROMOTIONS, REFORMS,
   RESOURCES, SCROLLS, TECHS, UNITS, WONDERS,
@@ -23,6 +23,11 @@ const BASE = {
   ...CORE_GLYPHS,
   ...MARS_GLYPHS,
 };
+// nations without a hand-tuned crest palette get one derived from their flag colors
+for (const l of Object.values(LEADERS)) {
+  const key = `nation_${l.id}`;
+  if (!Object.hasOwn(BASE, key)) (BASE as Record<string, Glyph>)[key] = derivedNationGlyph(l.id, l.flagColors);
+}
 
 const ANY: Record<string, Glyph> = BASE;
 function recolor(name: string, c: string): Glyph {
