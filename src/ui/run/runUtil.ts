@@ -10,7 +10,7 @@ import { PILLAR_NAMES } from '../terms';
 
 export const ERA_NAMES = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'] as const;
 export const ERA_TAGLINES = [
-  'One red world. Fifty-one Arks. No plan survives touchdown.',
+  'One red world. Fifty Arks. No plan survives touchdown.',
   'The first domes hold. The first arguments start.',
   'Mars is no longer empty. It has noticed you.',
   'The machines work. The machines also have opinions.',

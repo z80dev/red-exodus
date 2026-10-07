@@ -33,6 +33,6 @@ describe('nation perks stay with their own player', () => {
     expect(make('france').run.pillarLevels.arts).toBe(2);
     expect(make('russia').run.edicts.map((e) => e.id)).toContain('tsar_charge');
     expect(make('vatican').run.maxMandate).toBe(make('usa').run.maxMandate + 1);
-    expect(Object.keys(LEADERS)).toHaveLength(51);
+    expect(Object.keys(LEADERS)).toHaveLength(50);
   });
 });

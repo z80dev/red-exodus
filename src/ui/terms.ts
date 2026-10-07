@@ -3,7 +3,7 @@
 import type { PillarId } from '../sim/types';
 
 export const TITLE = 'RED EXODUS';
-export const SUBTITLE = 'Fifty-one Arks. One red world.';
+export const SUBTITLE = 'Fifty Arks. One red world.';
 
 export const T = {
   score: 'Viability',

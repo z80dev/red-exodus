@@ -78,13 +78,13 @@ describe('doctrines', () => {
 
 describe('leaders & uniques', () => {
   const leaders = Object.values(LEADERS);
-  it('has 51 nations; the original six plus every expansion Ark open at launch, locked ones have valid unlock rules', () => {
-    expect(leaders.length).toBe(51);
+  it('has 50 nations; the original six plus every expansion Ark open at launch, locked ones have valid unlock rules', () => {
+    expect(leaders.length).toBe(50);
     leaders.forEach((l, i) => {
       if (i < 6) expect(l.unlock, l.id).toBeUndefined();
       if (l.unlock) expect(UNLOCK_RULES.has(l.unlock.rule ?? ''), l.id).toBe(true);
     });
-    expect(leaders.filter((l) => !l.unlock).length).toBe(45);
+    expect(leaders.filter((l) => !l.unlock).length).toBe(44);
   });
 
 

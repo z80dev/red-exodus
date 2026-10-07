@@ -1,10 +1,10 @@
 # RED EXODUS — A Roguelike Colony Game on a Dying World's Last Hope
 
-> "Earth went dark on a Tuesday. Fifty-one Arks made it out. This is what landed."
+> "Earth went dark on a Tuesday. Fifty Arks made it out. This is what landed."
 
 Mobile-first, pause-anywhere, **45–75 minute runs**. A fast, tactical colony builder on Mars wrapped in
 a Balatro engine-building loop. You are not building a civilization over 6,000 years: you are one of
-fifty-one national Arks that escaped Earth's collapse, racing the dust, the cold, the other survivors and
+fifty national Arks that escaped Earth's collapse, racing the dust, the cold, the other survivors and
 your own dwindling cryo-sleeping passengers to prove your colony is *viable*.
 
 Code name stays `aeons` (package, ids, save keys). Display title is **RED EXODUS**.
@@ -21,7 +21,7 @@ Code name stays `aeons` (package, ids, save keys). Display title is **RED EXODUS
    the report. Order matters. Synergies make each run its own logic.
 4. **Mars is the boss.** Telegraphed **dust storms** sweep the map every turn; eras end in Crises (solar
    flares, Phobos debris, Earth's final broadcast). Hard, fair, readable.
-5. **Your nation is your deck.** Fifty-one Arks, each an asymmetric rule-breaker (Balatro decks), not a
+5. **Your nation is your deck.** Fifty Arks, each an asymmetric rule-breaker (Balatro decks), not a
    +10% bonus.
 
 ## 2. What makes it *not* Civilization
@@ -194,7 +194,7 @@ Rivals are drawn from the other eleven.
 | `north_korea` | North Korea · **Juche Ark** (challenge deck) | Marshal Ri Song-hwa, "the Dear Commander" | **Hermit Kingdom**: the Uplink cannot be rerolled; military units −30% Industry and +15% strength; −25% Morale. Start with *Eternal Leader* (×2 Hope; cannot be sold). | Songun Trooper (melee era1) · Mass Games Arena (stadium) | Eternal Leader | warmonger |
 | `vatican` | Holy See · **The Last Conclave** | Pope Innocent XIV | **Faith Beyond Earth**: +2 Hope in every Sol Report; Salvage has a 1-in-3 chance not to be consumed ("Miracle"); +1 Charter. | Swiss Guard (anti-cavalry) · Basilica of the Red Planet (cathedral) | The Cardinal | builder |
 
-### Expansion Arks (39 more; open from the start)
+### Expansion Arks (38 more; open from the start)
 Content lives in `src/content/nations/<region>.ts` (leaders + starting Crew) and `<region>.uniques.ts` (literal unique
 unit/building defs), spread into `LEADERS` / `UNIQUE_UNITS` / `UNIQUE_BUILDINGS`. Rule-breakers are in each file's `bonus`.
 Nations without a hand-tuned crest palette derive their `nation_<id>` icon from `flagColors`.
@@ -218,7 +218,6 @@ Nations without a hand-tuned crest palette derive their `nation_<id>` icon from 
 | `czechia` | Czechia · **Orloj Ark** | Marta Novotná, Master Horologist and Chief Brewmaster of the Orloj Ark | Wagon-Fort Crew · Orloj Tower | The Brewmaster | builder |
 | `romania` | Romania · **Carpathian Ark** | Ileana Munteanu, Voivode of the Carpathian Ark; Keeper of the Pods | Haiduk Raider · Bran Keep | The Count | expansionist |
 | `turkey` | Türkiye · **Crossroads Ark** | Deniz Aksoy, Caravanserai Warden of the Crossroads Ark | Janissary Bombardier · Covered Bazaar | The Tea Seller | warmonger |
-| `israel` | Israel · **Negev Ark** | Noa Ben-David, Chief Technology Officer of the Negev Ark; Drip-Line Engineer | Skyshield Interceptor · Drip-Line Works | The Startup Founder | scientist |
 | `kazakhstan` | Kazakhstan · **Baikonur Ark** | Aigerim Sarsenova, Launch Director of the Baikonur Ark; Marshal of the Steppe | Steppe Batyr · Cosmodrome Gantry | The Launch Director | expansionist |
 | `canada` | Canada · **Aurora Ark** | Marguerite Beaulieu, Search-and-Rescue Commander of the Aurora Ark | Mountie Sled Rover · Universal Med Bay | The Maple Tapper | builder |
 | `mexico` | Mexico · **Arca Quinto Sol** | Itzel Navarro Cruz, Commander of the Quinto Sol Ark | Luchador Trooper · Sun Stone Chapel | La Catrina | warmonger |

@@ -47,12 +47,6 @@ export const UNIQUE_UNITS_NORTHEAST: Record<string, UnitDef> = {
     uniqueTo: 'turkey', replaces: 'trebuchet', model: 'u_trebuchet', icon: 'siege',
     description: 'A drilled rail-mortar battery that fires in disciplined volleys while a drummer keeps time. Replaces the Rail Mortar with extra reach against colonies: **+225%** vs colonies.',
   },
-  skyshield_interceptor: {
-    id: 'skyshield_interceptor', name: 'Skyshield Interceptor', era: 4, class: 'ranged', cost: 108, strength: 32, rangedStrength: 44, range: 2, moves: 2, vision: 3,
-    tech: 'military_science', upgradesTo: 'machine_gun', bonusVs: { mounted: 30, armor: 30 }, abilities: ['noMelee'],
-    uniqueTo: 'israel', replaces: 'field_gun', model: 'u_field_gun', icon: 'ranged',
-    description: 'A radar-guided turret that tracks anything fast and heading your way. Replaces the Plasma Caster with better optics and **+30%** vs mounted and armor.',
-  },
   steppe_batyr: {
     id: 'steppe_batyr', name: 'Steppe Batyr', era: 2, class: 'mounted', cost: 62, strength: 23, moves: 5, vision: 3,
     tech: 'chivalry', upgradesTo: 'cavalry', abilities: ['moveAfterAttack'],
@@ -108,19 +102,6 @@ export const UNIQUE_BUILDINGS_NORTHEAST: Record<string, BuildingDef> = {
     id: 'covered_bazaar', name: 'Covered Bazaar', era: 1, cost: 70, tech: 'currency', yields: { gold: 3, cul: 1 }, pct: { gold: 20 }, maintenance: 0,
     uniqueTo: 'turkey', replaces: 'market', model: 'bld_market', pillar: 'commerce', icon: 'market',
     description: 'Replaces the Exchange: +3 {gold}, +1 {cul}, +20% {gold}. No upkeep. Sixty-one aisles, one pressure seal, and a vendor who has already sold you the exit.',
-  },
-  drip_works: {
-    id: 'drip_works', name: 'Drip-Line Works', era: 2, cost: 105, tech: 'engineering', yields: { food: 3, gold: 1 }, maintenance: 1,
-    uniqueTo: 'israel', replaces: 'aqueduct', model: 'bld_aqueduct', pillar: 'prosperity', icon: 'aqueduct',
-    effects: {
-      growthThreshold(ctx, a) {
-        if (a.city.id === ctx.cityId) a.value = Math.round(a.value * 0.75);
-      },
-      tileYield(ctx, a) {
-        if (a.city && a.city.id === ctx.cityId && a.tile.terrain === 'desert') a.yields.food += 1;
-      },
-    },
-    description: 'Replaces the Water Reclaimer: +3 {food}, +1 {gold}. This colony needs 25% less {food} to grow, and Dune Sea tiles worked here yield +1 {food}. Every drop is accounted for, and the accountant has a startup.',
   },
   cosmodrome_gantry: {
     id: 'cosmodrome_gantry', name: 'Cosmodrome Gantry', era: 1, cost: 80, tech: 'iron_working', yields: { prod: 2, sci: 1 }, maintenance: 1,

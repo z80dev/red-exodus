@@ -122,20 +122,6 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
       onEvent(ctx, ev) { if (ev.type === 'cityCaptured' && ev.to === ctx.player.id) addGold(ctx.state, ctx.player.id, 50, 'Spoils of the bazaar', ctx.emit); },
     },
   },
-  israel: {
-    id: 'israel', name: 'Noa Ben-David', title: 'Chief Technology Officer of the Negev Ark; Drip-Line Engineer', civName: 'Negev Ark', adjective: 'Israeli',
-    country: 'Israel', code: 'ISR', flagColors: ['#ffffff', '#0038b8'], colors: { primary: '#4c8bf5', secondary: '#eef1f5' },
-    description: 'Every meeting ends in a demo, every demo ends in a pivot, and somehow the tomatoes keep growing in the dunes.',
-    bonus: 'Dune Sea tiles yield **+1** {food} and **+1** {gold}. Colonies take no Dust Storm damage. Data Archives, Research Institutes and Research Labs cost **25%** less {prod}.',
-    startDoctrine: 'startup_founder', uniqueUnit: 'skyshield_interceptor', uniqueBuilding: 'drip_works', aiPersonality: 'scientist',
-    cityNames: ['New Tel Aviv', 'Haifa Heights', 'Negev Station', 'Be’er Sheva Basin', 'Eilat Inlet', 'Galilee Greenhouse', 'Netanya Nest', 'Rehovot Lab', 'Ashdod Anchorage', 'Kibbutz Alpha', 'Masada Massif', 'Dead Sea Shallows', 'Drip-Line Junction', 'Startup Gulch', 'Hummus Hab'],
-    portrait: { hue: 212, motif: 'tree', crest: 'book' },
-    effects: {
-      tileYield(_ctx, a) { if (a.tile.terrain === 'desert') { a.yields.food += 1; a.yields.gold += 1; } },
-      storm(ctx, a) { if (a.victim === ctx.player.id && a.city) a.damage = 0; },
-      cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'building' && (a.item.id === 'library' || a.item.id === 'university' || a.item.id === 'research_lab')) a.cost *= 0.75; },
-    },
-  },
   kazakhstan: {
     id: 'kazakhstan', name: 'Aigerim Sarsenova', title: 'Launch Director of the Baikonur Ark; Marshal of the Steppe', civName: 'Baikonur Ark', adjective: 'Kazakh',
     country: 'Kazakhstan', code: 'KAZ', flagColors: ['#00afca', '#fec50c'], colors: { primary: '#2fc4b2', secondary: '#f0b92f' },
@@ -207,12 +193,6 @@ export const CREW_NORTHEAST: DoctrineDef[] = [
         if (n > 0) addGold(ctx.state, ctx.player.id, n, 'Tea money', ctx.emit);
       },
     },
-  },
-  {
-    id: 'startup_founder', name: 'The Startup Founder', rarity: 'uncommon', cost: 6, noShop: true, nation: 'israel',
-    description: 'Pitches a new idea before breakfast and a pivot by lunch. Each Sol Report gains **+1** {splendor} per 3 Discovery buildings owned (max **4**).',
-    flavor: '“We are pre-revenue, pre-atmosphere, and extremely pre-launch.”', tags: ['nation', 'research', 'buildings'], icon: 'flask', art: { hue: 215, motif: 'flask' },
-    effects: { chronicle(ctx, c) { const n = Math.min(4, Math.floor(countBuildings(ctx.state, ctx.player.id, (b) => b.pillar === 'discovery') / 3)); if (n > 0) c.addSplendor(n); } },
   },
   {
     id: 'launch_director', name: 'The Launch Director', rarity: 'uncommon', cost: 6, noShop: true, nation: 'kazakhstan',

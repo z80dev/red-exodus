@@ -45,7 +45,7 @@ export function CopySeed({ seed, share = false }: { seed: string; share?: boolea
   async function copy() {
     try {
       const nativeShare = share && typeof navigator.share === 'function';
-      if (nativeShare) await navigator.share({ title: 'RED EXODUS — My Landfall', text: `Fifty-one Arks. One red world. Play my RED EXODUS seed: ${seed}` });
+      if (nativeShare) await navigator.share({ title: 'RED EXODUS — My Landfall', text: `Fifty Arks. One red world. Play my RED EXODUS seed: ${seed}` });
       else await navigator.clipboard.writeText(seed);
       setStatus(nativeShare ? 'Shared' : 'Copied');
     } catch { setStatus('Select the seed to copy'); }
