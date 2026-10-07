@@ -33,6 +33,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'safety_inspector', uniqueUnit: 'eisenfaust_driver', uniqueBuilding: 'mittelstand_works', aiPersonality: 'builder',
     cityNames: ['Neu-Berlin', 'Bavaria Basin', 'Hamburg-on-Dust', 'Köln Crater', 'Frankfurt Airlock', 'Stuttgart Works', 'Düsseldorf Dome', 'Leipzig Lowlands', 'Dresden Redux', 'Nürnberg Station', 'Bremen Base', 'Hannover Habitat', 'Autobahn Junction', 'Zweites Frühstück', 'Genehmigung Pending'],
     portrait: { hue: 215, motif: 'gear', crest: 'eagle' },
+    gender: 'f', alt: { name: 'Dr. Lukas Brenner', title: 'Chief Safety Engineer of the Ordnung Ark', gender: 'm', description: 'Every airlock has a certificate, every certificate has an inspector, and the inspector has already found the problem.' },
     effects: {
       cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'building' && isIn(INDUSTRIAL, a.item.id)) a.cost *= 0.75; },
       cityYield(_ctx, a) { const n = a.city.buildings.filter(b => isIn(INDUSTRIAL, b)).length; if (n) a.pct.prod += 10 * n; },
@@ -47,6 +48,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'tea_lady', uniqueUnit: 'longbow_coilgunner', uniqueBuilding: 'royal_dockyard', aiPersonality: 'expansionist',
     cityNames: ['New London', 'Dover Dome', 'Manchester Mars', 'Birmingham Basin', 'Leeds Landing', 'Brighton Rock(et)', 'Edinburgh Crater', 'Cardiff Station', 'York Dome', 'Little Britain', 'Piccadilly Airlock', 'Queue Hollow', 'Nether Wallop', 'Upper Dustwick', 'Stiff Upper Lip'],
     portrait: { hue: 350, motif: 'ship', crest: 'crown' },
+    gender: 'f', alt: { name: 'Sir Percival Ashdown', title: 'Admiral-Governor of the Albion Ark', gender: 'm', description: 'The Ark has been under heavy dust bombardment for a week. The Admiral describes this as “a bit blustery.”' },
     effects: {
       cityYield(ctx, a) { if (isCoastalCity(ctx.state, a.city)) a.pct.gold += 20; },
       influenceIncome(ctx, a) { a.lines.push({ label: 'Commonwealth tithe', amount: Math.floor(citiesOf(ctx.state, ctx.player.id).length / 3) }); },
@@ -61,6 +63,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'barista', uniqueUnit: 'codex_mortar', uniqueBuilding: 'grand_galleria', aiPersonality: 'builder',
     cityNames: ['Nuova Roma Rossa', 'Firenze Crater', 'Venezia Senz’Acqua', 'Milano Dome', 'Napoli Station', 'Torino Two', 'Bologna Basin', 'Pisa (Leaning, Slightly)', 'Siena Habitat', 'Genova Airlock', 'Palermo Marte', 'Verona Balcony', 'Pompeii Redux', 'Colosseo Dome', 'Ponte Vecchio Bis'],
     portrait: { hue: 320, motif: 'temple', crest: 'tower' },
+    gender: 'f', alt: { name: 'Prof. Matteo Lombardi', title: 'Superintendent of Eternal Restoration; Curator-General of the Rinascimento Ark', gender: 'm', description: 'The scaffolding came aboard first. The statues are still waiting for the permit.' },
     effects: {
       cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'building' && isIn(CULTURE_BUILDINGS, a.item.id)) a.cost *= 0.75; },
       cityYield(_ctx, a) { if (a.city.wonders.length) a.yields.cul += 3; },
@@ -78,6 +81,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'cartografo', uniqueUnit: 'matador_hover_bike', uniqueBuilding: 'plaza_mayor', aiPersonality: 'warmonger',
     cityNames: ['Nueva Madrid', 'Barcelona Crater', 'Sevilla Station', 'Valencia Dome', 'Bilbao Base', 'Granada Habitat', 'Toledo Airlock', 'Salamanca Heights', 'Córdoba Camp', 'Santiago de la Duna', 'Málaga Mons', 'Zaragoza Two', 'Ibiza After Dark', 'La Siesta', 'Mañana Colony'],
     portrait: { hue: 38, motif: 'sun', crest: 'castle' },
+    gender: 'f', alt: { name: 'Capitán Mateo Ibarra', title: 'Capitán of the Sol Ark; Director of the Great Survey', gender: 'm', description: 'The Ark landed at noon, found no shade, and took a three-hour break to think about it.' },
     effects: {
       unitVision(_ctx, a) { a.value += 1; },
       unitMoves(_ctx, a) { if (UNITS[a.unit.type]?.class === 'recon') a.value += 1; },
@@ -96,6 +100,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'pump_engineer', uniqueUnit: 'dijkwacht_squad', uniqueBuilding: 'polder_pump', aiPersonality: 'expansionist',
     cityNames: ['Nieuw-Amsterdam', 'Rotterdam Rift', 'Utrecht Underdome', 'Delft Dome', 'Haarlem Habitat', 'Eindhoven Lab', 'Groningen Ground', 'Maastricht Mons', 'Leiden Landing', 'Zuiderzee Station', 'Tulip Hollow', 'Windmill Heights', 'Bike Lane Basin', 'Below Mars Level', 'Gouda Gate'],
     portrait: { hue: 24, motif: 'river', crest: 'wheat' },
+    gender: 'f', alt: { name: 'Dr. Joost Hendriks', title: 'Dike-Warden of the Polder Ark', gender: 'm', description: 'They looked at the Dust Sea and said, “Give us a few decades.” The pump is already on order.' },
     effects: {
       canFoundCity(_ctx, a) { a.minDistance = Math.max(2, a.minDistance - 1); },
       tileYield(_ctx, a) { if (a.tile.terrain === 'coast') { a.yields.food += 1; a.yields.prod += 1; } },
@@ -110,6 +115,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'chocolatier', uniqueUnit: 'ardennes_ranger', uniqueBuilding: 'chocolaterie', aiPersonality: 'scientist',
     cityNames: ['Nouvelle Bruxelles', 'Antwerp Airlock', 'Gent Station', 'Brugge Dome', 'Liège Crater', 'Namur Habitat', 'Leuven Lab', 'Mons Base', 'Ostend Dust-Shore', 'Waterloo, Mars', 'Manneken Pis Fountain', 'Atomium Annex', 'Mechelen Two', 'Charleroi Works', 'Subcommittee Heights'],
     portrait: { hue: 18, motif: 'chalice', crest: 'lion' },
+    gender: 'f', alt: { name: 'Commissaire Luc Vandenbroucke', title: 'Commissioner of the Atomium Ark; Chair of the Subcommittee on Subcommittees', gender: 'm', description: 'The Ark carries three official languages, four governments and one chocolate reserve under round-the-clock guard.' },
     effects: {
       tileYield(_ctx, a) { if (a.tile.resource && RESOURCES[a.tile.resource]?.kind === 'luxury') { a.yields.gold += 1; a.yields.cul += 1; } },
       council(ctx, a) {
@@ -127,6 +133,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'publican', uniqueUnit: 'sliotar_slinger', uniqueBuilding: 'last_orders_pub', aiPersonality: 'expansionist',
     cityNames: ['New Dublin', 'Cork Crater', 'Galway Dry Bay', 'Limerick Limit', 'Kilkenny Dome', 'Waterford Station', 'Sligo Settlement', 'Dingle Dust', 'Tralee Habitat', 'Athlone Airlock', 'Killarney Crater', 'Drogheda Dome', 'Soft Day Basin', 'The Craic Pit', 'Last Orders, Mars'],
     portrait: { hue: 140, motif: 'lyre', crest: 'tree' },
+    gender: 'f', alt: { name: 'Cormac Ó Briain', title: 'Skipper of the Emerald Ark', gender: 'm', description: 'The weather forecast was one word long: “soft.” It has proved optimistic.' },
     effects: {
       storm(ctx, a) { if (a.victim === ctx.player.id && a.damage > 0 && chance(ctx.state.rng, 0.5)) a.damage = 0; },
       tileYield(_ctx, a) { if (a.tile.feature === 'forest') { a.yields.food += 1; a.yields.cul += 1; } },
@@ -141,6 +148,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'fadista', uniqueUnit: 'navegador_rover', uniqueBuilding: 'sagres_beacon', aiPersonality: 'expansionist',
     cityNames: ['Nova Lisboa', 'Porto Poente', 'Sagres Dome', 'Faro Station', 'Coimbra Crater', 'Braga Base', 'Évora Habitat', 'Cascais Airlock', 'Setúbal Skiffs', 'Aveiro Basin', 'Madeira Mons', 'Azores Array', 'Belém Beacon', 'Saudade Bay', 'Nata Plaza'],
     portrait: { hue: 12, motif: 'compass', crest: 'anchor' },
+    gender: 'f', alt: { name: 'Tiago Mendes', title: 'Navigator-General of the Navegante Ark', gender: 'm', description: 'The Ark is quietly homesick. There is a word for this feeling, and the manifest has a budget for it.' },
     effects: {
       unitMoves(ctx, a) { const tile = ctx.state.map.tiles[a.unit.tile]; if (tile && isWaterTile(tile)) a.value += 2; },
       tileYield(_ctx, a) { if (isWaterTile(a.tile)) a.yields.sci += 1; },
@@ -155,6 +163,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'kapellmeister', uniqueUnit: 'edelweiss_jager', uniqueBuilding: 'kaffeehaus', aiPersonality: 'scientist',
     cityNames: ['Neu-Wien', 'Salzburg Station', 'Graz Crater', 'Linz Lab', 'Innsbruck Heights', 'Klagenfurt Basin', 'Hallstatt Habitat', 'Schönbrunn Dome', 'Sachertorte Station', 'Eisenstadt Airlock', 'Bregenz Base', 'Melk Mons', 'Waltz Landing', 'Ringstraße Loop', 'Second Movement'],
     portrait: { hue: 250, motif: 'mountain', crest: 'eagle' },
+    gender: 'f', alt: { name: 'Dr. Maximilian Eder', title: 'Director of the Edelweiss Ark; Chair of the Philharmonic Hab', gender: 'm', description: 'The Ark has a concert hall, a coffeehouse and a very small airlock. The order of priority is disputed.' },
     effects: {
       warDeclaration(ctx, a) { if (a.target === ctx.player.id && ctx.state.turn < 40) { a.allowed = false; a.reason = 'The Congress of Vienna shields the Edelweiss Ark until Sol 40.'; } },
       tileYield(_ctx, a) { if (a.tile.elevation === 'hills') a.yields.cul += 1; },
@@ -169,6 +178,7 @@ export const LEADERS_WESTEUROPE: Record<string, LeaderDef> = {
     startDoctrine: 'windsmith', uniqueUnit: 'viking_raider', uniqueBuilding: 'hygge_lounge', aiPersonality: 'warmonger',
     cityNames: ['Nye København', 'Aarhus Airlock', 'Odense Outpost', 'Aalborg Array', 'Roskilde Rift', 'Esbjerg Wind', 'Kronborg Keep', 'Tivoli Dome', 'Brick Landing', 'Hygge Hollow', 'Skagen Shelf', 'Ribe Ridge', 'Bornholm Basin', 'Candlelight Crater', 'Smørrebrød Station'],
     portrait: { hue: 195, motif: 'tower', crest: 'serpent' },
+    gender: 'f', alt: { name: 'Kaptajn Søren Lindholm', title: 'Jarl-Director of the Hygge Ark', gender: 'm', description: 'The Ark runs on wind, candles and a deep conviction that the situation is, on balance, cosy.' },
     effects: {
       cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'building' && a.item.id === 'wind_farm') a.cost *= 0.5; },
       cityYield(_ctx, a) { if (a.city.buildings.includes('wind_farm')) a.yields.prod += 2; },

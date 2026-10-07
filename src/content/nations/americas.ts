@@ -39,6 +39,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'maple_tapper', uniqueUnit: 'mountie_sled', uniqueBuilding: 'universal_med_bay', aiPersonality: 'builder',
     cityNames: ['Nouvelle Ottawa', 'Toronto Dome', 'Montréal Souterrain', 'Vancouver Shallows', 'Calgary Crater', 'Edmonton Frost', 'Winnipeg Winter', 'Halifax Landing', 'Yellowknife Two', 'Saskatoon Station', 'Victoria Vent', 'Whitehorse Ridge', 'Niagara Falls Down', 'Moose Jaw Outpost', 'Sorry, Mars'],
     portrait: { hue: 5, motif: 'tree', crest: 'laurel' },
+    gender: 'f', alt: { name: 'Étienne Gallant', title: 'Ice-Road Chief of the Aurora Ark', gender: 'm', description: 'Every airlock was held open for the person behind. The person behind was also Canadian, and also apologized.' },
     effects: {
       unitHeal(ctx, a) { if (a.unit.owner === ctx.player.id) a.value += 10; },
       tileYield(_ctx, a) { if (a.tile.feature === 'forest') a.yields.food += 1; },
@@ -57,6 +58,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'la_catrina', uniqueUnit: 'luchador_trooper', uniqueBuilding: 'sun_stone_chapel', aiPersonality: 'warmonger',
     cityNames: ['Nueva Tenochtitlán', 'Guadalupe Roja', 'Monterrey Dome', 'Guadalajara Station', 'Puebla de los Cráteres', 'Mérida Crater', 'Oaxaca Base', 'Tijuana Outpost', 'Cancún Dust Shallows', 'Veracruz Landing', 'Zacatecas Deep', 'Chihuahua Dune', 'Taco Station Alpha', 'Fiesta Basin', 'Mañana, Mars'],
     portrait: { hue: 330, motif: 'mask', crest: 'eagle' },
+    gender: 'f', alt: { name: 'Mateo Aguilar Ríos', title: 'Capitán and Keeper of the Ofrenda of the Quinto Sol Ark', gender: 'm', description: 'The crew made peace with death a long time ago. Every November, they invite it to dinner.' },
     effects: {
       onEvent(ctx, ev) {
         if (ev.type === 'unitDied' && ev.player === ctx.player.id) addGold(ctx.state, ctx.player.id, 12, 'Día de Muertos', ctx.emit);
@@ -77,6 +79,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'gaucho', uniqueUnit: 'gaucho_hoverbike', uniqueBuilding: 'estancia', aiPersonality: 'expansionist',
     cityNames: ['Nueva Buenos Aires', 'Córdoba Crater', 'Rosario Station', 'Mendoza Vintage', 'La Plata Basin', 'Tucumán Dome', 'Salta Heights', 'Mar del Plata Shallows', 'Ushuaia Frost', 'Bariloche Ice', 'Santa Fe, Mars', 'Pampa Station', 'Asado Alpha', 'Tango Landing', 'Empanada Heights'],
     portrait: { hue: 200, motif: 'horse', crest: 'sun' },
+    gender: 'f', alt: { name: 'Joaquín Ferreyra', title: 'Comandante and Head Asador of the Pampa Ark', gender: 'm', description: 'The grill was lit, the tango was rehearsed, and the launch budget changed three times during the countdown.' },
     effects: {
       tileYield(_ctx, a) {
         if (a.tile.resource === 'cattle' || a.tile.resource === 'sheep') { a.yields.food += 1; a.yields.gold += 1; }
@@ -96,6 +99,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'cafetero', uniqueUnit: 'chiva_rover', uniqueBuilding: 'cafeteria_exchange', aiPersonality: 'expansionist',
     cityNames: ['Nueva Bogotá', 'Medellín Alta', 'Cali Orbital', 'Cartagena de Indias Rojas', 'Barranquilla Dome', 'Santa Marta Station', 'Bucaramanga Heights', 'Pereira Café', 'Manizales Crater', 'Armenia Quindío', 'Cúcuta Dust', 'El Dorado Two', 'Macondo', 'Villa de Leyva Dome', 'Cocora Valley'],
     portrait: { hue: 150, motif: 'chalice', crest: 'feather' },
+    gender: 'f', alt: { name: 'Santiago Restrepo Villa', title: 'Emerald Prospector and Commander of the Arca Esmeralda', gender: 'm', description: 'Three mountain ranges, one very strong coffee, and a launch nobody can fully explain. The official report says “a miracle.” The unofficial report says “several.”' },
     effects: {
       tileYield(_ctx, a) {
         if (a.tile.elevation === 'hills') a.yields.food += 1;
@@ -125,6 +129,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'seismologist', uniqueUnit: 'andean_sentinel', uniqueBuilding: 'atacama_array', aiPersonality: 'scientist',
     cityNames: ['Nuevo Santiago', 'Valparaíso Dome', 'Atacama Lookout', 'Antofagasta Station', 'Concepción Crater', 'La Serena Clear-Sky', 'Punta Arenas Frost', 'Temuco Two', 'Calama Copper', 'Iquique Shallows', 'Puerto Montt Base', 'Chiloé Dome', 'Rapa Nui Watch', 'Torres del Paine', 'Pisco Sour Base'],
     portrait: { hue: 18, motif: 'eye', crest: 'star' },
+    gender: 'f', alt: { name: 'Dr. Matías Ibáñez Soto', title: 'Chief Surveyor of the Cordillera Ark', gender: 'm', description: 'A nation shaped like a hallway built an Ark shaped like a hallway. The hallway has a telescope.' },
     effects: {
       canFoundCity(_ctx, a) { a.minDistance = Math.max(2, a.minDistance - 1); },
       tileYield(_ctx, a) {
@@ -141,6 +146,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'wildlife_ranger', uniqueUnit: 'boomerang_mortar', uniqueBuilding: 'shell_harbour', aiPersonality: 'expansionist',
     cityNames: ['Nova Sydney', 'Melbourne Crater', 'Perth Isolation', 'Brisbane Outpost', 'Adelaide Dome', 'Canberra Compromise', 'Darwin Heatwave', 'Alice Springs Two', 'Hobart Frost', 'Gold Coast Shallows', 'Cairns Reef', 'Broome Base', 'Bondi Beachhead', 'Coober Pedy Burrow', 'Down Under, Mars'],
     portrait: { hue: 265, motif: 'compass', crest: 'star' },
+    gender: 'f', alt: { name: 'Declan Thornbury', title: 'Head Stockman of the Southern Cross Ark', gender: 'm', description: 'Everything back home was trying to kill them. Mars is mostly a promotion.' },
     effects: {
       storm(ctx, a) { if (a.victim === ctx.player.id) a.damage = Math.floor(a.damage / 2); },
       tileYield(_ctx, a) {
@@ -157,6 +163,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'braai_master', uniqueUnit: 'springbok_scrum', uniqueBuilding: 'reef_foundry', aiPersonality: 'builder',
     cityNames: ['Nuwe Johannesburg', 'Kaapstad Crater', 'Durban Shallows', 'Pretoria Prime', 'Soweto Station', 'Bloemfontein Base', 'Gqeberha Dome', 'Kimberley Big Hole', 'Stellenbosch Vintage', 'Table Mountain Two', 'Kruger Reserve', 'Sandton Heights', 'Pietermaritzburg Pass', 'Polokwane Plateau', 'Braai Alpha'],
     portrait: { hue: 42, motif: 'lion', crest: 'star' },
+    gender: 'f', alt: { name: 'Sipho Ndlovu', title: 'Reef Foreman of the Rainbow Ark', gender: 'm', description: 'Eleven official languages aboard, one airlock, and a braai that has never once started on schedule.' },
     effects: {
       chronicle(ctx, c) {
         if (!ctx.player.isHuman) return;
@@ -184,6 +191,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'royal_scribe', uniqueUnit: 'medjay_sentry', uniqueBuilding: 'house_of_life', aiPersonality: 'builder',
     cityNames: ['New Thebes', 'Cairo Prime', 'Alexandria Annex', 'Giza Landing', 'Luxor Dome', 'Aswan Dam Two', 'Memphis Station', 'Karnak Crater', 'Sharm Shallows', 'Nile Basin', 'Port Said Dock', 'Heliopolis Two', 'Abu Simbel Cliff', 'Sphinx Base', 'Siwa Geyser Dome'],
     portrait: { hue: 215, motif: 'pyramid', crest: 'eye' },
+    gender: 'f', alt: { name: 'Dr. Youssef Mansour', title: 'Chief Archaeologist of the Sphinx Ark', gender: 'm', description: 'Five thousand years of planning for a very long sleep turned out to be excellent preparation for a cryo bay.' },
     effects: {
       tileYield(_ctx, a) {
         if (a.tile.feature === 'floodplains') { a.yields.food += 1; a.yields.cul += 1; }
@@ -204,6 +212,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'garden_keeper', uniqueUnit: 'immortal_guard', uniqueBuilding: 'qanat_reclaimer', aiPersonality: 'builder',
     cityNames: ['New Isfahan', 'Tehran Dome', 'Shiraz Garden', 'Tabriz Station', 'Persepolis Two', 'Mashhad Base', 'Yazd Windcatcher', 'Kerman Crater', 'Kashan Carpet Works', 'Ahvaz Deep', 'Rasht Shallows', 'Hamadan Heights', 'Pasargadae Landing', 'Naqsh-e Mars', 'Nowruz Station'],
     portrait: { hue: 350, motif: 'feather', crest: 'sun' },
+    gender: 'f', alt: { name: 'Dr. Kaveh Rostami', title: 'Engineer-Poet and Water-Keeper of the Pardis Ark', gender: 'm', description: 'A garden, a poem and a rug that survived the crossing. The garden is currently the most heavily defended object on the Ark.' },
     effects: {
       tileYield(_ctx, a) {
         const res = a.tile.resource;
@@ -227,6 +236,7 @@ export const LEADERS_AMERICAS: Record<string, LeaderDef> = {
     startDoctrine: 'truck_artist', uniqueUnit: 'karakoram_marksman', uniqueBuilding: 'karakoram_ramparts', aiPersonality: 'warmonger',
     cityNames: ['New Islamabad', 'Karachi Shallows', 'Lahore Garden Dome', 'Rawalpindi Base', 'Peshawar Pass', 'Quetta Crater', 'Multan Dust', 'Faisalabad Works', 'Sindh Delta', 'Gilgit Heights', 'Skardu Station', 'K2 Base Camp', 'Hunza Valley Dome', 'Indus Bend', 'Jingle Junction'],
     portrait: { hue: 155, motif: 'mountain', crest: 'moon' },
+    gender: 'f', alt: { name: 'Captain Hamza Qureshi', title: 'Convoy Commander of the Karakoram Ark', gender: 'm', description: 'The mountaineers reached the launch pad first. The truck painters arrived two hours later and made it look better.' },
     effects: {
       tileYield(_ctx, a) {
         if (a.tile.elevation === 'hills') a.yields.prod += 1;

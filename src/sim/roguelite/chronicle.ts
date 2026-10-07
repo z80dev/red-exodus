@@ -62,7 +62,7 @@ function effectLabel(fx: ActiveEffect): string {
     case 'doctrine': return DOCTRINES[fx.id]?.name ?? fx.id;
     case 'crisis': return CRISES[fx.id]?.name ?? fx.id;
     case 'reform': return REFORMS[fx.id]?.name ?? fx.id;
-    case 'leader': return LEADERS[fx.id]?.name ?? fx.id;
+    case 'leader': return LEADERS[fx.id]?.civName ?? fx.id;
     case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Hazard ${fx.id}`;
     case 'building': return BUILDINGS[fx.id]?.name ?? fx.id;
     case 'wonder': return WONDERS[fx.id]?.name ?? fx.id;

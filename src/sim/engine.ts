@@ -5,7 +5,7 @@ import type {
 import { BARBARIAN, HUMAN, PILLARS } from './types';
 import { BUILDINGS, LEADERS, NATURAL_WONDERS, TECHS, UNITS, WONDERS } from '../content';
 import { broadcastEvent, collectEffects, invalidateEffectCache, runHook } from './effects';
-import { seedRng, shuffle } from './rng';
+import { chance, deriveRng, seedRng, shuffle } from './rng';
 import { generateMap } from './mapgen';
 import { recomputeVisibility } from './visibility';
 import {
@@ -160,11 +160,11 @@ function blankRun(config: GameConfig): RunState {
   };
 }
 
-function makePlayer(id: PlayerId, leaderId: string, isHuman: boolean, tiles: number, idx: number): Player {
+function makePlayer(id: PlayerId, leaderId: string, isHuman: boolean, tiles: number, idx: number, altCommander = false): Player {
   const leader = LEADERS[leaderId];
   return {
     id,
-    name: leader?.name ?? `Commander ${id + 1}`,
+    name: leader ? (altCommander ? leader.alt.name : leader.name) : `Commander ${id + 1}`,
     civName: leader?.civName ?? `Ark ${id + 1}`,
     leaderId,
     colors: leader ? { ...leader.colors } : { ...FALLBACK_COLORS[idx % FALLBACK_COLORS.length] },
@@ -185,6 +185,7 @@ function makePlayer(id: PlayerId, leaderId: string, isHuman: boolean, tiles: num
     cryo: leader?.cryo ?? START_CRYO,
     researchOffer: [],
     researchRerolls: 0,
+    altCommander,
   };
 }
 
@@ -195,8 +196,10 @@ export function createGame(config: GameConfig): { state: GameState; events: SimE
   const rivalLeaders = shuffle(rng, Object.keys(LEADERS).filter((id) => id !== config.leaderId).sort());
 
   const n = map.tiles.length;
-  const players: Player[] = [makePlayer(HUMAN, config.leaderId, true, n, 0)];
-  for (let i = 1; i <= rivals; i++) players.push(makePlayer(i, rivalLeaders[i - 1] ?? `rival${i}`, false, n, i));
+  // rivals' commanders come from their own stream so the main rng (and every seed's game) is unchanged
+  const commanders = deriveRng(config.seed, 'commanders');
+  const players: Player[] = [makePlayer(HUMAN, config.leaderId, true, n, 0, config.altCommander === true)];
+  for (let i = 1; i <= rivals; i++) players.push(makePlayer(i, rivalLeaders[i - 1] ?? `rival${i}`, false, n, i, chance(commanders, 0.5)));
   const barb = makePlayer(BARBARIAN, 'barbarian', false, n, 0);
   barb.name = 'Ferals';
   barb.civName = 'Ferals';

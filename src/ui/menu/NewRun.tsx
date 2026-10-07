@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { ASCENSIONS, BUILDINGS, DOCTRINES, LEADERS, UNITS } from '../../content';
+import { ASCENSIONS, BUILDINGS, commanderOf, DOCTRINES, LEADERS, UNITS } from '../../content';
+import type { CommanderGender } from '../../sim/defs';
 import { audio } from '../../audio';
 import { useGame } from '../../game/store';
 import { isLeaderUnlocked, lockedContent, maxAscension, unlockHint } from '../../meta/profile';
@@ -30,12 +31,17 @@ export function NewRun() {
   const [error, setError] = useState('');
   const [browsing, setBrowsing] = useState(false);
   const [query, setQuery] = useState('');
+  /** preferred commander gender; carries over as you browse nations (null = each nation's default) */
+  const [preferred, setPreferred] = useState<CommanderGender | null>(null);
   const touchStart = useRef<number | null>(null);
   const leader = leaders[index];
   if (!leader) return <MenuFrame eyebrow="Landfall protocol" title="Choose your Ark"><p className="ae-error">The Ark registry is unavailable.</p></MenuFrame>;
   const unlocked = isLeaderUnlocked(profile, leader.id);
   const highest = maxAscension(profile, leader.id);
   const level = Math.min(ascension, highest);
+  const alt = preferred !== null && leader.gender !== preferred;
+  const cmd = commanderOf(leader, alt);
+  const commanders = [commanderOf(leader, false), commanderOf(leader, true)].sort((a, b) => a.gender.localeCompare(b.gender));
   function changeLeader(next: number) { setIndex((next + leaders.length) % leaders.length); setAscension(0); audio.sfx('select'); }
   function begin() {
     if (!unlocked || starting || !seed.trim()) return;
@@ -44,7 +50,7 @@ export function NewRun() {
     setStarting(true); setError('');
     try {
       audio.init(); audio.sfx('eraFanfare');
-      useGame.getState().newGame({ seed: daily ? date : seed.trim(), leaderId: leader.id, ascension: daily ? 0 : level, mapSize: daily ? 'small' : mapSize, rivals: daily ? 3 : rivals, tutorial: !profile.settings.tutorialDone, daily, locked: lockedContent(profile) });
+      useGame.getState().newGame({ seed: daily ? date : seed.trim(), leaderId: leader.id, ascension: daily ? 0 : level, mapSize: daily ? 'small' : mapSize, rivals: daily ? 3 : rivals, tutorial: !profile.settings.tutorialDone, daily, locked: lockedContent(profile), altCommander: alt });
       if (daily) update((p) => ({ ...p, dailyAttempts: [...new Set([...(p.dailyAttempts ?? []), date])] }));
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Your landing window was lost. Try again.'); setStarting(false); }
   }
@@ -55,17 +61,17 @@ export function NewRun() {
   return <MenuFrame eyebrow={daily ? 'Daily Landfall · One attempt' : 'A world waits below'} title="Choose your Ark" subtitle="Fifty nations escaped Earth. Mars has room for none of their old excuses.">
     <div className="ae-newrun-layout" style={{ '--leader-color': leader.colors.primary } as CSSProperties}>
       <section className={`ae-leader-stage ${!unlocked ? 'is-locked' : ''}`} aria-label="Choose a nation" onTouchStart={(e) => { touchStart.current = e.touches[0].clientX; }} onTouchEnd={(e) => { if (touchStart.current !== null) { const delta = e.changedTouches[0].clientX - touchStart.current; if (Math.abs(delta) > 45) changeLeader(index + (delta < 0 ? 1 : -1)); } touchStart.current = null; }}>
-        <div className="ae-leader-art" key={leader.id}><LeaderPortrait leader={leader} shape="card" className="ae-leader-portrait" /><div className="ae-leader-art-shade" /><span className="ae-leader-civ ae-eyebrow">{leader.country}</span><div className="ae-leader-art-name"><span className="ae-eyebrow">{leader.title}</span><h2>{leader.name}</h2></div><div className="ae-ark-badge" aria-label={`${leader.code} Ark colors`}>{leader.flagColors.map((color, stripe) => <i key={stripe} style={{ backgroundColor: color }} />)}<b>{leader.code}</b></div>{!unlocked && <div className="ae-leader-lock"><Icon name="lock" size={36} /><span>ARK NOT CLEARED</span></div>}</div>
+        <div className="ae-leader-art" key={`${leader.id}:${cmd.artId}`}><LeaderPortrait leader={leader} alt={alt} shape="card" className="ae-leader-portrait" /><div className="ae-leader-art-shade" /><span className="ae-leader-civ ae-eyebrow">{leader.country}</span><div className="ae-leader-art-name"><span className="ae-eyebrow">{cmd.title}</span><h2>{cmd.name}</h2></div><div className="ae-ark-badge" aria-label={`${leader.code} Ark colors`}>{leader.flagColors.map((color, stripe) => <i key={stripe} style={{ backgroundColor: color }} />)}<b>{leader.code}</b></div>{!unlocked && <div className="ae-leader-lock"><Icon name="lock" size={36} /><span>ARK NOT CLEARED</span></div>}</div>
         <div className="ae-carousel-controls"><button className="ae-icon-button" aria-label="Previous nation" onClick={() => changeLeader(index - 1)}><Icon name="chevronLeft" /></button><button className="ae-nation-browse" aria-label="Browse all nations" aria-expanded={browsing} onClick={() => { setBrowsing(true); setQuery(''); audio.sfx('open'); }}><span>All Arks</span><small>{index + 1} / {leaders.length}</small></button><button className="ae-icon-button" aria-label="Next nation" onClick={() => changeLeader(index + 1)}><Icon name="chevronRight" /></button></div>
       </section>
       {browsing && <div className="ae-nation-sheet" role="dialog" aria-label="All nations" onClick={(e) => { if (e.target === e.currentTarget) setBrowsing(false); }}>
         <div className="ae-nation-sheet-panel">
           <div className="ae-nation-sheet-head"><h3>Choose an Ark</h3><input aria-label="Search nations" placeholder="Search nations…" value={query} autoFocus onChange={(e) => setQuery(e.target.value)} /><button className="ae-icon-button" aria-label="Close" onClick={() => setBrowsing(false)}><Icon name="close" /></button></div>
-          <div className="ae-nation-grid">{leaders.map((entry, i) => ({ entry, i })).filter(({ entry }) => !query.trim() || `${entry.country} ${entry.code} ${entry.civName} ${entry.name}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => a.entry.country.localeCompare(b.entry.country)).map(({ entry, i }) => <button key={entry.id} aria-label={`Choose ${entry.country}`} aria-pressed={i === index} className={`${i === index ? 'active' : ''}${isLeaderUnlocked(profile, entry.id) ? '' : ' is-locked'}`} style={{ '--nation-color': entry.colors.primary } as CSSProperties} onClick={() => { changeLeader(i); setBrowsing(false); }}><span className="ae-nation-stripes">{entry.flagColors.map((color, stripe) => <i key={stripe} style={{ backgroundColor: color }} />)}</span><b>{entry.code}</b><span className="ae-nation-name">{entry.country}</span>{!isLeaderUnlocked(profile, entry.id) && <Icon name="lock" size={12} />}</button>)}</div>
+          <div className="ae-nation-grid">{leaders.map((entry, i) => ({ entry, i })).filter(({ entry }) => !query.trim() || `${entry.country} ${entry.code} ${entry.civName} ${entry.name} ${entry.alt.name}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a, b) => a.entry.country.localeCompare(b.entry.country)).map(({ entry, i }) => <button key={entry.id} aria-label={`Choose ${entry.country}`} aria-pressed={i === index} className={`${i === index ? 'active' : ''}${isLeaderUnlocked(profile, entry.id) ? '' : ' is-locked'}`} style={{ '--nation-color': entry.colors.primary } as CSSProperties} onClick={() => { changeLeader(i); setBrowsing(false); }}><span className="ae-nation-stripes">{entry.flagColors.map((color, stripe) => <i key={stripe} style={{ backgroundColor: color }} />)}</span><b>{entry.code}</b><span className="ae-nation-name">{entry.country}</span>{!isLeaderUnlocked(profile, entry.id) && <Icon name="lock" size={12} />}</button>)}</div>
         </div>
       </div>}
       <section className="ae-leader-details">
-        <div className="ae-nation-heading"><span className="ae-eyebrow">{leader.country} · {leader.code}</span><h2>{arkName}</h2><p className="ae-leader-description">Commander {leader.name}. {leader.description}</p></div>
+        <div className="ae-nation-heading"><span className="ae-eyebrow">{leader.country} · {leader.code}</span><h2>{arkName}</h2><p className="ae-leader-description">Commander {cmd.name}. {cmd.description}</p><div className="ae-commander-pick" role="radiogroup" aria-label="Commander">{commanders.map((c) => <button key={c.artId} role="radio" aria-checked={c.alt === alt} className={c.alt === alt ? 'active' : ''} onClick={() => { setPreferred(c.gender); audio.sfx('select'); }}><small>{c.gender === 'f' ? 'Female' : 'Male'} commander</small><span>{c.name}</span></button>)}</div></div>
         <div className="ae-ability"><span className="ae-eyebrow"><Icon name="bolt" size={16} />Rule-breaker</span><RichText text={leader.bonus} /></div>
         {!unlocked && <p className="ae-unlock-hint"><Icon name="lock" size={18} />{unlockHint('leader', leader.id) ?? leader.unlock?.text ?? 'Complete a prior landing to unlock this Ark.'}</p>}
         <div className="ae-starting-kit">

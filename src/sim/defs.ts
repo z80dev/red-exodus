@@ -310,6 +310,8 @@ export interface OmenDef {
   rewardText: string;
 }
 
+export type CommanderGender = 'f' | 'm';
+
 export interface LeaderDef {
   id: LeaderId; name: string; title: string; civName: string; adjective: string;
   colors: { primary: string; secondary: string };
@@ -328,6 +330,10 @@ export interface LeaderDef {
   aiPersonality: AiPersonality;
   cityNames: string[];
   portrait: { hue: number; motif: string; crest: string };
+  /** gender of the default commander (name/title/description above) */
+  gender: CommanderGender;
+  /** the opposite-gender commander the player may lead instead: same Ark, same rules, own portrait (`<id>_alt` art) */
+  alt: { name: string; title: string; gender: CommanderGender; description: string };
   unlock?: { text: string; rule?: string };
   effects: EffectHooks;
 }

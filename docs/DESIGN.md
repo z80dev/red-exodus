@@ -177,6 +177,9 @@ Landing, Martian Winter…
 ## 8. The Arks (nations = Balatro decks)
 
 The original twelve: six open from the start, six unlocked by meta progression. Commanders are fictional people.
+Every Ark offers two commanders, one female and one male (`LeaderDef.gender` / `LeaderDef.alt`, portrait art
+`<id>` / `<id>_alt`). The choice is cosmetic (`GameConfig.altCommander`); rivals roll theirs from a derived rng
+stream so seeds play identically. Nation perks are labelled with the Ark name, not the commander.
 Rivals are drawn from the other eleven.
 
 | id | Nation · Ark | Commander | Rule-breaker | UU / UB | Start Crew | AI |

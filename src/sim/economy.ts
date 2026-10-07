@@ -42,7 +42,7 @@ export function getPlayer(state: GameState, pid: PlayerId): Player {
 /** display name for an effect source (used by breakdown lines) */
 export function effectLabel(fx: ActiveEffect): string {
   switch (fx.kind) {
-    case 'leader': return LEADERS[fx.id]?.name ?? 'Nation';
+    case 'leader': return LEADERS[fx.id]?.civName ?? 'Nation';
     case 'doctrine': return DOCTRINES[fx.id]?.name ?? 'Crew';
     case 'crisis': return CRISES[fx.id]?.name ?? 'Crisis';
     case 'reform': return REFORMS[fx.id]?.name ?? 'Ark Module';

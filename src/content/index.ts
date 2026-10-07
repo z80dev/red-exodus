@@ -15,6 +15,7 @@ export * from './scrolls';
 export * from './crises';
 export * from './omens';
 export * from './leaders';
+export * from './commanders';
 export * from './reforms';
 export * from './ascension';
 export * from './nationCrew';

@@ -301,7 +301,7 @@ export function recordRunEnd(state: GameState): { unlocks: RunUnlock[] } {
     const before = maxAscension(p, leaderId);
     p.ascension[leaderId] = Math.max(p.ascension[leaderId] ?? -1, state.config.ascension);
     const after = maxAscension(p, leaderId);
-    if (after > before) unlocks.push({ kind: 'ascension', id: leaderId, name: `Ascension ${after} — ${LEADERS[leaderId]?.name ?? leaderId}` });
+    if (after > before) unlocks.push({ kind: 'ascension', id: leaderId, name: `Ascension ${after} — ${LEADERS[leaderId]?.civName ?? leaderId}` });
   }
 
   // content unlocks

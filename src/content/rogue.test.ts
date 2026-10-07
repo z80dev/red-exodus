@@ -97,6 +97,9 @@ describe('leaders & uniques', () => {
       expect(new Set(l.cityNames).size, l.id).toBeGreaterThanOrEqual(12);
       expect(MOTIFS).toContain(l.portrait.motif);
       expect(MOTIFS).toContain(l.portrait.crest);
+      expect(l.alt.gender, l.id).not.toBe(l.gender);
+      expect(l.alt.name.trim(), l.id).not.toBe('');
+      expect(l.alt.name, l.id).not.toBe(l.name);
       expect(badTokens(l.bonus), l.id).toEqual([]);
       const sd = DOCTRINES[l.startDoctrine ?? ''];
       expect(sd, l.id).toBeDefined();

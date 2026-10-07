@@ -3,6 +3,7 @@
 // banner in the civ colors hanging from a gilded rod, the civ crest on the banner, cradled by a laurel.
 import { useId, useMemo, useState, type CSSProperties } from 'react';
 import type { LeaderDef } from '../../sim/defs';
+import { commanderOf } from '../../content/commanders';
 import { GlyphLayers } from '../icons/GlyphLayers';
 import { artFor } from './artManifest';
 import { CrestArt } from './Crest';
@@ -21,16 +22,19 @@ export interface LeaderPortraitProps {
   style?: CSSProperties;
   /** skip the painted illustration even when shipped */
   procedural?: boolean;
+  /** show the nation's alternate commander (LeaderDef.alt) */
+  alt?: boolean;
 }
 
-export function LeaderPortrait({ leader, size, shape = 'card', className, style, procedural }: LeaderPortraitProps) {
-  const url = procedural ? null : artFor('leaders', leader.id);
+export function LeaderPortrait({ leader, size, shape = 'card', className, style, procedural, alt = false }: LeaderPortraitProps) {
+  const cmd = commanderOf(leader, alt);
+  const url = procedural ? null : artFor('leaders', cmd.artId);
   const [broken, setBroken] = useState<string | null>(null);
   const dims: CSSProperties =
     size !== undefined ? { width: size, height: shape === 'card' ? size * 1.25 : size } : { width: '100%', height: '100%' };
   const cls = `aeons-portrait aeons-portrait--${shape}${className ? ` ${className}` : ''}`;
   return (
-    <div className={cls} style={{ ...dims, ...style }} role="img" aria-label={`${leader.name}, ${leader.title}`}>
+    <div className={cls} style={{ ...dims, ...style }} role="img" aria-label={`${cmd.name}, ${cmd.title}`}>
       {url && broken !== url ? (
         <img src={url} alt="" draggable={false} onError={() => setBroken(url)} style={{ objectPosition: shape === 'card' ? '50% 30%' : '50% 22%' }} />
       ) : (

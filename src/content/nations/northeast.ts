@@ -18,6 +18,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'laureate', uniqueUnit: 'carolean_marcher', uniqueBuilding: 'nobel_hall', aiPersonality: 'scientist',
     cityNames: ['New Stockholm', 'Göteborg Gantry', 'Malmö Dome', 'Uppsala Array', 'Kiruna Deep', 'Västerås Works', 'Örebro Orbit', 'Linköping Lander', 'Fika Junction', 'Visby Walls', 'Umeå Underground', 'Abisko Lights', 'Flat-Pack Landing', 'Lund Lab', 'Skål Station'],
     portrait: { hue: 56, motif: 'book', crest: 'laurel' },
+    gender: 'f', alt: { name: 'Lars-Erik Bergström', title: 'Chair of the Assembly Committee; Chief Instruction Manual Inspector', gender: 'm', description: 'The Ark arrived in 1,400 flat-packed pieces, with one diagram, and a committee ready to discuss the diagram.' },
     effects: {
       onEvent(ctx, ev) { if (ev.type === 'techResearched' && ev.player === ctx.player.id) addGold(ctx.state, ctx.player.id, 25, 'Prize Fund', ctx.emit); },
       cityYield(_ctx, a) { if (cityHas(a.city, 'library')) a.yields.cul += 2; },
@@ -32,6 +33,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'fjord_pilot', uniqueUnit: 'ski_patrol', uniqueBuilding: 'fjord_pier', aiPersonality: 'expansionist',
     cityNames: ['Nye Oslo', 'Bergen Basin', 'Trondheim Tholus', 'Stavanger Station', 'Tromsø Aurora', 'Narvik Crater', 'Ålesund Airlock', 'Bodø Dome', 'Lillehammer Luge', 'Kristiansand South', 'Hammerfest Habitat', 'Svalbard Two', 'Valhalla Annex', 'Longship Landing', 'Midnight Sun Colony'],
     portrait: { hue: 222, motif: 'ship', crest: 'anchor' },
+    gender: 'f', alt: { name: 'Magnus Haugen', title: 'Harbour Admiral of the Fjord Ark', gender: 'm', description: 'The longships were retired long ago. The Ark’s skiff docks, however, are fully staffed and slightly smug.' },
     effects: {
       tileYield(_ctx, a) {
         const t = a.tile.terrain;
@@ -49,6 +51,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'winter_sniper', uniqueUnit: 'sisu_sharpshooter', uniqueBuilding: 'sauna', aiPersonality: 'builder',
     cityNames: ['Uusi Helsinki', 'Espoo Escarpment', 'Tampere Tholus', 'Oulu Outpost', 'Rovaniemi Redux', 'Turku Terminus', 'Lahti Lander', 'Kuopio Crater', 'Jyväskylä Junction', 'Vaasa Vault', 'Sauna Station Nine', 'Nokia Nest', 'Lapland Airlock', 'Silent Crater', 'Sisu Summit'],
     portrait: { hue: 178, motif: 'mountain', crest: 'shield' },
+    gender: 'f', alt: { name: 'Eino Korhonen', title: 'Reservist Colonel and Sauna Warden of the Sisu Ark', gender: 'm', description: 'Two meters of frost, zero small talk, and a sauna rated for hard vacuum.' },
     effects: {
       combat(_ctx, a) { const u = ownUnit(a); if (u && u.hp <= 50) ownMod(a, 'Sisu', 40); },
       tileYield(_ctx, a) {
@@ -65,6 +68,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'pierogi_chef', uniqueUnit: 'winged_hussar', uniqueBuilding: 'wawel_bastion', aiPersonality: 'warmonger',
     cityNames: ['Nowa Warszawa', 'Kraków Krater', 'Gdańsk Gantry', 'Wrocław Warren', 'Poznań Pad', 'Łódź Lander', 'Lublin Dome', 'Katowice Works', 'Szczecin Station', 'Białystok Base', 'Toruń Terminus', 'Zakopane Massif', 'Pierogi Point', 'Wawel on Mars', 'Solidarity Square'],
     portrait: { hue: 340, motif: 'feather', crest: 'horse' },
+    gender: 'f', alt: { name: 'Tomasz Kowalczyk', title: 'Marshal of the Feniks Ark; Union Steward', gender: 'm', description: 'The Ark has been shaken before. It stood up, drank the tea, and filed a very thorough grievance.' },
     effects: {
       influenceIncome(ctx, a) {
         if (!ctx.player.isHuman) return;
@@ -84,6 +88,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'brewmaster', uniqueUnit: 'hussite_wagon_crew', uniqueBuilding: 'orloj_tower', aiPersonality: 'builder',
     cityNames: ['Nová Praha', 'Brno Basin', 'Ostrava Works', 'Plzeň Pale Lager', 'Olomouc Orbit', 'Liberec Lander', 'Karlovy Vary Spa', 'Český Crater', 'Kutná Hora Cache', 'Hradec Habitat', 'Pardubice Pad', 'Defenestration Dome', 'Orloj Square', 'Bohemian Basin', 'Golem Gate'],
     portrait: { hue: 258, motif: 'hourglass', crest: 'lion' },
+    gender: 'f', alt: { name: 'Václav Horák', title: 'Master Clockmaker and Chief Brewmaster of the Orloj Ark', gender: 'm', description: 'The astronomical clock made the crossing intact. It now insists the 24-hour-39-minute sol is the planet’s mistake.' },
     effects: {
       cost(_ctx, a) { if (a.currency === 'gold' && a.item.kind === 'upgrade') a.cost *= 0.5; },
       chronicle(ctx, c) { const n = Math.floor(ctx.player.techs.length / 6); if (n > 0) c.addSplendor(n); },
@@ -98,6 +103,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'night_count', uniqueUnit: 'haiduk_raider', uniqueBuilding: 'bran_keep', aiPersonality: 'expansionist',
     cityNames: ['Noua București', 'Cluj Crater', 'Brașov Basin', 'Sibiu Station', 'Timișoara Terminal', 'Iași Inlet', 'Sighișoara Keep', 'Bran Dome', 'Peleș Pressurized', 'Ploiești Pumpjack', 'Transfăgărășan Pass', 'Carpathian Cache', 'Garlic Airlock', 'Poienari Spire', 'Midnight Pod Bay'],
     portrait: { hue: 352, motif: 'castle', crest: 'tower' },
+    gender: 'f', alt: { name: 'Radu Vasilescu', title: 'Voivode of the Carpathian Ark; Keeper of the Pods', gender: 'm', description: 'A castle, a mountain, a freezer full of coffin-shaped pods, and a perfectly reasonable explanation for all three.' },
     effects: {
       onEvent(ctx, ev) { if (ev.type === 'podLanded' && ev.player === ctx.player.id && chance(ctx.state.rng, 1 / 3)) changeCryo(ctx.state, ctx.player.id, 1, ctx.emit); },
       tileYield(_ctx, a) { if (a.tile.feature === 'jungle') a.yields.prod += 1; },
@@ -112,6 +118,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'tea_seller', uniqueUnit: 'janissary_bombardier', uniqueBuilding: 'covered_bazaar', aiPersonality: 'warmonger',
     cityNames: ['Yeni İstanbul', 'Ankara Airlock', 'İzmir Inlet', 'Bursa Basin', 'Antalya Annex', 'Konya Crater', 'Trabzon Terminal', 'Gaziantep Gantry', 'Kayseri Keep', 'Çanakkale Cut', 'Cappadocia Cavern', 'Pamukkale Terraces', 'Bazaar Gate', 'Çay Corner', 'Cats of Mars'],
     portrait: { hue: 6, motif: 'coin', crest: 'moon' },
+    gender: 'm', alt: { name: 'Zeynep Yıldız', title: 'Caravanserai Warden of the Crossroads Ark', gender: 'f', description: 'An Ark that is mostly a bazaar with an airlock, a very large kettle, and a cat nobody can explain.' },
     effects: {
       tileYield(_ctx, a) { if (a.tile.road) a.yields.gold += 1; },
       combat(_ctx, a) {
@@ -130,6 +137,7 @@ export const LEADERS_NORTHEAST: Record<string, LeaderDef> = {
     startDoctrine: 'launch_director', uniqueUnit: 'steppe_batyr', uniqueBuilding: 'cosmodrome_gantry', aiPersonality: 'expansionist',
     cityNames: ['New Astana', 'Almaty Apex', 'Baikonur Prime', 'Shymkent Station', 'Karaganda Coalface', 'Aktau Shallows', 'Semey Steppe', 'Turkistan Terminal', 'Pavlodar Pad', 'Aral Basin', 'Kokshetau Keep', 'Charyn Canyon', 'Kumis Corner', 'Steppe Horizon', 'Yurt Dome One'],
     portrait: { hue: 156, motif: 'horse', crest: 'sun' },
+    gender: 'f', alt: { name: 'Nurlan Zhaksybekov', title: 'Launch Director of the Baikonur Ark; Marshal of the Steppe', gender: 'm', description: 'The cosmodrome is leased, the steppe is endless, and the horses have strong opinions about the rovers.' },
     effects: {
       onEvent(ctx, ev) {
         if (ev.type === 'podLanded' && ev.player === ctx.player.id) ctx.counters.dropTile = ev.tile + 1;

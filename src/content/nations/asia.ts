@@ -27,6 +27,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'idol_trainee', uniqueUnit: 'hwacha_swarm_rack', uniqueBuilding: 'hallyu_hub', aiPersonality: 'scientist',
     cityNames: ['New Seoul', 'Busan Beachhead', 'Incheon Landing', 'Daejeon Dome', 'Gwangju Light', 'Jeju Crater', 'Ulsan Works', 'Suwon Fortress II', 'Pangyo Valley', 'Hanbit Station', 'Gangnam Style Hab', 'Daegu Heights', 'Ppalli-Ppalli Basin', 'Han River Dome', 'Soju Station'],
     portrait: { hue: 338, motif: 'lyre', crest: 'bolt' },
+    gender: 'f', alt: { name: 'Seo Joon-ho', title: 'Chief Showrunner of the Hanbit Ark', gender: 'm', description: 'Every module has a rehearsal schedule, a livestream, and a fully optimized airlock queue. Nobody has slept since landing.' },
     effects: {
       cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'building' && KOREAN_CULTURE_BUILDINGS.includes(a.item.id)) a.cost *= 0.7; },
       chronicle(_ctx, c) { const n = Math.min(8, Math.floor(c.stats.culture / 75)); if (n > 0) c.addSplendor(n, 'Hallyu Wave'); },
@@ -41,6 +42,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'spice_trader', uniqueUnit: 'silat_skirmisher', uniqueBuilding: 'pinisi_harbor', aiPersonality: 'expansionist',
     cityNames: ['Nusantara Prime', 'New Jakarta', 'Bandung Crater', 'Surabaya Harbor', 'Yogyakarta Dome', 'Bali High', 'Borobudur Base', 'Komodo Heights', 'Medan Station', 'Makassar Skiff', 'Krakatoa Rim', 'Sumatra Two', 'Java Junction', 'Lombok Landing', 'Thousand Islands, One Wi-Fi'],
     portrait: { hue: 322, motif: 'ship', crest: 'mountain' },
+    gender: 'f', alt: { name: 'Bayu Santoso', title: 'Fleet-Master of the Nusantara Ark', gender: 'm', description: 'The Ark launched as a flotilla of a thousand small habitats, each insisting on its own docking schedule and its own opinion about the coffee.' },
     effects: {
       tileYield(_ctx, a) {
         if (a.tile.terrain === 'coast' || a.tile.terrain === 'ocean') a.yields.food += 1;
@@ -57,6 +59,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'wildcatter', uniqueUnit: 'dromedary_courser', uniqueBuilding: 'deuterium_refinery', aiPersonality: 'builder',
     cityNames: ['Najd Prime', 'New Riyadh', 'Jeddah Skiff', 'Dammam Dome', 'Tabuk Station', 'Abha Heights', 'Dhahran Rig', 'Neom Next', 'Qassim Oasis', 'Ha’il Habitat', 'Al-Ula Arch', 'Yanbu Harbor', 'Empty Quarter Annex', 'Rover Crossing', 'Deuterium Is Fine, Honestly'],
     portrait: { hue: 150, motif: 'compass', crest: 'sword' },
+    gender: 'f', alt: { name: 'Khalid Al-Dosari', title: 'Chief Drilling Engineer of the Najd Ark', gender: 'm', description: 'The Ark brought one drilling rig, three giga-projects and a spreadsheet that proves the desert is an asset.' },
     effects: {
       tileYield(_ctx, a) {
         if (a.tile.resource === 'oil') a.yields.gold += 3;
@@ -73,6 +76,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'chip_designer', uniqueUnit: 'typhoon_battery', uniqueBuilding: 'semiconductor_fab', aiPersonality: 'scientist',
     cityNames: ['Yushan Prime', 'New Taipei', 'Hsinchu Fab', 'Taichung Dome', 'Kaohsiung Harbor', 'Tainan Station', 'Alishan Ridge', 'Taroko Gorge II', 'Sun Moon Basin', 'Keelung Rain', 'Hualien Heights', 'Chiayi Crater', 'Night Market No. 1', 'Bubble Tea Basin', 'Cleanroom Colony'],
     portrait: { hue: 232, motif: 'bolt', crest: 'mountain' },
+    gender: 'm', alt: { name: 'Dr. Lin Shu-fen', title: 'Chief Cleanroom Officer of the Yushan Ark', gender: 'f', description: 'The Ark is mostly cleanroom, with a few bunks installed around the chip fab. The bunks have also been cleaned.' },
     effects: {
       cityYield(_ctx, a) { const n = a.city.buildings.filter((b) => TAIWANESE_FAB_BUILDINGS.includes(b)).length; if (n > 0) a.yields.sci += 2 * n; },
       combat(ctx, a) { if (a.side === 'defense' && a.defender?.owner === ctx.player.id && a.tile.elevation === 'hills') a.defenseMods.push({ label: 'Ridge Fortress', pct: 25 }); },
@@ -87,6 +91,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'night_market_chef', uniqueUnit: 'elephant_walker', uniqueBuilding: 'spirit_house_garden', aiPersonality: 'builder',
     cityNames: ['Suvarnabhumi', 'New Bangkok', 'Chiang Mai Dome', 'Phuket Hab', 'Ayutthaya Two', 'Pattaya Pressure', 'Sukhothai Station', 'Krabi Crater', 'Khon Kaen Heights', 'Hua Hin Habitat', 'Nakhon Orbit', 'Chao Phraya Basin', 'Street Food Corner', 'Tuk-Tuk Terminal', 'Land of Smiles, Mostly'],
     portrait: { hue: 248, motif: 'temple', crest: 'laurel' },
+    gender: 'f', alt: { name: 'Anan Wongsakul', title: 'Chief Rice Agronomist of the Suvarnabhumi Ark', gender: 'm', description: 'The Ark has no plan for being pushed around and a very detailed plan for lunch. Both plans are working.' },
     effects: {
       cityYield(ctx, a) { if (atPeace(ctx.state, ctx.player)) { a.yields.gold += 1; a.yields.cul += 1; } },
       onEvent(ctx, ev) { if (ev.type === 'peaceMade' && (ev.a === ctx.player.id || ev.b === ctx.player.id)) addGold(ctx.state, ctx.player.id, 20, 'Bamboo diplomacy', ctx.emit); },
@@ -101,6 +106,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'harbourmaster', uniqueUnit: 'lion_city_sentinel', uniqueBuilding: 'free_port_exchange', aiPersonality: 'scientist',
     cityNames: ['Merlion Prime', 'New Singapura', 'Marina Bay Dome', 'Sentosa Pressurized', 'Jurong Works', 'Changi Terminal', 'Orchard Road Hab', 'Tampines Heights', 'Raffles Landing', 'Bukit Timah Ridge', 'Clarke Quay Skiff', 'Punggol Point', 'Woodlands Dock', 'Fine City Annex', 'Chewing-Gum Free Zone'],
     portrait: { hue: 18, motif: 'anchor', crest: 'lion' },
+    gender: 'f', alt: { name: 'Dr. Ravi Pillai', title: 'Water Systems Director of the Merlion Ark', gender: 'm', description: 'A small, spotless, fully air-conditioned habitat with a harbor, an exchange and a fine for everything.' },
     effects: {
       cityYield(_ctx, a) { if (a.city.isCapital) { a.pct.gold += 50; a.pct.sci += 25; } },
       canFoundCity(_ctx, a) { a.minDistance = Math.min(a.minDistance, 2); },
@@ -115,6 +121,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'balikbayan_courier', uniqueUnit: 'eskrima_duelist', uniqueBuilding: 'nurse_corps_clinic', aiPersonality: 'expansionist',
     cityNames: ['Perlas Prime', 'New Manila', 'Cebu Crater', 'Davao Dome', 'Baguio Heights', 'Iloilo Skiff', 'Palawan Reef (Dry)', 'Tacloban Rebuilt', 'Zamboanga Station', 'Boracay Basin', 'Vigan Cobblestone', 'Cagayan Landing', 'Bohol Hills', 'Mayon Rim', 'Karaoke Night Colony'],
     portrait: { hue: 46, motif: 'sun', crest: 'star' },
+    gender: 'f', alt: { name: 'Ramón Villanueva', title: 'Chief Bosun of the Perlas Ark', gender: 'm', description: 'The Ark’s morale officer is also the paramedic, the choir director, and the only person with a working karaoke machine.' },
     effects: {
       turnStart(ctx) { const amount = Math.min(2 * ctx.player.cryo, 12); if (amount > 0) addGold(ctx.state, ctx.player.id, amount, 'Cryo-pod remittances', ctx.emit); },
       unitHeal(_ctx, a) { a.value += 10; },
@@ -129,6 +136,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'tunnel_scout', uniqueUnit: 'tunnel_sniper', uniqueBuilding: 'tunnel_network', aiPersonality: 'warmonger',
     cityNames: ['Hồng Hà Prime', 'New Hanoi', 'Saigon Underneath', 'Da Nang Dome', 'Hue Citadel II', 'Hai Phong Harbor', 'Can Tho Delta', 'Nha Trang Reef (Dry)', 'Dalat Highlands', 'Ha Long Dust Bay', 'Sapa Terraces', 'Vung Tau Skiff', 'Quy Nhon Crater', 'Cu Chi Depths', 'Second Tunnel Level'],
     portrait: { hue: 2, motif: 'mountain', crest: 'star' },
+    gender: 'f', alt: { name: 'Nguyễn Quang Huy', title: 'Chief Dike Engineer of the Hồng Hà Ark', gender: 'm', description: 'Everything on this Ark was built twice: once above ground and once beneath it. The second one is better.' },
     effects: {
       combat(ctx, a) { if (a.side === 'defense' && a.defenderOwner === ctx.player.id && a.tile.owner === ctx.player.id) a.defenseMods.push({ label: 'Home Ground', pct: 25 }); },
       tileYield(_ctx, a) { if (a.tile.feature === 'jungle' || a.tile.feature === 'forest') a.yields.prod += 1; },
@@ -146,6 +154,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'textile_foreman', uniqueUnit: 'lathial_guard', uniqueBuilding: 'embankment_works', aiPersonality: 'expansionist',
     cityNames: ['Padma Prime', 'New Dhaka', 'Chattogram Port', 'Sylhet Tea Dome', 'Khulna Delta', 'Rajshahi Station', 'Cox’s Bazar Dunes', 'Barishal Skiff', 'Rangpur Heights', 'Mymensingh Basin', 'Comilla Crater', 'Sundarbans Annex', 'Rickshaw Roundabout', 'Hilsa Harbor', 'Monsoon Drill Colony'],
     portrait: { hue: 155, motif: 'river', crest: 'wheat' },
+    gender: 'f', alt: { name: 'Dr. Imran Chowdhury', title: 'River Pilot-General of the Padma Ark', gender: 'm', description: 'The planners are experts at living with flood, famine and forecast. Mars offers a refreshing range of all three.' },
     effects: {
       cityYield(_ctx, a) { const n = Math.floor(a.city.pop / 3); if (n > 0) { a.yields.prod += n; a.yields.gold += n; } },
       growthThreshold(_ctx, a) { if (a.city.pop <= 3) a.value *= 0.7; },
@@ -159,6 +168,7 @@ export const LEADERS_ASIA: Record<string, LeaderDef> = {
     startDoctrine: 'teh_tarik_mediator', uniqueUnit: 'keris_vanguard', uniqueBuilding: 'canopy_institute', aiPersonality: 'builder',
     cityNames: ['Muhibbah Prime', 'New Kuala Lumpur', 'Penang Hab', 'Johor Dome', 'Malacca Straits (Dry)', 'Kuching Heights', 'Kota Kinabalu Ridge', 'Ipoh Cavern', 'Putrajaya Annex', 'Langkawi Skiff', 'Cameron Highlands II', 'Shah Alam Station', 'Teh Tarik Terminal', 'Rainforest Annex', 'Four Languages, One Airlock'],
     portrait: { hue: 22, motif: 'tree', crest: 'compass' },
+    gender: 'f', alt: { name: 'Hafiz Abdullah', title: 'Chief Interpreter of the Muhibbah Ark', gender: 'm', description: 'Four languages, nine kinds of noodles and one diplomatic air handler. Every decision takes an extra round of tea, and it is always worth it.' },
     effects: {
       onGain(ctx) { if (ctx.player.isHuman) ctx.state.run.edictSlots += 1; },
       borderThreshold(_ctx, a) { a.value *= 0.75; },

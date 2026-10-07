@@ -21,6 +21,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     startDoctrine: 'astronaut', uniqueUnit: 'marine_raider', uniqueBuilding: 'liberty_exchange', aiPersonality: 'expansionist',
     cityNames: ['New Houston', 'Cape Canaveral II', 'New Albuquerque', 'Little Rock(et)', 'Phoenix Rising', 'New Detroit', 'Houston, We Have Air', 'New Anchorage', 'Omaha Beachhead', 'Dust Vegas', 'New Cleveland', 'Camp David Dome', 'New Seattle', 'Independence, Mars', 'Last Exit, Texas'],
     portrait: { hue: 205, motif: 'eagle', crest: 'star' },
+    gender: 'm', alt: { name: 'Cassandra Wells', title: 'Designated Survivor; Former Secretary of Agriculture', gender: 'f', description: 'The national emergency plan worked. The person in charge is still arguing about the invoice.' },
     effects: {
       council(ctx, a) { pushDoctrineCard(ctx.state, a.council); },
       cityYield(_ctx, a) { a.pct.gold += 10; },
@@ -35,6 +36,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     startDoctrine: 'foreman', uniqueUnit: 'jade_rabbit_crawler', uniqueBuilding: 'harmony_hab_block', aiPersonality: 'builder',
     cityNames: ['New Beijing', 'Chang’e Harbour', 'Jade Rabbit One', 'Dustzhou', 'Red Dragon Bay', 'Xīn Shanghai', 'Tiangong City', 'Long March East', 'Mòhe Crater', 'New Guangzhou', 'Quietly Thriving', 'Plan Ahead Basin', 'Second Shenzhen', 'The Future Is On Time', 'Xiǎo Mars'],
     portrait: { hue: 12, motif: 'gear', crest: 'lion' },
+    gender: 'f', alt: { name: 'Zhao Mingyuan', title: 'Flight Director of the Tiangong Mission', gender: 'm', description: 'The habitat arrived ahead of schedule. The schedule was written before Earth went dark.' },
     effects: {
       cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'wonder') a.cost *= 0.75; },
       chronicle(ctx, c) { const count = Object.values(ctx.state.cities).filter(city => city.owner === ctx.player.id).reduce((n, city) => n + city.wonders.length, 0); if (count) c.addSplendor(2 * count); },
@@ -48,6 +50,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     startDoctrine: 'veteran_cosmonaut', uniqueUnit: 'frostguard_spetsnaz', uniqueBuilding: 'rbmk_reactor', aiPersonality: 'warmonger',
     cityNames: ['Novaya Zarya', 'New Baikonur', 'Krasnoyarsk Crater', 'Vostok Dome', 'Sovetskaya Gavan', 'Perm Frost', 'Petropavlovsk-Red', 'New Murmansk', 'Omsk-on-Mars', 'Yekaterinburg East', 'Volga Station', 'New Yakutsk', 'Cold Shoulder', 'Comrade Springs', 'Cosmodrome No. 2'],
     portrait: { hue: 198, motif: 'moon', crest: 'star' },
+    gender: 'f', alt: { name: 'Aleksei Voronin', title: 'Cosmonaut-General of Novaya Zarya', gender: 'm', description: 'He brought the reactor manual, the emergency vodka, and a strict definition of “weather.”' },
     effects: {
       storm(ctx, a) { if (a.victim === ctx.player.id) a.damage = 0; else if (a.territoryOwner === ctx.player.id) a.damage *= 2; },
       tileYield(_ctx, a) { if (a.tile.terrain === 'tundra' || a.tile.terrain === 'snow') a.yields.prod += 1; },
@@ -62,6 +65,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     startDoctrine: 'jugaad_mechanic', uniqueUnit: 'pragyan_rover', uniqueBuilding: 'orbiter_relay', aiPersonality: 'scientist',
     cityNames: ['Naya Delhi', 'Mangalapuram', 'Pragyan Nagar', 'New Bengaluru', 'Chandrayaan Chowk', 'Jaipur Red', 'Kochi Crater', 'Pune Orbit', 'Thiruvananthapuram Two', 'Old Hyderabad', 'Mysuru Dome', 'Ahmedabad East', 'Vikram Landing', 'Jugaad Junction', 'New Varanasi'],
     portrait: { hue: 276, motif: 'flask', crest: 'book' },
+    gender: 'f', alt: { name: 'Dr. Vikram Iyer', title: 'Chief Flight Director of Mangalyaan Collective', gender: 'm', description: 'A launch system assembled from three spare parts and one extremely convincing presentation.' },
     effects: {
       researchOffers(_ctx, a) { a.value = 4; },
       researchReroll(ctx, a) { if (ctx.player.researchRerolls === 0) a.value = 0; },
@@ -77,6 +81,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     startDoctrine: 'roboticist', uniqueUnit: 'mecha_frame', uniqueBuilding: 'robotics_lab', aiPersonality: 'scientist',
     cityNames: ['New Tokyo', 'Yamato Landing', 'Akihabara Dome', 'Osaka Base', 'Kyoto Crater', 'Sapporo South', 'Naha Station', 'Sendai New Town', 'Hokkaido Habitat', 'Kobe Two', 'Fuji View Estate', 'Shinjuku-Red', 'Nagoya Works', 'Matsumoto Airlock', 'Neo Yokohama'],
     portrait: { hue: 228, motif: 'gear', crest: 'sun' },
+    gender: 'm', alt: { name: 'Haruka Mizuno', title: 'Chief Director of the Yamato Ark', gender: 'f', description: 'The robots run the checklist. The humans run the checklist about the robots.' },
     effects: { cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'building') a.cost *= 0.85; } },
   },
   france: {
@@ -87,6 +92,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     startDoctrine: 'la_joconde', uniqueUnit: 'legion_etrangere', uniqueBuilding: 'salon', aiPersonality: 'builder',
     cityNames: ['Nouvelle Paris', 'Lyon-sur-Mars', 'Cité Lumière', 'Bordeaux Rouge', 'Marseille Deux', 'Toulouse Station', 'Dijon Dome', 'Nice Try', 'Avignon-les-Dunes', 'Montpellier B', 'Saint-Étienne', 'Cannes du Cratère', 'Lille Nouvelle', 'Versailles Pressurisée', 'La Rochelle Rouge'],
     portrait: { hue: 166, motif: 'lyre', crest: 'laurel' },
+    gender: 'f', alt: { name: 'Étienne Moreau', title: 'Louvre Conservator and Chief of Arche Lumière', gender: 'm', description: 'The Louvre made it aboard. The Mona Lisa has seen the manifest and is not smiling.' },
     effects: {
       onGain(ctx) { if (ctx.player.isHuman) ctx.state.run.pillarLevels.arts = Math.max(2, ctx.state.run.pillarLevels.arts); },
       cityYield(_ctx, a) { a.pct.cul += 20; },
@@ -101,6 +107,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     unlock: { text: 'Rule 8 Colonies at once', rule: 'cities8' },
     cityNames: ['Novo Cuiabá', 'Nova Manaus', 'Brasília Vermelha', 'Santos Dumont', 'Belém do Cráter', 'Porto Alegre II', 'Recife de Marte', 'Salvador da Terra', 'Rio de Janeiro Novo', 'Campinas Orbital', 'Florianópolis Sul', 'Fortaleza Solar', 'Curitiba Pressurizada', 'Natal do Planeta', 'Boa Vista, Literally'],
     portrait: { hue: 28, motif: 'tree', crest: 'serpent' },
+    gender: 'f', alt: { name: 'Dr. Mateus Andrade', title: 'Forest Warden of Arca Amazônia', gender: 'm', description: 'The seed vault is intact. The planet is a desert. The botanist remains offensively optimistic.' },
     effects: {
       tileYield(_ctx, a) { if (a.tile.terrain === 'grassland' || a.tile.feature === 'floodplains') a.yields.food += 1; },
       growthThreshold(_ctx, a) { a.value *= 0.8; },
@@ -116,6 +123,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     unlock: { text: 'Win a run', rule: 'win' },
     cityNames: ['Al-Amal City', 'New Abu Dhabi', 'Dubai Next Door', 'Sharjah Station', 'Al Ain on Mars', 'Fujairah Dome', 'Ras al-Khaimah Red', 'Ajman Heights', 'Umm al-Quwain Two', 'Masdar Crater', 'The Palm, Regolith Edition', 'Jebel Hafeet Base', 'Hope, With Valet', 'New Liwa', 'Falcon Heights'],
     portrait: { hue: 190, motif: 'sun', crest: 'eagle' },
+    gender: 'm', alt: { name: 'Mariam Al-Suwaidi', title: 'Director of the Al-Amal Mission', gender: 'f', description: 'The Ark runs on sunlight, sovereign wealth, and a very expensive contingency plan.' },
     effects: {
       onGain(ctx) { addGold(ctx.state, ctx.player.id, 100, 'Sovereign fund', ctx.emit); },
       turnStart(ctx) { const amount = Math.min(Math.floor(ctx.player.gold * 0.03), 15); if (amount > 0) addGold(ctx.state, ctx.player.id, amount, 'Sovereign fund interest', ctx.emit); },
@@ -131,6 +139,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     unlock: { text: 'Complete 3 runs', rule: 'runs3' },
     cityNames: ['New Lagos', 'Abuja Station', 'Kano Crater', 'Port Harcourt Two', 'Ibadan Red', 'Enugu Heights', 'Benin-on-Mars', 'Jos Plateau Base', 'Warri Airlock', 'Akure Dome', 'Calabar Crossing', 'Kaduna Junction', 'Onitsha Market', 'Abeokuta New Town', 'No Wahala Colony'],
     portrait: { hue: 47, motif: 'flame', crest: 'eagle' },
+    gender: 'f', alt: { name: 'Tunde Balogun', title: 'Chairman of the Naija Ark Trading Council', gender: 'm', description: 'If the crash site has anything useful, the crew will find it. If it does not, they will make a business.' },
     effects: {
       growthThreshold(_ctx, a) { a.value *= 0.85; },
       onEvent(ctx, ev) {
@@ -151,6 +160,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     unlock: { text: 'Win without losing Charter', rule: 'noMandateLost' },
     cityNames: ['New Zürich', 'Genève Rouge', 'Bern Base', 'Lausanne-les-Dunes', 'Basel Habitat', 'Luzern Crater', 'Lugano Nuovo', 'Neuchâtel North', 'Sion Station', 'Winterthur Dome', 'Interlaken East', 'Fribourg Airlock', 'St. Gallen Two', 'Davos Downhill', 'Neutrality, Incorporated'],
     portrait: { hue: 205, motif: 'shield', crest: 'key' },
+    gender: 'f', alt: { name: 'Matthias Keller', title: 'President of the Helvetia Vault Council', gender: 'm', description: 'A nation-sized bunker with immaculate accounts and absolutely no opinion about your war.' },
     effects: {
       warDeclaration(_ctx, a) { a.allowed = false; a.reason = 'Swiss neutrality forbids declaring war in either direction.'; },
       combat(ctx, a) { const city = a.side === 'attack' ? a.attackerCity : a.defenderCity; if (a.side === 'defense' && city?.owner === ctx.player.id) a.defenseMods.push({ label: 'Armed Neutrality', pct: 50 }); },
@@ -166,6 +176,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     unlock: { text: 'Win a run at Hazard 4+', rule: 'winAsc4' },
     cityNames: ['Juche City', 'Pyongyang Red', 'New Hamhung', 'Kaesong Dome', 'Wonsan Landing', 'Sinuiju Station', 'Chongjin Heights', 'Hyesan Habitat', 'Nampo Basin', 'The Glorious Crater', 'One Channel Town', 'People’s Paradise 2', 'Songun Square', 'Dear Leader Heights', 'No Questions Colony'],
     portrait: { hue: 265, motif: 'crown', crest: 'shield' },
+    gender: 'f', alt: { name: 'Choe Min-ho', title: 'Marshal and Chief Commander of the Juche Ark', gender: 'm', description: 'The Ark has one channel, one approved portrait, and a reroll policy of zero.' },
     effects: {
       council(_ctx, a) { a.council.rerollLocked = true; },
       cost(_ctx, a) { if (a.currency === 'prod' && a.item.kind === 'unit' && UNITS[a.item.id] && UNITS[a.item.id].class !== 'civilian' && UNITS[a.item.id].class !== 'recon') a.cost *= 0.7; },
@@ -182,6 +193,7 @@ export const LEADERS: Record<string, LeaderDef> = {
     unlock: { text: 'Overcome 6 Crises in one run', rule: 'crises6' },
     cityNames: ['Città del Redentore', 'Nuova Roma', 'San Pietro Base', 'Assisi Crater', 'Loreto Station', 'Benedictine Heights', 'New Castel Gandolfo', 'Via della Speranza', 'Civitas Vaticana', 'Monte Cassino Two', 'Piazza del Sole', 'Orvieto Dome', 'Santa Maria Nuova', 'Conclave Heights', 'Urbi et Orbiti'],
     portrait: { hue: 44, motif: 'chalice', crest: 'shield' },
+    gender: 'm', alt: { name: 'Abbess Chiara Valdoni', title: 'Abbess-Camerlengo of the Last Conclave', gender: 'f', description: 'The last Conclave landed on Mars with one relic, one plan, and a truly impressive airlock blessing.' },
     effects: {
       chronicle(_ctx, c) { c.addSplendor(2); },
       onGain(ctx) { if (!ctx.player.isHuman) return; ctx.state.run.maxMandate += 1; changeMandate(ctx.state, 1, 'Faith Beyond Earth', ctx.emit); },

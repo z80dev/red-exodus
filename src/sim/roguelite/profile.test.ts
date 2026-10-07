@@ -15,7 +15,7 @@ function leader(id: string, unlock?: LeaderDef['unlock']): LeaderDef {
   return {
     id, name: id, title: '', civName: id, adjective: id, colors: { primary: '#fff', secondary: '#000' }, country: id, code: 'TST',
     flagColors: ['#fff', '#000'], description: '', bonus: '', aiPersonality: 'builder', cityNames: [],
-    portrait: { hue: 0, motif: 'sun', crest: 'crown' }, unlock, effects: {},
+    portrait: { hue: 0, motif: 'sun', crest: 'crown' }, gender: 'f', alt: { name: `${id} alt`, title: '', gender: 'm', description: '' }, unlock, effects: {},
   };
 }
 

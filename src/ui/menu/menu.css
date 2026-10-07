@@ -67,3 +67,8 @@
 .ae-nation-name { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ae-nation-stripes { display: flex; gap: 2px; }
 .ae-nation-stripes i { width: 3px; height: 18px; border-radius: 1px; }
+.ae-commander-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.ae-commander-pick button { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-height: 48px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: rgba(255,255,255,.03); color: var(--text); text-align: left; }
+.ae-commander-pick button small { font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text-dim); }
+.ae-commander-pick button span { font: 600 14px/1.2 var(--font-display); }
+.ae-commander-pick button.active { border-color: var(--leader-color, var(--gold-400)); box-shadow: 0 0 0 1px var(--leader-color, var(--gold-400)); background: color-mix(in srgb, var(--leader-color, #f0a660) 14%, transparent); }

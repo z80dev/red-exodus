@@ -35,4 +35,17 @@ describe('nation perks stay with their own player', () => {
     expect(make('vatican').run.maxMandate).toBe(make('usa').run.maxMandate + 1);
     expect(Object.keys(LEADERS)).toHaveLength(50);
   });
+
+  it('leading the alternate commander changes who leads, not the game', () => {
+    const make = (altCommander: boolean) => createGame({ seed: 'commander', leaderId: 'colombia', ascension: 0, mapSize: 'small', rivals: 3, tutorial: false, daily: false, altCommander }).state;
+    const def = make(false);
+    const alt = make(true);
+    expect(def.players[HUMAN].name).toBe(LEADERS.colombia.name);
+    expect(alt.players[HUMAN].name).toBe(LEADERS.colombia.alt.name);
+    expect(alt.players[HUMAN].altCommander).toBe(true);
+    expect(alt.players.map((p) => [p.leaderId, p.name])).toEqual(def.players.map((p, i) => [p.leaderId, i === HUMAN ? LEADERS.colombia.alt.name : p.name]));
+    expect(alt.map).toEqual(def.map);
+    expect(alt.rng).toEqual(def.rng);
+    expect(alt.run).toEqual(def.run);
+  });
 });

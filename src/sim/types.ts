@@ -193,6 +193,8 @@ export interface Player {
   researchOffer: TechId[];
   /** research rerolls bought for the current offer (price escalates) */
   researchRerolls: number;
+  /** this player is led by the nation's alternate commander (LeaderDef.alt); absent in older saves */
+  altCommander?: boolean;
 }
 
 // ───────────────────────────── roguelite layer ─────────────────────────────
@@ -333,6 +335,8 @@ export interface GameConfig {
   daily: boolean;
   /** meta-progression locked content ids (doctrines/edicts) excluded from this run's shops; from meta/profile lockedContent() */
   locked?: string[];
+  /** lead the nation's alternate (opposite-gender) commander instead of the default */
+  altCommander?: boolean;
 }
 
 export interface GameState {
