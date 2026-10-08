@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { DoctrineDef } from '../defs';
 import type { GameState, SimEvent } from '../types';
-import { BUILDINGS, CRISES, DOCTRINES, EDICTS, OMENS, REFORMS, SCROLLS } from '../../content';
-import { CHAPTER_LENGTHS, handleRunAction, initRun, onTurnEnd, trackEvent } from './index';
+import { BUILDINGS, CRISES, DOCTRINES, EDICTS } from '../../content';
+import { CHAPTER_LENGTHS, CRISIS_CHAPTER, handleRunAction, initRun, onTurnEnd, trackEvent } from './index';
 import { councilBuyError, doctrinePrice } from './council';
 import { changeMandate } from './run';
+import { INTEREST_CAP, START_FOCUS } from './constants';
 import { testState } from './testState';
 
 vi.mock(import('../cities'), async (orig) => ({ ...(await orig()), refreshAllCities: () => {} }));
@@ -34,28 +35,16 @@ beforeAll(() => {
       effects: { onBegin: (ctx) => { ctx.counters.begun = 1; }, onEnd: (ctx) => { ctx.counters.ended = 1; } },
     };
   }
-  for (let i = 0; i < 4; i++) {
-    OMENS[`__r_omen${i}`] = {
-      id: `__r_omen${i}`, name: `Omen ${i}`, description: '', icon: 'omen', eras: [0], goal: 2,
-      progress: (ev, _s, pid) => (ev.type === 'cityFounded' && ev.player === pid ? 1 : 0),
-      reward: { kind: 'influence', amount: 5 }, rewardText: '+5 influence',
-    };
-  }
   EDICTS.__r_edict = {
     id: '__r_edict', name: 'Test Edict', rarity: 'common', cost: 3, description: '', icon: 'edict', art: { hue: 0, motif: 'sun' },
     target: 'city', use: (ctx, t) => { ctx.state.cities[t.cityId!].pop += 3; },
-  };
-  SCROLLS.__r_scroll = { id: '__r_scroll', name: 'Test Scroll', pillar: 'glory', cost: 3, description: '', icon: 'scroll' };
-  REFORMS.__r_reform = {
-    id: '__r_reform', name: 'Test Reform', description: '', cost: 10, tier: 1, icon: 'reform',
-    effects: { onGain: (ctx) => { ctx.state.run.doctrineSlots++; } },
   };
 });
 
 function fresh(seed = 'RUN'): { state: GameState; events: SimEvent[]; emit: (e: SimEvent) => void } {
   const state = testState(seed);
   const events: SimEvent[] = [];
-  const emit = (e: SimEvent) => { events.push(e); trackEvent(state, e, emit); };
+  const emit = (e: SimEvent) => { events.push(e); trackEvent(state, e); };
   initRun(state, emit);
   return { state, events, emit };
 }
@@ -67,7 +56,7 @@ function act(state: GameState, emit: (e: SimEvent) => void, action: Parameters<t
 
 /** play out the current chapter with enough (or too little) culture */
 function playChapter(state: GameState, emit: (e: SimEvent) => void, pass: boolean) {
-  act(state, emit, { type: 'chooseChapterStart', focus: 'arts', omen: null });
+  act(state, emit, { type: 'chooseChapterStart', focus: 'arts' });
   state.run.stats.culture = pass ? 1e7 : 0;
   state.cities[1].pop = pass ? 3 : 0;
   for (let t = 0; t < state.run.chapterLength; t++) onTurnEnd(state, emit);
@@ -75,35 +64,34 @@ function playChapter(state: GameState, emit: (e: SimEvent) => void, pass: boolea
 }
 
 describe('run phases', () => {
-  it('initRun sets defaults and reveals an era-0 crisis', () => {
+  it('initRun sets defaults, rolls an era-0 crisis and opens the first chapter', () => {
     const { state, events } = fresh();
     const r = state.run;
-    expect(r).toMatchObject({ phase: 'crisisReveal', era: 0, chapter: 0, influence: 4, focus: 'prosperity', doctrineSlots: 5, edictSlots: 2 });
+    expect(r).toMatchObject({ phase: 'chapterStart', era: 0, chapter: 0, influence: 4, focus: START_FOCUS, doctrineSlots: 5, edictSlots: 2 });
+    expect(r.focus).toBe('discovery');
     expect(r.mandate).toBe(r.maxMandate);
     expect(Object.values(r.pillarLevels).every((l) => l === 1)).toBe(true);
     expect(CRISES[r.crisis!].eras).toContain(0);
-    expect(events).toContainEqual({ type: 'crisisRevealed', era: 0, crisis: r.crisis });
+    expect(events).toContainEqual({ type: 'crisisRolled', era: 0, crisis: r.crisis });
   });
 
   it('runs a full era: chapters, crisis begin/end, councils, next era', () => {
     const { state, events, emit } = fresh();
-    act(state, emit, { type: 'ackCrisis' });
     expect(state.run.phase).toBe('chapterStart');
-    expect(state.run.omenOffer).toHaveLength(2);
-    for (let ch = 0; ch < 3; ch++) {
+    for (let ch = 0; ch < CHAPTER_LENGTHS.length; ch++) {
       expect(state.run.chapter).toBe(ch);
       expect(state.run.chapterLength).toBe(CHAPTER_LENGTHS[ch]);
-      if (ch === 2) {
-        act(state, emit, { type: 'chooseChapterStart', focus: 'arts', omen: null });
+      if (ch === CRISIS_CHAPTER) {
+        act(state, emit, { type: 'chooseChapterStart', focus: 'arts' });
         expect(state.run.crisisActive).toBe(true);
         expect(events.some((e) => e.type === 'crisisBegan')).toBe(true);
         state.run.stats.culture = 1e7;
-        for (let t = 0; t < CHAPTER_LENGTHS[2] - 1; t++) onTurnEnd(state, emit);
+        for (let t = 0; t < CHAPTER_LENGTHS[CRISIS_CHAPTER] - 1; t++) onTurnEnd(state, emit);
         expect(state.run.phase).toBe('playing');
         onTurnEnd(state, emit);
         expect(state.run.crisisActive).toBe(false);
         expect(events.some((e) => e.type === 'crisisEnded')).toBe(true);
-        expect(state.run.lastChronicle!.influenceEarned).toContainEqual({ label: `${CRISES[state.run.crisis!].name} overcome`, amount: 2 });
+        expect(state.run.lastChronicle!.influenceEarned).toContainEqual({ label: `${CRISES[state.run.crisis!].name} survived`, amount: 2 });
       } else {
         playChapter(state, emit, true);
       }
@@ -111,30 +99,31 @@ describe('run phases', () => {
       act(state, emit, { type: 'ackChronicle' });
       expect(state.run.phase).toBe('council');
       expect(state.run.stats.culture).toBe(0);
-      const hasReform = state.run.council!.items.some((i) => i?.kind === 'reform');
-      expect(hasReform).toBe(ch === 0);
       act(state, emit, { type: 'leaveCouncil' });
     }
-    expect(state.run).toMatchObject({ era: 1, chapter: 0, phase: 'crisisReveal' });
+    expect(state.run).toMatchObject({ era: 1, chapter: 0, phase: 'chapterStart' });
     expect(state.run.mandate).toBe(state.run.maxMandate);
     expect(events).toContainEqual({ type: 'eraStarted', era: 1 });
     expect(CRISES[state.run.crisis!].eras).toContain(1);
-    expect(state.run.history).toHaveLength(3);
+    expect(state.run.history).toHaveLength(CHAPTER_LENGTHS.length);
   });
 
   it('failing costs mandate (2 in the crisis chapter), inflicts a dark age, and ends the run at 0', () => {
     const { state, events, emit } = fresh();
-    act(state, emit, { type: 'ackCrisis' });
     playChapter(state, emit, false);
     expect(state.run.mandate).toBe(state.run.maxMandate - 1);
     expect(state.run.darkAge).toBe(true);
     expect(state.run.phase).toBe('chronicle'); // defeat is deferred to ack
     act(state, emit, { type: 'ackChronicle' });
     act(state, emit, { type: 'leaveCouncil' });
-    playChapter(state, emit, true);
+    playChapter(state, emit, true); // Crisis chapter of era 0
     expect(state.run.darkAge).toBe(false);
     act(state, emit, { type: 'ackChronicle' });
     act(state, emit, { type: 'leaveCouncil' });
+    playChapter(state, emit, true); // Dawn of era 1
+    act(state, emit, { type: 'ackChronicle' });
+    act(state, emit, { type: 'leaveCouncil' });
+    expect(state.run.chapter).toBe(CRISIS_CHAPTER);
     state.run.mandate = 2; // start the Crisis with prior damage to exercise depletion at the Chronicle.
     playChapter(state, emit, false);
     expect(state.run.lastChronicle!.mandateLost).toBe(2);
@@ -149,18 +138,17 @@ describe('run phases', () => {
 
   it('mandate hitting 0 during play is an immediate defeat', () => {
     const { state, emit } = fresh();
-    act(state, emit, { type: 'ackCrisis' });
-    act(state, emit, { type: 'chooseChapterStart', focus: 'glory', omen: null });
+    act(state, emit, { type: 'chooseChapterStart', focus: 'glory' });
     changeMandate(state, -state.run.mandate, 'Capital razed', emit);
     expect(state.run).toMatchObject({ phase: 'defeat', defeatReason: 'Capital razed' });
   });
 
-  it('victory after era 6 chapter III, then endless continues', () => {
+  it('victory after the era 6 Crisis chapter, then endless continues', () => {
     const { state, events, emit } = fresh();
     state.run.era = 5;
-    state.run.chapter = 2;
+    state.run.chapter = CRISIS_CHAPTER;
     state.run.phase = 'chapterStart';
-    state.run.chapterLength = 8;
+    state.run.chapterLength = CHAPTER_LENGTHS[CRISIS_CHAPTER];
     playChapter(state, emit, true);
     act(state, emit, { type: 'ackChronicle' });
     expect(state.run.phase).toBe('victory');
@@ -169,14 +157,14 @@ describe('run phases', () => {
     act(state, emit, { type: 'continueEndless' });
     expect(state.run.phase).toBe('council');
     act(state, emit, { type: 'leaveCouncil' });
-    expect(state.run).toMatchObject({ era: 6, chapter: 0, phase: 'crisisReveal' });
+    expect(state.run).toMatchObject({ era: 6, chapter: 0, phase: 'chapterStart' });
     expect(state.run.crisis).not.toBeNull();
   });
 
   it('ends a failed final Chronicle instead of entering an unwinnable endless era', () => {
     const { state, events, emit } = fresh();
     state.run.era = 5;
-    state.run.chapter = 2;
+    state.run.chapter = CRISIS_CHAPTER;
     state.run.phase = 'chapterStart';
     state.run.chapterLength = 5;
     playChapter(state, emit, false);
@@ -188,43 +176,32 @@ describe('run phases', () => {
     expect(events).toContainEqual({ type: 'runLost', reason: state.run.defeatReason! });
   });
 
-  it('rejects map-phase run actions out of phase', () => {
+  it('rejects run actions out of phase', () => {
     const { state, emit } = fresh();
-    expect(handleRunAction(state, { type: 'chooseChapterStart', focus: 'arts', omen: null }, emit)).not.toBeNull();
     expect(handleRunAction(state, { type: 'ackChronicle' }, emit)).not.toBeNull();
-    act(state, emit, { type: 'ackCrisis' });
-    expect(handleRunAction(state, { type: 'chooseChapterStart', focus: 'arts', omen: 'nope' }, emit)).not.toBeNull();
-  });
-});
-
-describe('omens', () => {
-  it('progress via trackEvent, complete, and reward immediately', () => {
-    const { state, events, emit } = fresh();
-    act(state, emit, { type: 'ackCrisis' });
-    const omen = '__r_omen0';
-    state.run.omenOffer = [omen, state.run.omenOffer[0]];
-    act(state, emit, { type: 'chooseChapterStart', focus: 'prosperity', omen });
-    expect(state.run.omen).toMatchObject({ id: omen, progress: 0, done: false, goal: 2 });
-    emit({ type: 'cityFounded', cityId: 5, player: 0, tile: 1 });
-    expect(events).toContainEqual({ type: 'omenProgress', id: omen, progress: 1, goal: 2 });
-    expect(state.run.stats.citiesFounded).toBe(1);
-    emit({ type: 'cityFounded', cityId: 6, player: 0, tile: 2 });
-    expect(state.run.omen!.done).toBe(true);
-    expect(events).toContainEqual({ type: 'omenCompleted', id: omen });
-    expect(state.run.influence).toBe(4 + 5);
-    emit({ type: 'cityFounded', cityId: 7, player: 0, tile: 3 });
-    expect(events.filter((e) => e.type === 'omenCompleted')).toHaveLength(1);
+    expect(handleRunAction(state, { type: 'leaveCouncil' }, emit)).not.toBeNull();
+    expect(handleRunAction(state, { type: 'chooseChapterStart', focus: 'nope' as never }, emit)).not.toBeNull();
+    act(state, emit, { type: 'chooseChapterStart', focus: 'arts' });
+    expect(handleRunAction(state, { type: 'chooseChapterStart', focus: 'arts' }, emit)).not.toBeNull();
   });
 
-  it('avoids recently offered omens when possible', () => {
-    const { state, emit } = fresh();
-    act(state, emit, { type: 'ackCrisis' });
-    const first = [...state.run.omenOffer];
+  it('passing a chapter levels the focus pillar; failing leaves levels unchanged', () => {
+    const { state, events, emit } = fresh('LEVEL');
+    const before = state.run.pillarLevels.arts;
     playChapter(state, emit, true);
+    const up = state.run.lastChronicle!.focusLevelUp;
+    expect(up).toEqual({ pillar: 'arts', level: before + 1 });
+    expect(state.run.pillarLevels.arts).toBe(before + 1);
+    expect(events).toContainEqual({ type: 'pillarLevelUp', pillar: 'arts', level: before + 1 });
     act(state, emit, { type: 'ackChronicle' });
     act(state, emit, { type: 'leaveCouncil' });
-    const eraOmens = Object.values(OMENS).filter((o) => !o.eras || o.eras.includes(0)).length;
-    if (eraOmens >= 4) expect(state.run.omenOffer.some((id) => first.includes(id))).toBe(false);
+
+    const levels = { ...state.run.pillarLevels };
+    const count = events.filter((e) => e.type === 'pillarLevelUp').length;
+    playChapter(state, emit, false);
+    expect(state.run.lastChronicle!.focusLevelUp).toBeNull();
+    expect(state.run.pillarLevels).toEqual(levels);
+    expect(events.filter((e) => e.type === 'pillarLevelUp')).toHaveLength(count);
   });
 });
 
@@ -248,7 +225,6 @@ describe('stats', () => {
 describe('council', () => {
   function toCouncil(seed: string) {
     const f = fresh(seed);
-    act(f.state, f.emit, { type: 'ackCrisis' });
     playChapter(f.state, f.emit, true);
     act(f.state, f.emit, { type: 'ackChronicle' });
     return f;
@@ -268,7 +244,7 @@ describe('council', () => {
       const items = state.run.council!.items;
       expect(items[0]!.kind).toBe('doctrine');
       expect(items[1]!.kind).toBe('doctrine');
-      expect(['edict', 'scroll']).toContain(items[2]!.kind);
+      expect(items[2] === null || items[2].kind === 'edict').toBe(true);
       expect(items[3]!.kind).toBe('pack');
       expect(items[4]!.kind).toBe('pack');
       for (const it of items) {
@@ -289,10 +265,9 @@ describe('council', () => {
     const { state, emit } = fresh('LOCK');
     state.config.locked = ['__r_locked'];
     state.run.doctrines = [{ uid: 900, id: '__r_c0', edition: 'base', counters: {}, disabled: false, sellValue: 2 }];
-    act(state, emit, { type: 'ackCrisis' });
     for (let i = 0; i < 40; i++) {
       state.run.phase = 'chronicle';
-      state.run.lastChronicle = { era: 0, chapter: 0, target: 1, steps: [], renown: 0, splendor: 0, score: 1, passed: true, triumph: false, mandateLost: 0, influenceEarned: [] };
+      state.run.lastChronicle = { era: 0, chapter: 0, target: 1, steps: [], renown: 0, splendor: 0, score: 1, passed: true, triumph: false, mandateLost: 0, influenceEarned: [], focusLevelUp: null };
       act(state, emit, { type: 'ackChronicle' });
       for (const it of state.run.council!.items) {
         if (it?.kind === 'doctrine') expect(['__r_locked', '__r_c0']).not.toContain(it.id);
@@ -300,7 +275,7 @@ describe('council', () => {
     }
   });
 
-  it('buy, reroll cost growth, sell, slots, packs, reform', () => {
+  it('buy, reroll cost growth, sell, slots, packs', () => {
     const { state, emit } = toCouncil('BUY');
     const c = state.run.council!;
     state.run.influence = 100;
@@ -328,7 +303,7 @@ describe('council', () => {
     // full slots block non-ethereal doctrines
     state.run.doctrineSlots = 0;
     c.items[1] = { kind: 'doctrine', id: '__r_c5', edition: 'base', price: 4 };
-    expect(councilBuyError(state, 1)).toMatch(/bunks full/);
+    expect(councilBuyError(state, 1)).toMatch(/Slots are full/);
     c.items[1] = { kind: 'doctrine', id: '__r_c5', edition: 'ethereal', price: 9 };
     expect(councilBuyError(state, 1)).toBeNull();
     state.run.doctrineSlots = 5;
@@ -338,26 +313,18 @@ describe('council', () => {
     act(state, emit, { type: 'councilBuy', slot: 3 });
     expect(c.pack!.options.length).toBeGreaterThan(0);
     expect(c.pack!.options.every((o) => o.kind === 'doctrine' && o.price === 0)).toBe(true);
-    expect(handleRunAction(state, { type: 'leaveCouncil' }, emit)).toMatch(/Supply Drop/);
+    expect(handleRunAction(state, { type: 'leaveCouncil' }, emit)).toMatch(/Open the Pack/);
     const n = state.run.doctrines.length;
     act(state, emit, { type: 'packPick', index: 0 });
     expect(state.run.doctrines.length).toBe(n + 1);
     expect(c.pack).toBeNull();
 
-    c.items[4] = { kind: 'pack', pack: 'archive', size: 'normal', price: 4 };
+    c.items[4] = { kind: 'pack', pack: 'edict', size: 'normal', price: 4 };
     act(state, emit, { type: 'councilBuy', slot: 4 });
-    const scroll = c.pack!.options[0];
-    expect(scroll.kind).toBe('scroll');
-    const pillar = SCROLLS[(scroll as { id: string }).id].pillar;
-    const lvl = state.run.pillarLevels[pillar];
+    expect(c.pack!.options.every((o) => o.kind === 'edict' && o.price === 0)).toBe(true);
+    const edicts = state.run.edicts.length;
     act(state, emit, { type: 'packPick', index: 0 });
-    expect(state.run.pillarLevels[pillar]).toBe(lvl + 1);
-
-    // reform
-    c.items[5] = { kind: 'reform', id: '__r_reform', price: 10 };
-    act(state, emit, { type: 'councilBuy', slot: 5 });
-    expect(state.run.reforms).toContain('__r_reform');
-    expect(state.run.doctrineSlots).toBe(6);
+    expect(state.run.edicts.length).toBe(edicts + 1);
 
     // reorder
     const uids = state.run.doctrines.map((d) => d.uid);
@@ -385,13 +352,13 @@ describe('council', () => {
     const c = state.run.council!;
     state.run.influence = 40;
     c.rerollLocked = true;
-    expect(handleRunAction(state, { type: 'councilReroll' }, emit)).toMatch(/cannot be rerolled/);
+    expect(handleRunAction(state, { type: 'councilReroll' }, emit)).toMatch(/cannot reroll/);
     c.rerollLocked = false;
     act(state, emit, { type: 'councilReroll' });
 
     DOCTRINES.__r_stuck = doctrine('__r_stuck', 'common', { noSell: true });
     state.run.doctrines.push({ uid: 556, id: '__r_stuck', edition: 'base', counters: {}, disabled: false, sellValue: 2 });
-    expect(handleRunAction(state, { type: 'sellDoctrine', uid: 556 }, emit)).toBe("This Crew member won't leave");
+    expect(handleRunAction(state, { type: 'sellDoctrine', uid: 556 }, emit)).toBe('You cannot sell this Crew member');
     expect(state.run.doctrines.some((d) => d.uid === 556)).toBe(true);
 
     DOCTRINES.__r_refund = doctrine('__r_refund', 'common', {
@@ -405,15 +372,15 @@ describe('council', () => {
     act(state, emit, { type: 'leaveCouncil' });
     state.run.influence = 100;
     playChapter(state, emit, true);
-    expect(state.run.lastChronicle!.influenceEarned).toContainEqual({ label: 'Interest', amount: 10 });
+    expect(state.run.lastChronicle!.influenceEarned).toContainEqual({ label: 'Savings bonus', amount: INTEREST_CAP * 2 });
   });
 
   it('edicts: target validation, use in play only', () => {
     const { state, events, emit } = toCouncil('EDICT');
     state.run.edicts = [{ uid: 777, id: '__r_edict' }];
-    expect(handleRunAction(state, { type: 'useEdict', uid: 777, cityId: 1 }, emit)).toMatch(/during play/);
+    expect(handleRunAction(state, { type: 'useEdict', uid: 777, cityId: 1 }, emit)).toMatch(/during a turn/);
     act(state, emit, { type: 'leaveCouncil' });
-    act(state, emit, { type: 'chooseChapterStart', focus: 'arts', omen: null });
+    act(state, emit, { type: 'chooseChapterStart', focus: 'arts' });
     expect(handleRunAction(state, { type: 'useEdict', uid: 777 }, emit)).toMatch(/colony/);
     const pop = state.cities[1].pop;
     act(state, emit, { type: 'useEdict', uid: 777, cityId: 1 });

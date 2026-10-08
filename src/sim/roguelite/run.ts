@@ -1,18 +1,17 @@
-// OWNER: SimMechanics. Run clock & phases: eras → chapters → Sol Report → the Uplink. DESIGN §3.
+// OWNER: SimMechanics. Run clock & phases: eras → chapters (Dawn, Crisis) → Chapter Report → Shop. DESIGN §3.
 import { refreshAllCities } from '../cities';
 import type { CrisisDef } from '../defs';
 import { collectEffects, makeCtx } from '../effects';
 import { weightedIndex } from '../rng';
-import type { DoctrineId, Edition, Emit, GameState, OmenId, PillarId, RunState } from '../types';
+import type { DoctrineId, Edition, Emit, GameState, PillarId, RunState } from '../types';
 import { BARBARIAN, HUMAN, PILLARS } from '../types';
-import { CRISES, DOCTRINES, LEADERS, OMENS } from '../../content';
+import { CRISES, DOCTRINES, LEADERS } from '../../content';
 import {
   CHAPTER_LENGTHS, CRISIS_CHAPTER, ERA_NAMES, FINAL_ERA, START_DOCTRINE_SLOTS, START_EDICT_SLOTS, START_FOCUS,
   START_INFLUENCE, START_MANDATE,
 } from './constants';
 import { chronicleTarget, computeChronicle } from './chronicle';
 import { doctrinePrice, doctrineSlotsUsed, generateCouncil, sellValueFor } from './council';
-import { omenGoal, rollOmenOffers } from './omens';
 import { emptyStats, markSeen } from './stats';
 import { changeCryo, ERA_CRYO } from '../mars';
 
@@ -23,10 +22,10 @@ function freshRun(state: GameState): RunState {
   const pillarLevels = {} as Record<PillarId, number>;
   for (const p of PILLARS) pillarLevels[p] = 1;
   return {
-    phase: 'crisisReveal', era: 0, chapter: 0, chapterTurn: 0, chapterLength: CHAPTER_LENGTHS[0],
+    phase: 'chapterStart', era: 0, chapter: 0, chapterTurn: 0, chapterLength: CHAPTER_LENGTHS[0],
     mandate: START_MANDATE, maxMandate: START_MANDATE, influence: START_INFLUENCE, focus: START_FOCUS, pillarLevels,
-    doctrines: [], doctrineSlots: START_DOCTRINE_SLOTS, edicts: [], edictSlots: START_EDICT_SLOTS, reforms: [],
-    crisis: null, crisisActive: false, darkAge: false, omenOffer: [], omen: null,
+    doctrines: [], doctrineSlots: START_DOCTRINE_SLOTS, edicts: [], edictSlots: START_EDICT_SLOTS,
+    crisis: null, crisisActive: false, darkAge: false,
     stats: emptyStats(), totals: emptyStats(), council: null, lastChronicle: null, history: [],
     ascension: state.config.ascension, nextUid: 1, seen: [], bestScore: 0, defeatReason: null,
   };
@@ -45,7 +44,7 @@ function refreshCities(state: GameState): void {
   for (const p of state.players) if (p.alive && p.id !== BARBARIAN) refreshAllCities(state, p.id);
 }
 
-/** fill state.run for a fresh game (after players/map/start units exist); rolls era-0 crisis; phase = 'crisisReveal' */
+/** fill state.run for a fresh game (after players/map/start units exist); rolls era-0 crisis; phase = 'chapterStart' */
 export function initRun(state: GameState, emit: Emit): void {
   state.run = freshRun(state);
   // leader & ascension onGain hooks may adjust the run (mandate, influence, slots) or grant starting assets
@@ -60,9 +59,10 @@ export function initRun(state: GameState, emit: Emit): void {
   if (start) grantDoctrine(state, start, 'base', emit);
   emit({ type: 'eraStarted', era: 0 });
   rollCrisis(state, emit);
+  openChapter(state);
 }
 
-/** roll this era's crisis (weighted; avoids repeats); emits crisisRevealed */
+/** roll this era's crisis (weighted; avoids repeats); emits crisisRolled */
 export function rollCrisis(state: GameState, emit: Emit): void {
   const run = state.run;
   const all = Object.values(CRISES);
@@ -77,7 +77,7 @@ export function rollCrisis(state: GameState, emit: Emit): void {
   const crisis = pool[weights.some((w) => w > 0) ? weightedIndex(state.rng, weights) : 0];
   run.crisis = crisis.id;
   markSeen(run, `crisis:${crisis.id}`);
-  emit({ type: 'crisisRevealed', era: run.era, crisis: crisis.id });
+  emit({ type: 'crisisRolled', era: run.era, crisis: crisis.id });
 }
 
 function crisisHook(state: GameState, hook: 'onBegin' | 'onEnd', emit: Emit): void {
@@ -109,23 +109,13 @@ function openChapter(state: GameState): void {
   run.phase = 'chapterStart';
   run.chapterTurn = 0;
   run.chapterLength = CHAPTER_LENGTHS[Math.min(run.chapter, CHAPTER_LENGTHS.length - 1)];
-  rollOmenOffers(state);
 }
 
-export function ackCrisis(state: GameState): string | null {
-  if (state.run.phase !== 'crisisReveal') return 'Nothing to acknowledge';
-  openChapter(state);
-  return null;
-}
-
-export function chooseChapterStart(state: GameState, focus: PillarId, omen: OmenId | null, emit: Emit): string | null {
+export function chooseChapterStart(state: GameState, focus: PillarId, emit: Emit): string | null {
   const run = state.run;
   if (run.phase !== 'chapterStart') return 'Not at a chapter start';
-  if (!PILLARS.includes(focus)) return 'Unknown pillar';
-  if (omen != null && (!run.omenOffer.includes(omen) || !OMENS[omen])) return 'That Directive is not on offer';
+  if (!PILLARS.includes(focus)) return 'Unknown Focus';
   run.focus = focus;
-  run.omen = omen != null ? { id: omen, progress: 0, done: false, goal: omenGoal(state, OMENS[omen]) } : null;
-  run.omenOffer = [];
   run.chapterTurn = 0;
   run.phase = 'playing';
   emit({ type: 'chapterStarted', era: run.era, chapter: run.chapter, target: chronicleTarget(state, run.era, run.chapter) });
@@ -155,7 +145,12 @@ export function endChapter(state: GameState, emit: Emit): void {
   run.lastChronicle = result;
   run.phase = 'chronicle';
   emit({ type: 'chronicle', result });
-  if (result.mandateLost) changeMandate(state, -result.mandateLost, 'The Sol Report fell short', emit);
+  const up = result.focusLevelUp;
+  if (up) {
+    run.pillarLevels[up.pillar] = up.level;
+    emit({ type: 'pillarLevelUp', pillar: up.pillar, level: up.level });
+  }
+  if (result.mandateLost) changeMandate(state, -result.mandateLost, 'You missed the target', emit);
   const income = result.influenceEarned.reduce((s, l) => s + l.amount, 0);
   addInfluence(state, income, emit);
   refreshCities(state);
@@ -163,18 +158,17 @@ export function endChapter(state: GameState, emit: Emit): void {
 
 export function ackChronicle(state: GameState, emit: Emit): string | null {
   const run = state.run;
-  if (run.phase !== 'chronicle' || !run.lastChronicle) return 'No Sol Report to acknowledge';
+  if (run.phase !== 'chronicle' || !run.lastChronicle) return 'No Chapter Report to close';
   const r = run.lastChronicle;
   run.stats = emptyStats();
-  run.omen = null;
   if (run.mandate <= 0) {
-    defeatRun(state, 'Charter revoked. The Ark has cut your colony loose — the uplink goes quiet.', emit);
+    defeatRun(state, 'You have no Lives left. Earth has stopped sending help.', emit);
   } else if (r.era === FINAL_ERA && r.chapter === CRISIS_CHAPTER) {
     if (r.passed) {
       run.phase = 'victory';
       emit({ type: 'runWon' });
     } else {
-      defeatRun(state, 'The final Sol Report fell short. Mars will not remember your name.', emit);
+      defeatRun(state, 'You missed the target in the final Chapter Report.', emit);
     }
   } else {
     run.phase = 'council';
@@ -185,8 +179,8 @@ export function ackChronicle(state: GameState, emit: Emit): string | null {
 
 export function leaveCouncil(state: GameState, emit: Emit): string | null {
   const run = state.run;
-  if (run.phase !== 'council') return 'The Uplink is offline';
-  if (run.council?.pack) return 'Open the Supply Drop first';
+  if (run.phase !== 'council') return 'The Shop is closed';
+  if (run.council?.pack) return 'Open the Pack first';
   run.council = null;
   if (run.chapter < CRISIS_CHAPTER) {
     run.chapter++;
@@ -195,14 +189,12 @@ export function leaveCouncil(state: GameState, emit: Emit): string | null {
   }
   run.era++;
   run.chapter = 0;
-  run.phase = 'crisisReveal';
-  run.chapterTurn = 0;
-  run.chapterLength = CHAPTER_LENGTHS[0];
   emit({ type: 'eraStarted', era: run.era });
   emit({ type: 'notify', text: run.era <= FINAL_ERA ? `The ${ERA_NAMES[run.era]} era begins` : `Beyond ${run.era - FINAL_ERA} begins`, icon: 'calendar', tone: 'info' });
   // the Ark thaws a fresh batch of pods for every surviving nation
   for (const p of state.players) if (p.alive && p.id !== BARBARIAN) changeCryo(state, p.id, ERA_CRYO, emit);
   rollCrisis(state, emit);
+  openChapter(state);
   return null;
 }
 
@@ -218,8 +210,8 @@ export function grantDoctrine(state: GameState, id: DoctrineId, edition: Edition
   const run = state.run;
   const def = DOCTRINES[id];
   if (!def) return 'Unknown Crew member';
-  if (run.doctrines.some((d) => d.id === id)) return 'Already aboard';
-  if (edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'All bunks full';
+  if (run.doctrines.some((d) => d.id === id)) return 'You already have this Crew member';
+  if (edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'All Slots are full';
   const uid = run.nextUid++;
   run.doctrines.push({ uid, id, edition, counters: {}, disabled: false, sellValue: sellValueFor(state, id, doctrinePrice(def.rarity, edition)) });
   markSeen(run, `doctrine:${id}`);
@@ -249,7 +241,7 @@ export function changeMandate(state: GameState, delta: number, reason: string, e
   if (run.mandate <= 0 && run.phase !== 'chronicle') defeatRun(state, reason, emit);
 }
 
-/** the colony collapses (Charter exhausted, Ark Hab lost, …) */
+/** the run is lost (no Lives left, Capital lost, …) */
 export function defeatRun(state: GameState, reason: string, emit: Emit): void {
   const run = state.run;
   if (run.phase === 'defeat') return;

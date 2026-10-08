@@ -11,7 +11,6 @@ q80, then renders art/previews/gen_<kind>.png from the shipped files. Backdrop k
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import os
 import sys
@@ -25,10 +24,9 @@ RAW = ROOT / "art" / "gen" / "out"
 PUBLIC = ROOT / "public" / "art"
 PREVIEWS = ROOT / "art" / "previews"
 
-KINDS = ["leaders", "doctrines", "edicts", "crises", "omens", "reforms", "eras", "key"]
+KINDS = ["leaders", "doctrines", "edicts", "crises", "eras", "key"]
 CARD = (512, 512)
-SIZE = {"leaders": (640, 800), "doctrines": CARD, "edicts": CARD, "crises": CARD, "omens": CARD,
-        "reforms": CARD, "eras": (1600, 900), "key": (1600, 900)}
+SIZE = {"leaders": (640, 800), "doctrines": CARD, "edicts": CARD, "crises": CARD, "eras": (1600, 900), "key": (1600, 900)}
 # vertical focal point for the cover crop (0 = keep top, 0.5 = centre): faces sit high in portraits
 FOCUS_Y = {"leaders": 0.08}
 # vignette strength at the corners (0..1) and where the falloff starts (normalised radius)
@@ -37,7 +35,6 @@ VIGNETTE_CARD = (0.7, 0.5)
 INK = np.array([11, 15, 26], dtype=np.float32)  # deep ink navy
 PORTRAIT_SUFFIX = "-portrait"
 QUALITY = 80
-SHEET_PREFIX = "_sheet_"  # multi-vignette generations (art_jobs.ts SHEET_KINDS), split into per-id PNGs
 
 
 def target_size(kind: str, stem: str) -> tuple[int, int]:
@@ -66,55 +63,13 @@ def vignette(img: Image.Image, strength: float, start: float) -> Image.Image:
     return Image.fromarray((px * (1 - a) + INK * a).round().astype(np.uint8))
 
 
-def gutter(lum: np.ndarray, axis: int) -> int:
-    """Index of the darkest line (the painted gap between sheet cells) within the middle 20 % of an axis."""
-    profile = lum.mean(axis=axis)
-    n = profile.shape[0]
-    lo, hi = int(n * 0.4), int(n * 0.6)
-    return lo + int(np.argmin(profile[lo:hi]))
-
-
-def split_sheets(kind: str, force: bool) -> int:
-    """Cut the multi-vignette sheet jobs (art_jobs.ts SHEET_KINDS) into one raw PNG per cell id."""
-    jobs_file = ROOT / "art" / "gen" / f"{kind}.json"
-    if not jobs_file.exists():
-        return 0
-    n = 0
-    for job in json.loads(jobs_file.read_text()):
-        sheet = ROOT / job["out"]
-        if "cells" not in job or not sheet.exists():
-            continue
-        cells = job["cells"]
-        outs = [RAW / kind / f"{cid}.png" for cid in cells]
-        if not force and all(o.exists() and o.stat().st_mtime >= sheet.stat().st_mtime for o in outs):
-            continue
-        img = Image.open(sheet).convert("RGB")
-        lum = np.asarray(img.convert("L"), dtype=np.float32)
-        w, h = img.size
-        x = gutter(lum, 0)
-        if job["layout"] == "2x2":
-            y = gutter(lum, 1)
-            boxes = [(0, 0, x, y), (x, 0, w, y), (0, y, x, h), (x, y, w, h)]
-        else:
-            boxes = [(0, 0, x, h), (x, 0, w, h)]
-        for cid, out, (l, t, r, b) in zip(cells, outs, boxes):
-            inset = round(min(r - l, b - t) * 0.02)  # drop the gap line and any cell-edge bleed
-            l, t, r, b = l + inset, t + inset, r - inset, b - inset
-            side = min(r - l, b - t)
-            cx, cy = (l + r) // 2, (t + b) // 2
-            img.crop((cx - side // 2, cy - side // 2, cx - side // 2 + side, cy - side // 2 + side)).save(out)
-            n += 1
-    return n
-
-
 def process_kind(kind: str, force: bool) -> int:
     src_dir, dst_dir = RAW / kind, PUBLIC / kind
     if not src_dir.is_dir():
         return 0
-    split_sheets(kind, force)
     dst_dir.mkdir(parents=True, exist_ok=True)
     n = 0
-    for src in sorted(p for p in src_dir.glob("*.png") if not p.name.startswith(SHEET_PREFIX)):
+    for src in sorted(src_dir.glob("*.png")):
         dst = dst_dir / f"{src.stem}.webp"
         if not force and dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime:
             continue

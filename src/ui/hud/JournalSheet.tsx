@@ -1,4 +1,4 @@
-// Journal: the empire's chronicle of notable events (state.log), newest first, grouped by turn.
+// Log: notable events (state.log), newest first, grouped by turn.
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { audio } from '../../audio';
@@ -41,8 +41,8 @@ export function JournalSheet() {
 
   return (
     <Sheet onClose={close} className="jr">
-      <SheetHeader icon="journal" title="Journal" subtitle={`${log.length} entries · Turn ${turn}`} onClose={close} />
-      {!groups.length && <p className="es-empty">Your story has yet to be written.</p>}
+      <SheetHeader icon="journal" title="Log" subtitle={`${log.length} ${log.length === 1 ? 'entry' : 'entries'} · Turn ${turn}`} onClose={close} />
+      {!groups.length && <p className="es-empty">Nothing has happened yet.</p>}
       {groups.map((g) => (
         <section key={g.turn} className="jr-turn">
           <h3 className="jr-turn__title display"><span>Turn {g.turn}</span>{g.turn === turn && <em>now</em>}</h3>

@@ -21,7 +21,7 @@ export function Logo({ className, height, tagline = false, style }: LogoProps) {
       <path d="M110 76C220 -4 500 -4 610 76" fill="none" stroke="#e7a75d" strokeWidth="1.4" opacity=".86" />
       <text x="360" y="99" textAnchor="middle" fill={`url(#${gradient})`} stroke="#351a13" strokeWidth="2" paintOrder="stroke" fontFamily={LOGO_LETTER_STYLE.family} fontWeight={LOGO_LETTER_STYLE.weight} fontSize="74" letterSpacing={LOGO_LETTER_STYLE.tracking}>{LOGO_WORDMARK}</text>
       <path d="M112 117H608" stroke="#d88143" strokeWidth="1" opacity=".65" />
-      {tagline && <text x="360" y="158" textAnchor="middle" fill="#e5c49b" fontFamily="Rajdhani, sans-serif" fontSize="17" letterSpacing="4">TWELVE ARKS · ONE RED WORLD</text>}
+      {tagline && <text x="360" y="158" textAnchor="middle" fill="#e5c49b" fontFamily="Rajdhani, sans-serif" fontSize="17" letterSpacing="4">FIFTY ARKS · ONE RED WORLD</text>}
     </svg>
   </div>;
 }

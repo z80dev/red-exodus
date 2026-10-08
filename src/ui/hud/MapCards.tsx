@@ -18,7 +18,7 @@ import { Button, IconButton, fmt } from '../kit';
 import { YIELD_META, playerColor, turnsLabel, unitName } from './format';
 import { stormPowerAt } from '../../sim/mars';
 import { hexDistance } from '../../sim/hex';
-import { T } from '../terms';
+import { T, YIELD_NAMES } from '../terms';
 
 export function MapCards() {
   const preview = useInteraction((u) => u.preview);
@@ -79,7 +79,7 @@ function TileCard({ idx }: { idx: TileIdx }) {
         <div className="mc__titles">
           <div className="mc__title display">{info.naturalWonder?.name ?? info.name}</div>
           <div className="mc__sub">
-            {info.owner ? <span className="mc-owner"><i style={{ background: info.owner.color }} />{info.owner.civName}{info.territoryOf ? ` · ${info.territoryOf.name}` : ''}</span> : 'Unclaimed'}
+            {info.owner ? <span className="mc-owner"><i style={{ background: info.owner.color }} />{info.owner.civName}{info.territoryOf ? ` · ${info.territoryOf.name}` : ''}</span> : 'No owner'}
             {!info.visible && <span className="mc-fog"> · last seen</span>}
           </div>
         </div>
@@ -87,11 +87,11 @@ function TileCard({ idx }: { idx: TileIdx }) {
       <div className="mc-tile__grid">
         <YieldRow y={info.yields} />
         {info.defensePct !== 0 && <span className={`mc-tag ${info.defensePct > 0 ? 'mc-tag--good' : 'mc-tag--bad'}`}><Icon name="shield" size={13} /> {info.defensePct > 0 ? '+' : '−'}{Math.abs(info.defensePct)}% defense</span>}
-        <span className="mc-tag"><Icon name="moves" size={13} /> {info.impassable ? 'Impassable' : `${info.moveCost} move${info.moveCost === 1 ? '' : 's'}`}</span>
+        <span className="mc-tag"><Icon name="moves" size={13} /> {info.impassable ? 'Cannot enter' : `${info.moveCost} move${info.moveCost === 1 ? '' : 's'}`}</span>
         {info.river && <span className="mc-tag mc-tag--river"><Icon name="river" size={13} /> River</span>}
-        {info.worked && <span className="mc-tag mc-tag--good"><Icon name="check" size={13} /> Worked</span>}
+        {info.worked && <span className="mc-tag mc-tag--good"><Icon name="check" size={13} /> In use</span>}
         {stormInfo && <span className={`mc-tag mc-tag--storm ${stormInfo.forecast ? 'is-forecast' : ''}`}>
-          <Icon name="storm" size={13} /> {T.storm}{stormInfo.forecast ? ' forecast · next two Sols' : ` · power ${stormInfo.power}`}
+          <Icon name="storm" size={13} /> {T.storm}{stormInfo.forecast ? ' in the next two turns' : ` · power ${stormInfo.power}`}
         </span>}
       </div>
       {info.naturalWonder && <p className="mc__desc">{info.naturalWonder.description}</p>}
@@ -99,17 +99,17 @@ function TileCard({ idx }: { idx: TileIdx }) {
         {info.resource && (
           <span className={`mc-chip mc-chip--${info.resource.kind}`}>
             <Icon name={RESOURCES[info.resource.id]?.icon ?? info.resource.id} size={18} />
-            {info.resource.name} <small>{info.resource.kind}{info.resource.improved ? ' · connected' : ` · needs ${IMPROVEMENTS[info.resource.improvement]?.name ?? info.resource.improvement}`}</small>
+            {info.resource.name} <small>{info.resource.kind}{info.resource.improved ? ' · in use' : ` · needs ${IMPROVEMENTS[info.resource.improvement]?.name ?? info.resource.improvement}`}</small>
           </span>
         )}
         {info.improvement && (
-          <span className={`mc-chip ${info.improvement.pillaged ? 'is-bad' : ''}`}>
-            <Icon name={IMPROVEMENTS[info.improvement.id]?.icon ?? info.improvement.id} size={18} /> {info.improvement.name}{info.improvement.pillaged && <small> · pillaged</small>}
+          <span className="mc-chip">
+            <Icon name={IMPROVEMENTS[info.improvement.id]?.icon ?? info.improvement.id} size={18} /> {info.improvement.name}
           </span>
         )}
-        {info.city && <span className="mc-chip"><Icon name="city" size={18} /> {info.city.name} <small>pop {info.city.pop} · {info.city.hp}/{info.city.maxHp} hp</small></span>}
-        {info.camp && <span className="mc-chip is-bad"><Icon name="skull" size={18} /> Barbarian camp</span>}
-        {info.ruin && <span className="mc-chip mc-chip--gold"><Icon name="star" size={18} /> Ancient ruins</span>}
+        {info.city && <span className="mc-chip"><Icon name="city" size={18} /> {info.city.name} <small>size {info.city.pop} · health {info.city.hp}/{info.city.maxHp}</small></span>}
+        {info.camp && <span className="mc-chip is-bad"><Icon name="skull" size={18} /> {T.camp}</span>}
+        {info.ruin && <span className="mc-chip mc-chip--gold"><Icon name="star" size={18} /> {T.ruin}</span>}
         {info.units.map((u) => <UnitChip key={u.id} u={u} />)}
       </div>
       {canImprove && <Button small variant="gold" className="mc__cta" onClick={() => improveTile(idx)}><Icon name="improve" size={16} /> Improve</Button>}
@@ -121,7 +121,7 @@ function UnitChip({ u }: { u: TileInfo['units'][number] }) {
   const color = useSim((s) => playerColor(s, u.owner));
   return (
     <span className="mc-chip mc-chip--unit" style={{ '--team': color ?? '#888' } as CSSProperties}>
-      <i className="mc-chip__dot" /> {u.name} <small className="num">{u.hp} hp</small>
+      <i className="mc-chip__dot" /> {u.name} <small className="num">health {u.hp}</small>
     </span>
   );
 }
@@ -170,14 +170,13 @@ function sides(s: GameState, p: Extract<Preview, { kind: 'combat' | 'strike' }>)
 }
 
 function verdict(c: CombatPreview): { text: string; tone: 'great' | 'good' | 'even' | 'bad' | 'awful' } {
-  if (c.captures) return { text: 'Capture!', tone: 'great' };
-  if (c.defenderKillLikely && !c.attackerDeathLikely) return { text: 'Decisive Victory', tone: 'great' };
-  if (c.attackerDeathLikely) return { text: c.defenderKillLikely ? 'Mutual Destruction' : 'Likely Death', tone: 'awful' };
+  if (c.defenderKillLikely && !c.attackerDeathLikely) return { text: 'Likely win', tone: 'great' };
+  if (c.attackerDeathLikely) return { text: c.defenderKillLikely ? 'Both may die' : 'Your unit may die', tone: 'awful' };
+  if (c.dmgToAttacker <= 0) return { text: 'Safe attack', tone: 'good' };
   const r = (c.dmgToDefender + 1) / (c.dmgToAttacker + 1);
-  if (c.ranged || r >= 1.6) return { text: c.ranged ? 'Bombard' : 'Major Victory', tone: 'good' };
-  if (r >= 1.1) return { text: 'Minor Victory', tone: 'good' };
-  if (r >= 0.8) return { text: 'Stalemate', tone: 'even' };
-  return { text: 'Costly Attack', tone: 'bad' };
+  if (r >= 1.1) return { text: 'Good attack', tone: 'good' };
+  if (r >= 0.8) return { text: 'Even fight', tone: 'even' };
+  return { text: 'Risky', tone: 'bad' };
 }
 
 function CombatCard({ p }: { p: Extract<Preview, { kind: 'combat' | 'strike' }> }) {
@@ -190,19 +189,24 @@ function CombatCard({ p }: { p: Extract<Preview, { kind: 'combat' | 'strike' }> 
   const v = verdict(c);
   const attAfter = Math.max(0, att.hp - c.dmgToAttacker);
   const defAfter = Math.max(0, def.hp - c.dmgToDefender);
+  const mine = p.kind === 'strike' ? `Your ${T.city.toLowerCase()}` : 'Your unit';
   return (
     <CardShell className={`mc-combat is-${v.tone}`} onClose={cancelPreview} tutorial="combat-preview">
       <div className={`mc-verdict display is-${v.tone}`}>{v.text}</div>
       <div className="mc-duel">
-        <CombatSide side={att} strength={c.attackerStrength} after={attAfter} dmg={c.dmgToAttacker} align="left" label={c.ranged ? 'Ranged' : 'Attacker'} />
+        <CombatSide side={att} strength={c.attackerStrength} after={attAfter} align="left" label="You" />
         <span className="mc-duel__vs display">VS</span>
-        <CombatSide side={def} strength={c.defenderStrength} after={defAfter} dmg={c.dmgToDefender} align="right" label="Defender" />
+        <CombatSide side={def} strength={c.defenderStrength} after={defAfter} align="right" label="Enemy" />
       </div>
       <div className="mc-odds" style={{ '--odds': odds, '--ca': att.color, '--cd': def.color } as CSSProperties}>
         <span className="mc-odds__a" />
         <span className="mc-odds__d" />
         <span className="mc-odds__mark" />
       </div>
+      <ul className="mc-outcome">
+        <li>{c.dmgToAttacker > 0 ? <>{mine} takes <b className="num">~{Math.round(c.dmgToAttacker)}</b> damage</> : <>{mine} takes no damage</>}</li>
+        <li>{c.dmgToDefender > 0 ? <>Enemy takes <b className="num">~{Math.round(c.dmgToDefender)}</b> damage</> : <>Enemy takes no damage</>}</li>
+      </ul>
       <div className="mc-mods">
         <ModList mods={c.attackMods} />
         <ModList mods={c.defenseMods} right />
@@ -210,26 +214,25 @@ function CombatCard({ p }: { p: Extract<Preview, { kind: 'combat' | 'strike' }> 
       <div className="mc-combat__actions">
         <Button small onClick={() => { audio.sfx('close'); cancelPreview(); }}>Cancel</Button>
         <Button variant={v.tone === 'awful' ? 'danger' : 'gold'} onClick={confirmPreview}>
-          <Icon name={p.kind === 'strike' || c.ranged ? 'ranged' : 'attack'} size={18} /> {p.kind === 'strike' ? 'Strike' : 'Attack'}
+          <Icon name={p.kind === 'strike' || c.ranged ? 'ranged' : 'attack'} size={18} /> Attack
         </Button>
       </div>
     </CardShell>
   );
 }
 
-function CombatSide({ side, strength, after, dmg, align, label }: { side: Side; strength: number; after: number; dmg: number; align: 'left' | 'right'; label: string }) {
+function CombatSide({ side, strength, after, align, label }: { side: Side; strength: number; after: number; align: 'left' | 'right'; label: string }) {
   const hpPct = side.hp / side.maxHp;
   const afterPct = after / side.maxHp;
   return (
     <div className={`mc-side mc-side--${align}`} style={{ '--team': side.color } as CSSProperties}>
       <div className="mc-side__label">{label}</div>
       <div className="mc-side__name">{side.name}</div>
-      <div className="mc-side__str"><Icon name="strength" size={16} /><b className="num">{Math.round(strength * 10) / 10}</b></div>
-      <div className="mc-hp">
+      <div className="mc-side__str" title="Strength"><Icon name="strength" size={16} /><b className="num">{Math.round(strength * 10) / 10}</b></div>
+      <div className="mc-hp" aria-label={`Health after: ${Math.round(after)}`}>
         <span className="mc-hp__lost" style={{ transform: `scaleX(${hpPct})` }} />
         <span className="mc-hp__left" style={{ transform: `scaleX(${afterPct})` }} />
       </div>
-      <div className="mc-side__dmg num">{dmg > 0 ? <>−{Math.round(dmg)} <small>→ {Math.round(after)}</small></> : <small>no damage</small>}</div>
     </div>
   );
 }
@@ -255,7 +258,6 @@ function ImprovePicker({ idx }: { idx: TileIdx }) {
       options: improvementOptions(s, HUMAN, idx).filter((o) => o.placeable),
       resource: t.resource ? RESOURCES[t.resource] : undefined,
       gold: s.players[HUMAN].gold,
-      current: t.improvement,
     };
   });
   if (!data) return null;
@@ -273,13 +275,12 @@ function ImprovePicker({ idx }: { idx: TileIdx }) {
           const d = IMPROVEMENTS[o.id];
           const bonus: Partial<Yields> = { ...d?.yields };
           if (data.resource && data.resource.improvement === o.id) for (const k of YIELD_KEYS) bonus[k] = (bonus[k] ?? 0) + (data.resource.improvedYields[k] ?? 0);
-          const repair = data.current === o.id;
           return (
             <button key={o.id} type="button" className={`mc-imp ${o.error ? 'is-locked' : ''}`} disabled={!!o.error}
               onClick={() => buyImprovement(idx, o.id)}>
               <span className="mc-imp__icon"><Icon name={d?.icon ?? o.id} size={30} /></span>
               <span className="mc-imp__text">
-                <span className="mc-imp__name">{repair ? `Repair ${d?.name ?? o.id}` : d?.name ?? o.id}</span>
+                <span className="mc-imp__name">{d?.name ?? o.id}</span>
                 <YieldRow y={bonus} dim />
                 {o.error && <span className="mc-imp__err">{o.error}</span>}
               </span>
@@ -306,17 +307,17 @@ export function ModeBanner() {
     if (mode.kind === 'edictTarget') {
       const inst = s.run.edicts.find((e) => e.uid === mode.uid);
       const def = inst ? EDICTS[inst.id] : undefined;
-      const what = def?.target === 'city' ? 'one of your cities' : def?.target === 'unit' ? 'one of your units' : def?.target === 'ownedTile' ? 'a tile in your borders' : 'a tile';
-      return { icon: def?.icon ?? 'edict', title: def?.name ?? 'Edict', text: `Choose ${what}`, done: 'Cancel' };
+      const what = def?.target === 'city' ? `one of your ${T.cities.toLowerCase()}` : def?.target === 'unit' ? 'one of your units' : def?.target === 'ownedTile' ? 'a tile inside your borders' : 'a tile';
+      return { icon: def?.icon ?? 'edict', title: def?.name ?? T.edict, text: `Choose ${what}.`, done: 'Cancel' };
     }
     if (mode.kind === 'improve') {
       const n = improveTiles(s, mode.cityId).length;
       const c = mode.cityId != null ? s.cities[mode.cityId] : null;
-      return { icon: 'improve', title: c ? `Improve ${c.name}` : 'Improve Tiles', text: `${n} ${n === 1 ? 'tile' : 'tiles'} can be improved · ${fmt(s.players[HUMAN].gold)} gold`, done: 'Done' };
+      return { icon: 'improve', title: c ? `Improve ${c.name}` : 'Improve tiles', text: `${n} ${n === 1 ? 'tile' : 'tiles'} can be improved · ${fmt(s.players[HUMAN].gold)} ${YIELD_NAMES.gold}`, done: 'Done' };
     }
     if (strike != null) {
       const c = s.cities[strike];
-      return { icon: 'ranged', title: `${c?.name ?? 'City'} Strike`, text: 'Choose a target in range', done: 'Cancel' };
+      return { icon: 'ranged', title: `${c?.name ?? T.city}: attack`, text: 'Choose a target in range.', done: 'Cancel' };
     }
     return null;
   });

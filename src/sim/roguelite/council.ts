@@ -1,14 +1,15 @@
-// The Council: the between-chapter shop (Balatro shop). DESIGN §5. Deterministic via state.rng.
-import { collectEffects, makeCtx, runHook } from '../effects';
+// The Shop (internal: Council): the between-chapter shop (Balatro shop). DESIGN §5. Deterministic via state.rng.
+import { makeCtx, runHook } from '../effects';
 import type { DoctrineDef, EdictDef } from '../defs';
-import { chance, random, randInt, weightedIndex } from '../rng';
-import type { CouncilState, Edition, Emit, GameState, PillarId, Rarity, RunState, ShopItem, Uid } from '../types';
-import { HUMAN, PILLARS } from '../types';
-import { DOCTRINES, EDICTS, PILLAR_DEFS, REFORMS, SCROLLS } from '../../content';
+import { random, randInt, weightedIndex } from '../rng';
+import type { CouncilState, Edition, Emit, GameState, Rarity, RunState, ShopItem, Uid } from '../types';
+import { HUMAN } from '../types';
+import { DOCTRINES, EDICTS } from '../../content';
 import {
-  DOCTRINE_PRICE, EDICT_PRICE_BY_RARITY, EDICT_SLOT_EDICT_CHANCE, EDITION_CHANCE, EDITION_PRICE, PACK_WEIGHTS, PACKS,
-  RARITY_WEIGHTS_PACK, RARITY_WEIGHTS_SHOP, REROLL_BASE, REROLL_STEP, SCROLL_PRICE, SHOP_DOCTRINE_SLOTS, SHOP_PACK_SLOTS,
+  DOCTRINE_PRICE, EDICT_PRICE_BY_RARITY, EDITION_CHANCE, EDITION_PRICE, PACK_WEIGHTS, PACKS, RARITY_WEIGHTS_PACK,
+  RARITY_WEIGHTS_SHOP, REROLL_BASE, REROLL_STEP, SHOP_DOCTRINE_SLOTS, SHOP_PACK_SLOTS,
 } from './constants';
+import type { PackKind } from './constants';
 import { addInfluence, grantDoctrine } from './run';
 import { markSeen } from './stats';
 
@@ -69,12 +70,8 @@ export function rollEdition(state: GameState): Edition {
 }
 
 /** roll a doctrine not owned / not already offered; `exclude` is updated */
-export function rollDoctrine(state: GameState, exclude: Set<string>, inPack: boolean, rarity?: Rarity): { id: string; rarity: Rarity } | null {
-  let pool = doctrinePool(state, exclude);
-  if (rarity) {
-    const exact = pool.filter((d) => d.rarity === rarity);
-    if (exact.length) pool = exact;
-  }
+function rollDoctrine(state: GameState, exclude: Set<string>, inPack: boolean): { id: string; rarity: Rarity } | null {
+  const pool = doctrinePool(state, exclude);
   const def = rollByRarity(state, pool, inPack ? RARITY_WEIGHTS_PACK : RARITY_WEIGHTS_SHOP)
     ?? (inPack ? null : rollByRarity(state, pool, RARITY_WEIGHTS_PACK));
   if (!def) return null;
@@ -90,7 +87,7 @@ function doctrineItem(state: GameState, exclude: Set<string>, inPack: boolean): 
   return { kind: 'doctrine', id: d.id, edition, price: inPack ? 0 : doctrinePrice(d.rarity, edition) };
 }
 
-export function rollEdict(state: GameState, exclude: Set<string>, inPack: boolean): EdictDef | null {
+function rollEdict(state: GameState, exclude: Set<string>, inPack: boolean): EdictDef | null {
   const pool = Object.values(EDICTS).filter((e) => !exclude.has(e.id) && !isLocked(state, e.id));
   const def = rollByRarity(state, pool, inPack ? RARITY_WEIGHTS_PACK : RARITY_WEIGHTS_SHOP) ?? rollByRarity(state, pool, RARITY_WEIGHTS_PACK);
   if (def) exclude.add(def.id);
@@ -104,34 +101,9 @@ function edictItem(state: GameState, exclude: Set<string>, inPack: boolean): Sho
   return { kind: 'edict', id: def.id, price: inPack ? 0 : edictPrice(def) };
 }
 
-export function rollScroll(state: GameState, exclude: Set<string>): string | null {
-  const pool = Object.values(SCROLLS).filter((s) => !exclude.has(s.id));
-  const weights = pool.map((s) => Math.max(0, s.weight ?? 1));
-  if (!weights.some((w) => w > 0)) return null;
-  const s = pool[weightedIndex(state.rng, weights)];
-  exclude.add(s.id);
-  return s.id;
-}
-
-function scrollItem(state: GameState, exclude: Set<string>, inPack: boolean): ShopItem | null {
-  const id = rollScroll(state, exclude);
-  if (!id) return null;
-  const def = SCROLLS[id];
-  return { kind: 'scroll', id, price: inPack ? 0 : def.cost > 0 ? def.cost : SCROLL_PRICE };
-}
-
-function edictOrScrollItem(state: GameState, exclude: Set<string>): ShopItem | null {
-  const edictFirst = chance(state.rng, EDICT_SLOT_EDICT_CHANCE);
-  return edictFirst
-    ? edictItem(state, exclude, false) ?? scrollItem(state, exclude, false)
-    : scrollItem(state, exclude, false) ?? edictItem(state, exclude, false);
-}
-
 /** can a pack of this kind produce at least one option right now? */
-function packAvailable(state: GameState, pack: 'doctrine' | 'archive' | 'edict'): boolean {
-  if (pack === 'doctrine') return doctrinePool(state, new Set()).length > 0;
-  if (pack === 'edict') return Object.values(EDICTS).some((e) => !isLocked(state, e.id));
-  return Object.values(SCROLLS).some((sc) => (sc.weight ?? 1) > 0);
+function packAvailable(state: GameState, pack: PackKind): boolean {
+  return pack === 'doctrine' ? doctrinePool(state, new Set()).length > 0 : Object.values(EDICTS).some((e) => !isLocked(state, e.id));
 }
 
 function packItem(state: GameState): ShopItem | null {
@@ -141,15 +113,6 @@ function packItem(state: GameState): ShopItem | null {
   return { kind: 'pack', pack: p.pack, size: p.size, price: PACKS[p.pack][p.size].price };
 }
 
-function reformItem(state: GameState): ShopItem | null {
-  const owned = new Set(state.run.reforms);
-  const pool = Object.values(REFORMS).filter((r) => !owned.has(r.id) && (r.tier === 1 || !r.requires || owned.has(r.requires)));
-  if (!pool.length) return null;
-  const r = pool[randInt(state.rng, pool.length)];
-  markSeen(state.run, `reform:${r.id}`);
-  return { kind: 'reform', id: r.id, price: r.cost };
-}
-
 /** ids already on offer (avoid duplicates across slots) */
 function offeredIds(c: CouncilState): Set<string> {
   const s = new Set<string>();
@@ -157,28 +120,24 @@ function offeredIds(c: CouncilState): Set<string> {
   return s;
 }
 
-/** layout: [doctrine, doctrine, edict|scroll, pack, pack, reform?] (reform only in the first council of an era) */
+/** layout: [doctrine, doctrine, edict, pack, pack] */
 export function generateCouncil(state: GameState, emit: Emit): void {
   const run = state.run;
   const exclude = new Set<string>();
   const items: (ShopItem | null)[] = [];
   for (let i = 0; i < SHOP_DOCTRINE_SLOTS; i++) items.push(doctrineItem(state, exclude, false));
-  items.push(edictOrScrollItem(state, exclude));
+  items.push(edictItem(state, exclude, false));
   for (let i = 0; i < SHOP_PACK_SLOTS; i++) items.push(packItem(state));
-  if (run.chapter === 0) {
-    const reform = reformItem(state);
-    if (reform) items.push(reform);
-  }
   run.council = { items, rerollCost: REROLL_BASE, rerolls: 0, pack: null };
   runHook(state, HUMAN, 'council', emit, null, { council: run.council, reroll: false });
 }
 
 export function councilRerollError(state: GameState): string | null {
   const c = state.run.council;
-  if (state.run.phase !== 'council' || !c) return 'The Uplink is offline';
-  if (c.pack) return 'Open the Supply Drop first';
-  if (c.rerollLocked) return 'The Uplink cannot be rerolled';
-  if (state.run.influence < c.rerollCost) return 'Not enough Scrip';
+  if (state.run.phase !== 'council' || !c) return 'The Shop is closed';
+  if (c.pack) return 'Open the Pack first';
+  if (c.rerollLocked) return 'You cannot reroll this Shop';
+  if (state.run.influence < c.rerollCost) return 'Not enough Coins';
   return null;
 }
 
@@ -190,11 +149,11 @@ export function councilReroll(state: GameState, emit: Emit): string | null {
   c.rerolls++;
   c.rerollCost += REROLL_STEP;
   // hooks re-add their extra cards on every call, so drop all cards (and sold slots) and rebuild the base cards
-  const kept = c.items.filter((it): it is ShopItem => it != null && (it.kind === 'pack' || it.kind === 'reform'));
+  const kept = c.items.filter((it): it is ShopItem => it != null && it.kind === 'pack');
   const exclude = new Set<string>();
   const cards: (ShopItem | null)[] = [];
   for (let i = 0; i < SHOP_DOCTRINE_SLOTS; i++) cards.push(doctrineItem(state, exclude, false));
-  cards.push(edictOrScrollItem(state, exclude));
+  cards.push(edictItem(state, exclude, false));
   c.items = [...cards, ...kept];
   runHook(state, HUMAN, 'council', emit, null, { council: c, reroll: true });
   return null;
@@ -206,47 +165,26 @@ function acquireError(state: GameState, item: ShopItem): string | null {
   switch (item.kind) {
     case 'doctrine':
       if (!DOCTRINES[item.id]) return 'Unknown Crew member';
-      if (run.doctrines.some((d) => d.id === item.id)) return 'Already aboard';
-      if (item.edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'All bunks full — let someone go first';
+      if (run.doctrines.some((d) => d.id === item.id)) return 'You already have this Crew member';
+      if (item.edition !== 'ethereal' && doctrineSlotsUsed(run) >= run.doctrineSlots) return 'All Slots are full. Sell a Crew member first.';
       return null;
     case 'edict':
-      if (!EDICTS[item.id]) return 'Unknown Salvage';
-      return edictSlotsFree(run) > 0 ? null : 'Salvage slots full — use or discard one first';
-    case 'scroll':
-      return SCROLLS[item.id] ? null : 'Unknown Blueprint';
-    case 'reform':
-      if (!REFORMS[item.id]) return 'Unknown Ark Module';
-      return run.reforms.includes(item.id) ? 'Ark Module already installed' : null;
+      if (!EDICTS[item.id]) return 'Unknown Boost';
+      return edictSlotsFree(run) > 0 ? null : 'Your Boost slots are full. Use or remove one first.';
     case 'pack':
-      return packAvailable(state, item.pack) ? null : 'Nothing left to find in this Supply Drop';
+      return packAvailable(state, item.pack) ? null : 'This Pack is empty.';
   }
 }
 
 export function councilBuyError(state: GameState, slot: number): string | null {
   const run = state.run;
   const c = run.council;
-  if (run.phase !== 'council' || !c) return 'The Uplink is offline';
-  if (c.pack) return 'Open the Supply Drop first';
+  if (run.phase !== 'council' || !c) return 'The Shop is closed';
+  if (c.pack) return 'Open the Pack first';
   const item = c.items[slot];
   if (!item) return 'Sold out';
-  if (run.influence < item.price) return 'Not enough Scrip';
+  if (run.influence < item.price) return 'Not enough Coins';
   return acquireError(state, item);
-}
-
-/** apply a scroll: +1 pillar level */
-/** apply a scroll: raise its pillar (or the focus pillar / every pillar) by `levels` */
-export function applyScroll(state: GameState, id: string, emit: Emit): void {
-  const def = SCROLLS[id];
-  if (!def) return;
-  const run = state.run;
-  const levels = Math.max(1, def.levels ?? 1);
-  const targets: PillarId[] = def.scope === 'all' ? [...PILLARS] : def.scope === 'focus' ? [run.focus] : [def.pillar];
-  for (const p of targets) run.pillarLevels[p] = (run.pillarLevels[p] ?? 1) + levels;
-  markSeen(run, `scroll:${id}`);
-  const text = targets.length === 1
-    ? `${def.name}: ${PILLAR_DEFS[targets[0]].name} reaches level ${run.pillarLevels[targets[0]]}`
-    : `${def.name}: every pillar rises ${levels} level${levels > 1 ? 's' : ''}`;
-  emit({ type: 'notify', text, icon: targets.length === 1 ? targets[0] : 'scroll', tone: 'good' });
 }
 
 export function addEdict(state: GameState, id: string): Uid | null {
@@ -256,15 +194,6 @@ export function addEdict(state: GameState, id: string): Uid | null {
   run.edicts.push({ uid, id });
   markSeen(run, `edict:${id}`);
   return uid;
-}
-
-export function enactReform(state: GameState, id: string, emit: Emit): void {
-  const run = state.run;
-  if (run.reforms.includes(id) || !REFORMS[id]) return;
-  run.reforms.push(id);
-  markSeen(run, `reform:${id}`);
-  const fx = collectEffects(state, HUMAN).find((f) => f.kind === 'reform' && f.id === id);
-  if (fx?.hooks.onGain) fx.hooks.onGain(makeCtx(state, HUMAN, fx, emit));
 }
 
 /** take an item (already validated & paid) */
@@ -279,24 +208,16 @@ function acquire(state: GameState, item: ShopItem, emit: Emit): void {
     case 'edict':
       addEdict(state, item.id);
       break;
-    case 'scroll':
-      applyScroll(state, item.id, emit);
-      break;
-    case 'reform':
-      enactReform(state, item.id, emit);
-      break;
     case 'pack':
       openPack(state, item);
       break;
   }
 }
 
-function packOptions(state: GameState, pack: 'doctrine' | 'archive' | 'edict', count: number, exclude: Set<string>): ShopItem[] {
+function packOptions(state: GameState, pack: PackKind, count: number, exclude: Set<string>): ShopItem[] {
   const options: ShopItem[] = [];
   for (let i = 0; i < count; i++) {
-    const opt = pack === 'doctrine' ? doctrineItem(state, exclude, true)
-      : pack === 'edict' ? edictItem(state, exclude, true)
-        : scrollItem(state, exclude, true);
+    const opt = pack === 'doctrine' ? doctrineItem(state, exclude, true) : edictItem(state, exclude, true);
     if (opt) options.push(opt);
   }
   return options;
@@ -326,7 +247,7 @@ export function councilBuy(state: GameState, slot: number, emit: Emit): string |
 
 export function packPickError(state: GameState, index: number | null): string | null {
   const c = state.run.council;
-  if (state.run.phase !== 'council' || !c?.pack) return 'No Supply Drop is open';
+  if (state.run.phase !== 'council' || !c?.pack) return 'No Pack is open';
   if (index == null) return null;
   const opt = c.pack.options[index];
   if (!opt) return 'Invalid choice';
@@ -351,11 +272,11 @@ export function packPick(state: GameState, index: number | null, emit: Emit): st
 
 export function sellDoctrine(state: GameState, uid: Uid, emit: Emit): string | null {
   const run = state.run;
-  if (!['council', 'playing', 'chapterStart'].includes(run.phase)) return 'Crew cannot be dismissed now';
+  if (!['council', 'playing', 'chapterStart'].includes(run.phase)) return 'You cannot sell Crew now';
   const idx = run.doctrines.findIndex((d) => d.uid === uid);
   if (idx < 0) return 'No such Crew member';
   const inst = run.doctrines[idx];
-  if (DOCTRINES[inst.id]?.noSell) return "This Crew member won't leave";
+  if (DOCTRINES[inst.id]?.noSell) return 'You cannot sell this Crew member';
   // disabled (e.g. Iconoclasm) doctrines still undo their onGain when sold
   const hooks = DOCTRINES[inst.id]?.effects;
   if (hooks?.onLose) hooks.onLose(makeCtx(state, HUMAN, { kind: 'doctrine', id: inst.id, uid, hooks, counters: inst.counters }, emit));

@@ -18,10 +18,8 @@
 .rc--r-rare { --rc-metal-lo: #5a1429; --rc-metal: #c9436b; --rc-metal-hi: #ffb3c9; --rc-gem: var(--r-rare); }
 .rc--r-legendary { --rc-metal-lo: #6b4c14; --rc-metal: #e0b84a; --rc-metal-hi: #fff2b8; --rc-gem: var(--r-legendary); }
 .rc--crisis { --rc-metal-lo: #2a0c0e; --rc-metal: #8e2a2c; --rc-metal-hi: #ff8a78; --rc-gem: var(--splendor); }
-.rc--omen { --rc-metal-lo: #2e1c55; --rc-metal: #7e5fd0; --rc-metal-hi: #d8c8ff; --rc-gem: var(--influence); }
-.rc--reform { --rc-metal-lo: #1f3a3a; --rc-metal: #b08a4a; --rc-metal-hi: #f4dca0; --rc-gem: #5fd0c0; }
 .rc--pack { --rc-metal-lo: #5b3f14; --rc-metal: #c89b46; --rc-metal-hi: #fbe3a6; }
-.rc--pillar, .rc--scroll { --rc-metal-lo: color-mix(in srgb, var(--rc-accent) 30%, #0c111b); --rc-metal: var(--rc-accent); --rc-metal-hi: color-mix(in srgb, var(--rc-accent) 45%, white); --rc-gem: var(--rc-accent); }
+.rc--pillar { --rc-metal-lo: color-mix(in srgb, var(--rc-accent) 30%, #0c111b); --rc-metal: var(--rc-accent); --rc-metal-hi: color-mix(in srgb, var(--rc-accent) 45%, white); --rc-gem: var(--rc-accent); }
 .rc--leader { --rc-metal-lo: #6b4c14; --rc-metal: #e0b84a; --rc-metal-hi: #fff2b8; --rc-gem: var(--rc-accent); }
 
 .rc-tilt {
@@ -279,8 +277,6 @@
 .rfx-float--good { color: var(--good); }
 .rfx-dot { position: absolute; width: 7px; height: 7px; border-radius: 50%; }
 .rc--crisis { --rc-metal-lo: #3a1b14; --rc-metal: #b5552b; --rc-metal-hi: #ffc27d; --rc-gem: #f28c28; }
-.rc--omen { --rc-metal-lo: #12333a; --rc-metal: #2d8290; --rc-metal-hi: #9ce9f0; --rc-gem: #5fd4e8; }
-.rc--reform { --rc-metal-lo: #27302b; --rc-metal: #819147; --rc-metal-hi: #cadc7a; --rc-gem: #a7c458; }
 .rc--pack { --rc-metal-lo: #432418; --rc-metal: #b5552b; --rc-metal-hi: #ffc27d; --rc-gem: #5fd4e8; }
 .rc--r-rare { --rc-metal-lo: #343018; --rc-metal: #a38a32; --rc-metal-hi: #f4d66b; --rc-gem: var(--r-rare); }
 .rc--r-legendary { --rc-metal-lo: #4a2414; --rc-metal: #d87735; --rc-metal-hi: #ffd28e; --rc-gem: var(--r-legendary); }

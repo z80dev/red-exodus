@@ -1,225 +1,56 @@
-// Tech tree: 6 era columns scrolling horizontally, SVG prerequisite connectors, tap to research.
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
-import { audio } from '../../audio';
-import { BUILDINGS, IMPROVEMENTS, RESOURCES, UNITS, WONDERS } from '../../content';
-import { act } from '../../game/interaction';
+// Research sheet: what you are researching now, the current choices, and what you already know.
+import { TECHS } from '../../content';
 import { useGame, useSim } from '../../game/store';
-import { empireYields, techTree } from '../../sim/selectors';
-import type { TechNode } from '../../sim/selectors';
-import { Icon } from '../icons/Icon';
-import { RichText } from '../icons/RichText';
-import { Bar, Button, IconButton, fmt, signed, useEscape } from '../kit';
-import { ERA_NAMES, techName, turnsLabel } from './format';
-import { toast } from './toast';
+import { empireYields } from '../../sim/selectors';
 import { HUMAN } from '../../sim/types';
-import { researchRerollCost } from '../../sim/mars';
+import { audio } from '../../audio';
+import { Icon } from '../icons/Icon';
+import { Bar, Sheet, SheetHeader, fmt } from '../kit';
 import { T, YIELD_NAMES } from '../terms';
-
-interface Geo { colW: number; rowH: number; nodeW: number; nodeH: number; eraGap: number; padTop: number; padX: number }
-
-function useGeo(): Geo {
-  const [geo, setGeo] = useState<Geo>(calc);
-  useEffect(() => {
-    const on = () => setGeo(calc());
-    window.addEventListener('resize', on);
-    return () => window.removeEventListener('resize', on);
-  }, []);
-  return geo;
-}
-
-function calc(): Geo {
-  const short = window.innerHeight < 520;
-  const wide = window.innerWidth >= 1100 && window.innerHeight >= 700;
-  return short
-    ? { colW: 150, rowH: 50, nodeW: 136, nodeH: 42, eraGap: 26, padTop: 34, padX: 16 }
-    : wide
-      ? { colW: 190, rowH: 86, nodeW: 172, nodeH: 70, eraGap: 36, padTop: 46, padX: 28 }
-      : { colW: 162, rowH: Math.round(Math.max(76, Math.min(104, (window.innerHeight - 330) / 6))), nodeW: 146, nodeH: 62, eraGap: 28, padTop: 42, padX: 18 };
-}
-
-interface Unlock { icon: string; name: string }
-function unlocksOf(n: TechNode): Unlock[] {
-  const u = n.unlocks;
-  return [
-    ...u.units.map((id) => ({ icon: UNITS[id]?.icon ?? 'melee', name: UNITS[id]?.name ?? id })),
-    ...u.buildings.map((id) => ({ icon: BUILDINGS[id]?.icon ?? id, name: BUILDINGS[id]?.name ?? id })),
-    ...u.wonders.map((id) => ({ icon: WONDERS[id]?.icon ?? id, name: WONDERS[id]?.name ?? id })),
-    ...u.improvements.map((id) => ({ icon: IMPROVEMENTS[id]?.icon ?? id, name: IMPROVEMENTS[id]?.name ?? id })),
-    ...u.resources.map((id) => ({ icon: RESOURCES[id]?.icon ?? id, name: `Reveals ${RESOURCES[id]?.name ?? id}` })),
-  ];
-}
+import { turnsLabel } from './format';
+import { ResearchOffer } from './ResearchPick';
 
 export function TechSheet() {
-  const nodes = useSim((s) => techTree(s));
-  const y = useSim((s) => empireYields(s));
-  const era = useSim((s) => s.run.era) ?? 0;
-  const offer = useSim((s) => s.players[HUMAN].researchOffer);
-  const rerollCost = useSim((s) => researchRerollCost(s, HUMAN));
-  const geo = useGeo();
-  const scrolled = useRef(false);
-  const [focus, setFocus] = useState<string | null>(null);
-  const close = () => { audio.sfx('close'); useGame.getState().setPanel('none'); };
-  useEscape(close);
-
-  const byId = useMemo(() => new Map((nodes ?? []).map((n) => [n.id, n])), [nodes]);
-  const pos = (n: TechNode) => ({
-    x: geo.padX + n.era * (3 * geo.colW + geo.eraGap) + n.pos.col * geo.colW,
-    y: geo.padTop + n.pos.row * geo.rowH,
+  const data = useSim((s) => {
+    const p = s.players[HUMAN];
+    return { y: empireYields(s), hasOffer: p.researchOffer.length > 0, known: [...p.techs].reverse() };
   });
-  const width = geo.padX * 2 + 6 * 3 * geo.colW + 5 * geo.eraGap;
-  const height = geo.padTop + 6 * geo.rowH + 8;
-
-  if (!nodes || !y) return null;
-  const selected = focus ? byId.get(focus) ?? null : nodes.find((n) => n.status === 'current') ?? null;
-  const offerIds = new Set(offer ?? []);
-  const research = (n: TechNode) => {
-    setFocus(n.id);
-    if (offerIds.has(n.id)) {
-      const res = act({ type: 'setResearch', tech: n.id }, 'research');
-      if (res.ok) toast(`${T.breakthrough}: ${n.name}`, 'info', n.icon);
-    } else {
-      audio.sfx('tap');
-      const missing = n.prereqs.filter((p) => byId.get(p)?.status !== 'researched').map(techName);
-      toast(missing.length ? `Requires ${missing.join(' & ')}` : 'Not in this Breakthrough draft.', 'info', 'lock');
-    }
-  };
-
-  // highlight prerequisite chain of the focused/current node
-  const chain = new Set<string>();
-  if (selected) {
-    const walk = (id: string) => {
-      if (chain.has(id)) return;
-      chain.add(id);
-      for (const p of byId.get(id)?.prereqs ?? []) if (byId.get(p)?.status !== 'researched') walk(p);
-    };
-    walk(selected.id);
-  }
-
+  const close = () => { audio.sfx('close'); useGame.getState().setPanel('none'); };
+  if (!data) return null;
+  const { y } = data;
   return (
-    <div className="tt" role="dialog" aria-label={T.tech} data-tutorial="tech-tree">
-      <div className="tt__scrim" onPointerDown={close} />
-      <div className="k-panel tt__panel">
-        <header className="tt__head">
-          <Icon name="tech" size={28} />
-          <div className="tt__title">
-            <h2 className="k-title">{T.breakthrough}</h2>
-            <div className="tt__sub num"><Icon name="sci" size={13} /> {signed(y.sci)} {YIELD_NAMES.sci} per turn</div>
-          </div>
+    <Sheet onClose={close} className="tt">
+      <div data-tutorial="tech-tree">
+        <SheetHeader icon="tech" title={T.tech} subtitle={<>{fmt(y.sci)} {YIELD_NAMES.sci} per turn</>} onClose={close} />
+        <section className="tt-now" aria-label="Now researching">
           {y.research ? (
-            <div className="tt__cur">
-              <span className="tt__cur-name">{y.research.name}</span>
-              <Bar value={y.research.progress} max={y.research.cost} preview={y.research.progress + y.sci} color="var(--y-sci)" height={6} />
-              <span className="tt__cur-meta num">{turnsLabel(y.research.turns)}</span>
-            </div>
-          ) : <div className="tt__cur tt__cur--none">Choose a technology to research</div>}
-          <IconButton icon="close" label="Close" onClick={close} size="sm" />
-        </header>
-        <section className="tt-draft" aria-label={T.breakthrough}>
-          <div className="tt-draft__head"><b>{T.breakthrough} Draft</b><span>Pick one. Your options are somebody’s last good idea.</span></div>
-          <div className="tt-draft__cards">
-            {(offer ?? []).map((id) => {
-              const n = byId.get(id);
-              if (!n) return null;
-              const unl = unlocksOf(n);
-              return <button key={n.id} type="button" className="tt-draft-card" onClick={() => research(n)}>
-                <Icon name={n.icon || n.id} size={30} /><b>{n.name}</b>
-                <small><RichText text={String(n.description)} iconSize={13} /></small>
-                <span className="tt-draft-card__unlock">{unl.slice(0, 3).map((u) => u.name).join(' · ')}</span>
-              </button>;
-            })}
-          </div>
-          <Button className="tt-draft__reroll" disabled={(rerollCost ?? 0) > y.treasury} onClick={() => {
-            const result = act({ type: 'rerollResearch' }, 'reroll');
-            if (result.ok) toast(`${T.breakthrough} redrawn.`, 'info', 'reroll');
-          }}><Icon name="reroll" size={16} /> Reroll · {rerollCost ?? 0} {YIELD_NAMES.gold}</Button>
-        </section>
-        <div className="tt__scroll" ref={(el) => {
-          // open scrolled to the current research (or the current era), once
-          if (!el || scrolled.current) return;
-          scrolled.current = true;
-          const cur = nodes.find((n) => n.status === 'current');
-          const x = cur ? pos(cur).x : geo.padX + Math.min(era, 5) * (3 * geo.colW + geo.eraGap);
-          el.scrollLeft = Math.max(0, x - el.clientWidth / 2 + geo.nodeW / 2);
-        }}>
-          <div className="tt__canvas" style={{ width, height }}>
-            {ERA_NAMES.map((name, e) => (
-              <div key={name} className={`tt__era ${e === era ? 'is-now' : ''} ${e < era ? 'is-past' : ''}`}
-                style={{ left: geo.padX + e * (3 * geo.colW + geo.eraGap) - geo.eraGap / 2, width: 3 * geo.colW + geo.eraGap }}>
-                <span className="display">{name}</span>
+            <>
+              <div className="tt-now__row">
+                <span className="tt-now__name">{y.research.name}</span>
+                <span className="tt-now__turns num">{turnsLabel(y.research.turns)}</span>
               </div>
-            ))}
-            <svg className="tt__links" width={width} height={height}>
-              {nodes.flatMap((n) =>
-                n.prereqs.map((pid) => {
-                  const p = byId.get(pid);
-                  if (!p) return null;
-                  const a = pos(p);
-                  const b = pos(n);
-                  const x1 = a.x + geo.nodeW;
-                  const y1 = a.y + geo.nodeH / 2;
-                  const x2 = b.x;
-                  const y2 = b.y + geo.nodeH / 2;
-                  const mx = (x1 + x2) / 2;
-                  const cls = p.status === 'researched' && n.status === 'researched' ? 'is-done' : p.status === 'researched' ? 'is-open' : chain.has(n.id) && chain.has(pid) ? 'is-chain' : '';
-                  return <path key={`${pid}>${n.id}`} className={cls} d={`M${x1} ${y1} C${mx} ${y1} ${mx} ${y2} ${x2} ${y2}`} />;
-                }),
-              )}
-            </svg>
-            {nodes.map((n) => {
-              const p = pos(n);
-              const unl = unlocksOf(n);
-              const draftLocked = n.status === 'available' && !offerIds.has(n.id);
-              return (
-                <button key={n.id} type="button"
-                  className={`tt-node is-${n.status} ${draftLocked ? 'is-draft-locked' : ''} ${selected?.id === n.id ? 'is-focus' : ''} ${chain.has(n.id) && n.status === 'locked' ? 'is-chain' : ''}`}
-                  style={{ left: p.x, top: p.y, width: geo.nodeW, height: geo.nodeH, '--prog': n.cost ? Math.min(1, n.progress / n.cost) : 0 } as CSSProperties}
-                  onClick={() => research(n)} aria-label={`${n.name}, ${draftLocked ? 'draft locked' : n.status}`}>
-                  <span className="tt-node__icon"><Icon name={n.icon || n.id} size={geo.nodeH > 50 ? 28 : 22} /></span>
-                  <span className="tt-node__body">
-                    <span className="tt-node__name">{n.name}</span>
-                    <span className="tt-node__meta num">
-                      {n.status === 'researched' ? <><Icon name="check" size={11} /> Known</> : draftLocked ? 'Draft locked' : turnsLabel(n.turns)}
-                    </span>
-                    {geo.nodeH > 50 && (
-                      <span className="tt-node__unlocks">
-                        {unl.slice(0, 5).map((u, i) => <Icon key={i} name={u.icon} size={15} title={u.name} />)}
-                        {unl.length > 5 && <small>+{unl.length - 5}</small>}
-                      </span>
-                    )}
-                  </span>
-                  {n.status === 'current' && <span className="tt-node__prog" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        {selected && <TechDetail n={selected} offered={offerIds.has(selected.id)} onResearch={() => research(selected)} />}
+              <Bar value={y.research.progress} max={y.research.cost} preview={y.research.progress + y.sci} color="var(--y-sci)" height={8} />
+              <span className="tt-now__meta num">{fmt(y.research.progress)} / {fmt(y.research.cost)} {YIELD_NAMES.sci}</span>
+            </>
+          ) : <p className="tt-now__none">Nothing yet. Pick one below.</p>}
+        </section>
+        {data.hasOffer && (
+          <section className="tt-sec">
+            <h3 className="tt-sec__title">{y.research ? 'Switch to (progress is kept)' : 'Choose research'}</h3>
+            <ResearchOffer />
+          </section>
+        )}
+        <section className="tt-sec">
+          <h3 className="tt-sec__title">Done <span className="num">{data.known.length}</span></h3>
+          {data.known.length ? (
+            <ul className="tt-known">
+              {data.known.map((id) => (
+                <li key={id}><Icon name={TECHS[id]?.icon || id} size={16} /> {TECHS[id]?.name ?? id}</li>
+              ))}
+            </ul>
+          ) : <p className="tt-empty">No research finished yet.</p>}
+        </section>
       </div>
-    </div>
-  );
-}
-
-function TechDetail({ n, offered, onResearch }: { n: TechNode; offered: boolean; onResearch: () => void }) {
-  const unl = unlocksOf(n);
-  return (
-    <div className="tt-detail" key={n.id}>
-      <span className="tt-detail__icon"><Icon name={n.icon || n.id} size={36} /></span>
-      <div className="tt-detail__body">
-        <div className="tt-detail__name display">{n.name} <small>{ERA_NAMES[n.era]}</small></div>
-        <div className="tt-detail__desc"><RichText text={String(n.description)} iconSize={14} /></div>
-        <div className="tt-detail__unlocks">
-          {unl.map((u, i) => <span key={i} className="tt-unlock"><Icon name={u.icon} size={16} />{u.name}</span>)}
-        </div>
-      </div>
-      <div className="tt-detail__side">
-        <span className="num"><Icon name="sci" size={13} /> {fmt(n.progress)}/{fmt(n.cost)}</span>
-        {n.status === 'available' && offered && <Button small variant="gold" onClick={onResearch}>{T.tech}</Button>}
-        {n.status === 'available' && !offered && <span className="tt-detail__tag is-locked"><Icon name="lock" size={12} /> Draft locked</span>}
-        {n.status === 'current' && <span className="tt-detail__tag">{T.tech} in progress</span>}
-        {n.status === 'researched' && <span className="tt-detail__tag is-done">Known</span>}
-        {n.status === 'locked' && <span className="tt-detail__tag is-locked"><Icon name="lock" size={12} /> Locked</span>}
-      </div>
-    </div>
+    </Sheet>
   );
 }

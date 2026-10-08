@@ -3,7 +3,6 @@ import { useSim } from '../../game/store';
 import { ChapterStart } from './ChapterStart';
 import { Chronicle } from './Chronicle';
 import { Council } from './Council';
-import { CrisisReveal } from './CrisisReveal';
 import { RunEnd } from './RunEnd';
 import './card.css';
 import './run.css';
@@ -13,8 +12,6 @@ export function RunOverlays() {
   // keyed by era/chapter so a new era or chapter always replays its entrance
   const stamp = useSim((s) => `${s.run.era}:${s.run.chapter}`);
   switch (phase) {
-    case 'crisisReveal':
-      return <CrisisReveal key={`crisis:${stamp}`} />;
     case 'chapterStart':
       return <ChapterStart key={`chapter:${stamp}`} />;
     case 'chronicle':

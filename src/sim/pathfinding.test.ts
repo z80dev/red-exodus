@@ -14,7 +14,7 @@ const originalUnits = { ...UNITS };
 function tile(idx: number, width: number, row: number): Tile {
   return {
     idx, col: idx % width, row, terrain: 'grassland', elevation: 'flat', feature: null,
-    riverEdges: 0, resource: null, improvement: null, pillaged: false, road: false,
+    riverEdges: 0, resource: null, improvement: null, road: false,
     naturalWonder: null, owner: null, cityId: null, height: 0, camp: false, ruin: false,
   };
 }
@@ -27,10 +27,10 @@ function makeState(width = 7, height = 5): GameState {
     rng: { a: 1, b: 2, c: 3, d: 4 }, turn: 1,
     map: { width, height, tiles, starts: [] },
     players: [{ id: BARBARIAN, name: '', civName: '', leaderId: '', colors: { primary: '', secondary: '' }, isHuman: false, alive: true,
-      gold: 0, techs: [], researching: null, researchProgress: {}, vis: Array(tiles.length).fill(1), relations: { 0: 'war' }, happiness: 0, ai: null,
+      gold: 0, techs: [], researching: null, researchProgress: {}, vis: Array(tiles.length).fill(1), happiness: 0, ai: null,
       capitalId: null, citiesFounded: 0, counters: {}, effectCounters: {}, cryo: 0, researchOffer: [], researchRerolls: 0 }],
     cities: {}, units: {}, nextId: 1,
-    run: { era: 0, ascension: 0, doctrines: [], reforms: [], crisisActive: false, crisis: null },
+    run: { era: 0, ascension: 0, doctrines: [], crisisActive: false, crisis: null },
     wonderOwners: {}, naturalWondersSeen: {}, log: [], gameOver: false, storms: [], nextStormId: 1,
   } as unknown as GameState;
 }
@@ -38,7 +38,7 @@ function makeState(width = 7, height = 5): GameState {
 function makeUnit(tileIdx: number, moves = 2): Unit {
   return {
     id: 1, owner: BARBARIAN, type: 'test_unit', tile: tileIdx, hp: 100, moves, hasAttacked: false,
-    xp: 0, level: 0, promotions: [], promotionChoices: null, order: null, fortifyTurns: 0, age: 0,
+    xp: 0, level: 0, promotions: [], order: null, fortifyTurns: 0, age: 0,
   };
 }
 

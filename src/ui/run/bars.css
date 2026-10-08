@@ -1,4 +1,4 @@
-/* Doctrine bar + edict tray. OWNER: UI-Rogue. Inline components: the host positions them. */
+/* Crew bar + Boost tray. OWNER: UI-Rogue. Inline components: the host positions them. */
 .rdb {
   --rdb-mini-w: 44px;
   --rdb-card-w: clamp(58px, 15vw, 96px);

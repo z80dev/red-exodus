@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ART_KINDS, ART_LIST, ART_SIZE, type ArtKind } from '../ui/art/artManifest';
 
 const BACKDROP: Record<ArtKind, boolean> = {
-  leaders: false, doctrines: false, edicts: false, crises: false, omens: false, reforms: false, eras: true, key: true,
+  leaders: false, doctrines: false, edicts: false, crises: false, eras: true, key: true,
 };
 
 export default function ArtGenGallery() {

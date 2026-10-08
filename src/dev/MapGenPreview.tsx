@@ -1,16 +1,12 @@
 import { useMemo, useState } from 'react';
 import { generateMap } from '../sim/mapgen';
 import { hexToWorld } from '../sim/hex';
-import { RESOURCES } from '../content';
+import { RESOURCES, TERRAINS } from '../content';
 import type { MapSize, TerrainId } from '../sim/types';
 
 const palette: Record<TerrainId, string> = {
   ocean: '#6e3219', coast: '#a4552c', lake: '#3f8f8a', grassland: '#8f5a44', plains: '#c8693a',
   desert: '#d9a066', tundra: '#b89a8c', snow: '#eef3f6',
-};
-const TERRAIN_NAMES: Record<TerrainId, string> = {
-  ocean: 'Dust Sea', coast: 'Dust Shallows', lake: 'Brine Lake', grassland: 'Clay Basin',
-  plains: 'Regolith Plain', desert: 'Dune Sea', tundra: 'Frost Flats', snow: 'Polar Ice',
 };
 const teams = ['#f2a64a', '#5fd4e8', '#8a9a3b', '#eef3f6'];
 const corners = Array.from({ length: 6 }, (_, i) => {
@@ -59,7 +55,7 @@ export default function MapGenPreview() {
           const start = map.starts.indexOf(t.idx);
           const res = t.resource ? RESOURCES[t.resource] : null;
           return <g key={t.idx} transform={`translate(${x},${z})`}>
-            <title>{`${t.col},${t.row} · ${TERRAIN_NAMES[t.terrain]} ${t.elevation}${t.feature ? ` · ${t.feature}` : ''}${res ? ` · ${res.name}` : ''}${start >= 0 ? ` · Ark ${start + 1}` : ''}`}</title>
+            <title>{`${t.col},${t.row} · ${TERRAINS[t.terrain].name} ${t.elevation}${t.feature ? ` · ${t.feature}` : ''}${res ? ` · ${res.name}` : ''}${start >= 0 ? ` · Ark ${start + 1}` : ''}`}</title>
             <polygon points={outline} fill={palette[t.terrain]} stroke="#21151028" strokeWidth=".045" />
             {t.elevation === 'hills' && <path d="M-.65.35Q-.26-.46.05.25Q.33-.38.7.3" fill="none" stroke="#57463d" strokeWidth=".1" opacity=".75" />}
             {t.elevation === 'mountain' && <><path d="M-.8.5L-.12-.72.55.5Z" fill="#3b2f2a"/><path d="M-.12-.72L.55.5H-.03Z" fill="#57463d"/><path d="M-.35-.3L-.12-.72.12-.29-.08-.38Z" fill="#eef3f6"/></>}
@@ -81,7 +77,7 @@ export default function MapGenPreview() {
       </svg>
     </section>
     <footer><span><strong style={{ color: '#f28c28' }}>{seed}</strong> · {map.width} × {map.height} · {Math.round(land / map.tiles.length * 100)}% land · {ms.toFixed(1)} ms</span>
-      <div className="legend">{(['ocean', 'coast', 'lake', 'grassland', 'plains', 'desert', 'tundra', 'snow'] as TerrainId[]).map(t => <span className="key" key={t}><i className="swatch" style={{ background: palette[t] }}/>{TERRAIN_NAMES[t]}</span>)}<span className="key"><i className="swatch" style={{ background: '#f28c28' }}/>resources</span></div>
+      <div className="legend">{(['ocean', 'coast', 'lake', 'grassland', 'plains', 'desert', 'tundra', 'snow'] as TerrainId[]).map(t => <span className="key" key={t}><i className="swatch" style={{ background: palette[t] }}/>{TERRAINS[t].name}</span>)}<span className="key"><i className="swatch" style={{ background: '#f28c28' }}/>resources</span></div>
     </footer>
   </main>;
 }

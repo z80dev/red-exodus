@@ -24,7 +24,7 @@ beforeAll(() => {
   LEADERS.__p_win = leader('__p_win', { text: 'Win with the tester', rule: 'winWith:__test_leader' });
   DOCTRINES.__p_doc = {
     id: '__p_doc', name: 'Locked Doc', rarity: 'rare', cost: 8, description: '', tags: [], icon: 'doctrine',
-    art: { hue: 0, motif: 'sun' }, unlock: { text: 'Seize 5 colonies in one run', rule: 'capture5' }, effects: {},
+    art: { hue: 0, motif: 'sun' }, unlock: { text: 'Clear 10 Raider Camps in one run', rule: 'camps10' }, effects: {},
   };
 });
 
@@ -39,7 +39,7 @@ function endedRun(era: number, won: boolean): GameState {
   s.turn = 40;
   s.run.bestScore = 5000;
   s.run.seen.push('doctrine:__p_doc', 'crisis:whatever');
-  if (won) s.run.history.push({ era: 5, chapter: 2, score: 1, target: 1, passed: true });
+  if (won) s.run.history.push({ era: 5, chapter: 1, score: 1, target: 1, passed: true });
   return s;
 }
 
@@ -50,7 +50,7 @@ describe('profile', () => {
     expect(isLeaderUnlocked(p, '__p_era')).toBe(false);
     expect(isDoctrineUnlocked(p, '__p_doc')).toBe(false);
     expect(lockedContent(p)).toContain('__p_doc');
-    expect(unlockHint('doctrine', '__p_doc')).toBe('Seize 5 colonies in one run');
+    expect(unlockHint('doctrine', '__p_doc')).toBe('Clear 10 Raider Camps in one run');
     expect(maxAscension(p, '__test_leader')).toBe(0);
   });
 
@@ -69,7 +69,7 @@ describe('profile', () => {
 
   it('winning unlocks win-with rules and the next ascension (max 8)', () => {
     const s = endedRun(5, true);
-    s.run.totals.citiesCaptured = 5;
+    s.run.totals.campsCleared = 10;
     const ids = recordRunEnd(s).unlocks.map((u) => `${u.kind}:${u.id}`);
     expect(ids).toEqual(expect.arrayContaining(['leader:__p_win', 'doctrine:__p_doc', 'ascension:__test_leader']));
     let p = loadProfile();

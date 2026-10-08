@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '../icons/Icon';
+import { T } from '../terms';
 import './kit.css';
 
 type BtnVariant = 'default' | 'gold' | 'danger' | 'ghost';
@@ -144,10 +145,10 @@ export function Ornament({ className = '' }: { className?: string }) {
   );
 }
 
-/** Mandate (lives) hearts. */
+/** Lives hearts. */
 export function Hearts({ value, max, size = 16, flashLost }: { value: number; max: number; size?: number; flashLost?: boolean }) {
   return (
-    <span className="k-hearts" aria-label={`Mandate ${value} of ${max}`}>
+    <span className="k-hearts" aria-label={`${T.mandate}: ${value} of ${max}`}>
       {Array.from({ length: Math.max(max, value) }, (_, i) => (
         <svg key={i} viewBox="0 0 24 22" width={size} height={size * 0.92} className={`k-heart ${i < value ? 'is-full' : 'is-empty'} ${flashLost && i === value ? 'is-lost' : ''}`}>
           <path d="M12 21 C5 15.5 1 12 1 7.2 C1 3.8 3.6 1.2 6.9 1.2 C9.1 1.2 10.9 2.4 12 4.2 C13.1 2.4 14.9 1.2 17.1 1.2 C20.4 1.2 23 3.8 23 7.2 C23 12 19 15.5 12 21 Z" />

@@ -99,10 +99,10 @@ function IconGrid({ names }: { names: string[] }) {
 
 const SAMPLES = [
   '+2 {food} and +1 {prod} on greenhouse and fabrication tiles.',
-  'Colonies with a **Data Archive** gain +3 {sci}. ×1.5 {splendor} if your Priority is {icon:discovery} **Discovery**.',
-  '+50 {renown} per megaproject · +4 {splendor} · −1 {mandate} if you break the Charter.',
+  'Colonies with a **Data Archive** gain +3 {sci}. ×1.5 {splendor} if your Focus is {icon:discovery} **Science**.',
+  '+50 {renown} for each Wonder · +4 {splendor} · −1 {mandate} if you miss the target.',
   'Gain 3 {influence} per chapter per 3 colonies. Luxuries give +2 {happy}; each colony costs -1 {unhappy}.',
-  'Unlocks {icon:res_iron} Nickel-Iron and {icon:bld_workshop} Fabricator. x2 {gold} from trade routes.\nSecond line: {cul} +25% morale.',
+  'Unlocks {icon:res_iron} Nickel-Iron and {icon:bld_workshop} Workshop. ×2 {gold} from trade routes.\nSecond line: +25% {cul}.',
 ];
 
 export default function Art2DGallery() {

@@ -1,30 +1,30 @@
 // UI-Run gallery: every run-phase overlay on a real engine state with handcrafted fixtures.
-// Open: /?dev=RunDemo&scene=chronicle (scenes: crisis chapter chronicle council pack victory defeat bars cards)
+// Open: /?dev=RunDemo&scene=chronicle (scenes: chapter chapterCrisis chronicle chronicleFail council pack victory defeat bars cards)
 // Dispatch runs the real sim but never writes the IndexedDB save.
 import { EDITION_NAMES, PILLAR_NAMES, YIELD_NAMES } from '../ui/terms';
 import { useEffect, useMemo, useState } from 'react';
-import { DOCTRINES, EDICTS, SCROLLS } from '../content';
+import { DOCTRINES, EDICTS } from '../content';
 import { bus } from '../game/bus';
 import { useGame } from '../game/store';
 import { applyAction, createGame } from '../sim/engine';
 import { generateCouncil } from '../sim/roguelite/council';
-import { chronicleTarget, grantDoctrine } from '../sim/roguelite';
+import { CHAPTERS_PER_ERA, chronicleTarget, CRISIS_CHAPTER, DARK_AGE_LABEL, grantDoctrine } from '../sim/roguelite';
 import type { ChronicleResult, ChronicleStep, Edition, GameState, PillarId, Rarity, SimEvent } from '../sim/types';
 import { PILLARS } from '../sim/types';
 import { Card } from '../ui/run/Card';
-import { crisisCard, doctrineCard, edictCard, leaderCard, omenCard, packCard, pillarCard, reformCard, scrollCard } from '../ui/run/cards';
+import { crisisCard, doctrineCard, edictCard, leaderCard, packCard, pillarCard } from '../ui/run/cards';
 import { DoctrineBar } from '../ui/run/DoctrineBar';
 import { EdictTray } from '../ui/run/EdictTray';
 import { RunOverlays } from '../ui/run/RunOverlays';
 import { primeRunEndUnlocks } from '../ui/run/RunEnd';
 import { LEADERS } from '../content';
-import { CRISES, OMENS, REFORMS } from '../content';
+import { CRISES } from '../content';
 import { Button } from '../ui/kit';
 import '../ui/run/card.css';
 import '../ui/run/run.css';
 
-type Scene = 'crisis' | 'chapter' | 'chronicle' | 'chronicleFail' | 'council' | 'pack' | 'victory' | 'defeat' | 'bars' | 'cards';
-const SCENES: Scene[] = ['crisis', 'chapter', 'chronicle', 'chronicleFail', 'council', 'pack', 'victory', 'defeat', 'bars', 'cards'];
+type Scene = 'chapter' | 'chapterCrisis' | 'chronicle' | 'chronicleFail' | 'council' | 'pack' | 'victory' | 'defeat' | 'bars' | 'cards';
+const SCENES: Scene[] = ['chapter', 'chapterCrisis', 'chronicle', 'chronicleFail', 'council', 'pack', 'victory', 'defeat', 'bars', 'cards'];
 
 const noopEmit = (ev: SimEvent) => void ev;
 
@@ -77,16 +77,16 @@ function fixtureChronicle(state: GameState, passed: boolean): ChronicleResult {
   const artsTotal = Math.round(312 * k);
   const lines: Record<PillarId, [string, number][]> = {
     arts: [[`${Math.round(312 * k)} ${YIELD_NAMES.cul}`, 312 * k]],
-    discovery: [['13 Data', 150 * k], ['1 breakthrough', 30]],
+    discovery: [['13 Science', 150 * k], ['1 Research done', 30]],
     commerce: [['8 Credits', 96 * k]],
-    conquest: [['3 ferals cleared', 75 * k]],
-    prosperity: [['6 colonists', 90 * k], ['2 installations', 20]],
-    glory: [['1 megaproject', 200 * k], ['1 building', 20]],
+    conquest: [['3 Raider Camps cleared', 75 * k]],
+    prosperity: [['6 colonists', 90 * k], ['2 Improvements', 20]],
+    glory: [['1 Wonder', 200 * k], ['1 Building', 20]],
   };
   for (const p of PILLARS) for (const [label, amt] of lines[p]) push({ source: 'pillar', label: `${PILLAR_NAMES[p]} · ${label}`, ref: p, renownAdd: Math.round(amt) });
-  push({ source: 'focus', label: 'Priority: Heritage ×2', ref: 'arts', renownAdd: artsTotal });
-  push({ source: 'focus', label: 'Heritage Hope', ref: 'arts', splendorAdd: 3 });
-  push({ source: 'city', label: 'Ares Hab', ref: '1', splendorAdd: 2 });
+  push({ source: 'focus', label: `Focus: ${PILLAR_NAMES.arts} ×2`, ref: 'arts', renownAdd: artsTotal });
+  push({ source: 'focus', label: `${PILLAR_NAMES.arts} level ${run.pillarLevels.arts}`, ref: 'arts', splendorAdd: 3 });
+  push({ source: 'city', label: 'Ares Capital', ref: '1', splendorAdd: 2 });
   push({ source: 'city', label: 'Dawn Colony', ref: '2', splendorAdd: 1 });
   push({ source: 'city', label: 'Hellas Colony', ref: '3', splendorAdd: 1, renownAdd: 30 });
   const docs = run.doctrines;
@@ -95,24 +95,25 @@ function fixtureChronicle(state: GameState, passed: boolean): ChronicleResult {
   if (docs[1] && docs[1].edition !== 'base') push({ source: 'edition', label: `${EDITION_NAMES[docs[1].edition]} edition`, ref: String(docs[1].uid), renownAdd: 50 });
   if (docs[2]) push({ source: 'doctrine', label: doctrineCard(docs[2].id).title, ref: String(docs[2].uid), splendorMul: 1.5 });
   if (docs[3]) push({ source: 'doctrine', label: doctrineCard(docs[3].id).title, ref: String(docs[3].uid), splendorAdd: 4, renownAdd: 60 });
-  if (docs[3] && docs[3].edition === 'prismatic') push({ source: 'edition', label: 'Legendary Tale', ref: String(docs[3].uid), splendorMul: 1.5 });
-  push({ source: 'omen', label: 'Directive fulfilled: Signal from Earth', renownAdd: 80 });
+  if (docs[3] && docs[3].edition === 'prismatic') push({ source: 'edition', label: `${EDITION_NAMES.prismatic} ${doctrineCard(docs[3].id).title}`, ref: String(docs[3].uid), splendorMul: 1.5 });
+  push({ source: 'bonus', label: 'Festivals and Boosts', renownAdd: 80 });
   if (!passed) push({ source: 'darkAge', label: 'Blackout', splendorMul: 0.85 });
-  else push({ source: 'crisis', label: 'The Long Winter', splendorMul: 0.9 });
-  push({ source: 'final', label: 'Viability' });
+  else push({ source: 'crisis', label: 'Polar Night', splendorMul: 0.9 });
+  push({ source: 'final', label: 'Score' });
   const score = Math.floor(r * s);
   // the failing fixture keeps the real formula but falls ~30% short of its target
   const target = passed ? chronicleTarget(state, run.era, run.chapter) : Math.round(score * 1.45);
   const ok = score >= target;
   return {
     era: run.era, chapter: run.chapter, target, steps, renown: r, splendor: s, score, passed: ok,
-    triumph: score >= target * 2, mandateLost: ok ? 0 : run.chapter === 2 ? 2 : 1,
+    triumph: score >= target * 2, mandateLost: ok ? 0 : run.chapter === CRISIS_CHAPTER ? 2 : 1,
     influenceEarned: [
-      { label: 'Chapter stipend', amount: 3 },
-      { label: `Chapter ${run.chapter + 1} bonus`, amount: run.chapter + 1 },
-      { label: 'Ark interest', amount: 2 },
-      ...(score >= target * 2 ? [{ label: 'Triumph', amount: 3 }] : []),
+      { label: 'Base pay', amount: 3 },
+      ok ? { label: 'Dawn bonus', amount: 1 } : { label: DARK_AGE_LABEL, amount: 3 },
+      { label: 'Savings bonus', amount: 2 },
+      ...(score >= target * 2 ? [{ label: 'Big Win', amount: 3 }] : []),
     ],
+    focusLevelUp: ok ? { pillar: 'arts', level: run.pillarLevels.arts + 1 } : null,
   };
 }
 
@@ -121,19 +122,16 @@ function setup(scene: Scene, era: number): GameState {
   const run = state.run;
   run.era = era;
   switch (scene) {
-    case 'crisis':
-      run.phase = 'crisisReveal';
-      break;
     case 'chapter':
-      run.phase = 'crisisReveal';
-      run.chapter = 0;
-      applyAction(state, { type: 'ackCrisis' });
+    case 'chapterCrisis':
+      run.phase = 'chapterStart';
+      run.chapter = scene === 'chapter' ? 0 : CRISIS_CHAPTER;
       run.pillarLevels = { arts: 3, discovery: 2, commerce: 1, conquest: 1, prosperity: 2, glory: 1 };
       break;
     case 'chronicle':
     case 'chronicleFail': {
       giveDoctrines(state, ['base', 'radiant', 'gilded', 'prismatic', 'ethereal']);
-      run.chapter = 1;
+      run.chapter = 0;
       const res = fixtureChronicle(state, scene === 'chronicle');
       run.mandate = Math.max(0, run.maxMandate - res.mandateLost);
       run.influence = 14;
@@ -145,13 +143,11 @@ function setup(scene: Scene, era: number): GameState {
     case 'pack': {
       giveDoctrines(state, ['base', 'gilded', 'prismatic']);
       giveEdicts(state);
-      run.chapter = 1;
+      run.chapter = 0;
       run.influence = 24;
       run.pillarLevels = { arts: 3, discovery: 2, commerce: 1, conquest: 1, prosperity: 2, glory: 1 };
       run.phase = 'council';
-      run.chapter = 0;
       generateCouncil(state, noopEmit);
-      run.chapter = 1;
       if (scene === 'pack') {
         const ids = pickDoctrines().map((d) => d.id).reverse();
         run.council!.pack = {
@@ -164,22 +160,23 @@ function setup(scene: Scene, era: number): GameState {
     case 'victory':
     case 'defeat': {
       giveDoctrines(state, ['base', 'gilded', 'prismatic', 'base']);
-      run.history = Array.from({ length: scene === 'victory' ? 18 : 10 }, (_, i) => {
-        const e = Math.floor(i / 3);
-        const target = chronicleTarget(state, e, i % 3);
-        return { era: e, chapter: i % 3, score: Math.round(target * (1.2 + (i % 4) * 0.35)), target, passed: i !== 7 };
+      run.history = Array.from({ length: scene === 'victory' ? 12 : 7 }, (_, i) => {
+        const e = Math.floor(i / CHAPTERS_PER_ERA);
+        const chapter = i % CHAPTERS_PER_ERA;
+        const target = chronicleTarget(state, e, chapter);
+        return { era: e, chapter, score: Math.round(target * (1.2 + (i % 4) * 0.35)), target, passed: i !== 5 };
       });
       run.totals = { ...run.totals, wonders: 5, techs: 29, kills: 41, buildings: 38, citiesFounded: 7 };
-      state.turn = scene === 'victory' ? 121 : 67;
-      if (scene === 'victory') { run.era = 5; run.chapter = 2; run.phase = 'victory'; }
-      else { run.era = 3; run.chapter = 1; run.phase = 'defeat'; run.defeatReason = 'Charter exhausted — the Ark cut the line. Mars kept the lights.'; run.mandate = 0; }
+      state.turn = scene === 'victory' ? 54 : 31;
+      if (scene === 'victory') { run.era = 5; run.chapter = CRISIS_CHAPTER; run.phase = 'victory'; }
+      else { run.era = 3; run.chapter = 0; run.phase = 'defeat'; run.defeatReason = 'You have no Lives left. Earth has stopped sending help.'; run.mandate = 0; }
       // fixture unlocks: never touch the real profile from the gallery
       const leaderIds = Object.keys(LEADERS).filter((id) => id !== state.config.leaderId);
       primeRunEndUnlocks(state, {
         unlocks: [
           ...leaderIds.slice(0, 2).map((id) => ({ kind: 'leader', id, name: LEADERS[id].name })),
           { kind: 'doctrine', id: pickDoctrines()[3]?.id ?? '', name: 'Crew' },
-          { kind: 'ascension', id: '1', name: 'Hazard 1' },
+          { kind: 'ascension', id: '1', name: 'Difficulty 1' },
           ...(scene === 'victory' ? leaderIds.slice(2, 7).map((id) => ({ kind: 'leader', id, name: LEADERS[id].name })) : []),
         ],
       });
@@ -268,7 +265,7 @@ function BarsScene() {
   const fire = () => {
     const d = useGame.getState().state?.run.doctrines ?? [];
     const pick = d[Math.floor(Math.random() * d.length)];
-    if (pick) bus.publish([{ type: 'doctrineTriggered', uid: pick.uid, text: ['+1 Food', '+2 Hope', '+15 Output', '×1.5 Hope'][Math.floor(Math.random() * 4)] }]);
+    if (pick) bus.publish([{ type: 'doctrineTriggered', uid: pick.uid, text: ['+1 Food', '+2 Multiplier', '+15 Points', '×1.5 Multiplier'][Math.floor(Math.random() * 4)] }]);
   };
   return (
     <div className="rdemo-bars">
@@ -287,12 +284,9 @@ function CardsScene() {
   const editions: Edition[] = ['base', 'gilded', 'radiant', 'prismatic', 'ethereal'];
   const others = [
     edictCard(Object.keys(EDICTS)[0] ?? 'x'),
-    scrollCard(Object.keys(SCROLLS)[0] ?? 'x', 2),
     crisisCard(Object.keys(CRISES)[0] ?? 'x'),
-    omenCard(Object.keys(OMENS)[0] ?? 'x'),
-    reformCard(Object.keys(REFORMS)[0] ?? 'x'),
     packCard('doctrine', 'normal'),
-    packCard('archive', 'jumbo'),
+    packCard('edict', 'jumbo'),
     pillarCard('arts', 3, { projected: 420, splendor: 4 }),
     leaderCard('usa'),
   ];

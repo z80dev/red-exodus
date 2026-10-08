@@ -3,9 +3,9 @@ import type { Emit, SimEvent } from './types';
 import { HUMAN } from './types';
 import { BUILDINGS, IMPROVEMENTS, UNITS, WONDERS } from '../content';
 import {
-  BORDER_BASE, BORDER_PACE, BUY_EXP, BUY_LINEAR, CAPTURE_HP_FRACTION, CENTER_MIN_YIELDS, FOOD_PER_POP, GROWTH_BASE,
+  BORDER_BASE, BORDER_PACE, BUY_EXP, BUY_LINEAR, CENTER_MIN_YIELDS, FOOD_PER_POP, GROWTH_BASE,
   GROWTH_EXP, GROWTH_PACE, GROWTH_PER, IMPROVEMENT_SCALING, PRODUCTION_PACE, borderThreshold, buildImprovement, buyCost,
-  canFoundCity, canProduce, captureCity, cityTerritory, completeItem, computeCityYields, growthThreshold, improvementCost,
+  canFoundCity, canProduce, cityTerritory, completeItem, computeCityYields, growthThreshold, improvementCost,
   processCity, productionCost, refreshCity, tileYields,
 } from './cities';
 import { collectEffects } from './effects';
@@ -47,12 +47,13 @@ describe('growth & borders', () => {
     const city = state.cities[cityId];
     refreshCity(state, city);
     expect(city.yields.food).toBeGreaterThan(0);
+    const before = city.pop;
     city.foodStored = growthThreshold(state, city) - 0.01;
     const { emit, events } = recorder();
     processCity(state, city, emit);
-    expect(city.pop).toBe(2);
+    expect(city.pop).toBe(before + 1);
     expect(city.foodStored).toBe(0);
-    expect(events).toContainEqual({ type: 'cityGrew', cityId: city.id, player: HUMAN, pop: 2 });
+    expect(events).toContainEqual({ type: 'cityGrew', cityId: city.id, player: HUMAN, pop: before + 1 });
   });
 
   it('unhappiness halts growth', () => {
@@ -60,10 +61,11 @@ describe('growth & borders', () => {
     const city = state.cities[cityId];
     state.players[HUMAN].happiness = -1;
     refreshCity(state, city);
+    const before = city.pop;
     city.foodStored = growthThreshold(state, city) - 0.01;
     const { emit } = recorder();
     processCity(state, city, emit);
-    expect(city.pop).toBe(1);
+    expect(city.pop).toBe(before);
   });
 
   it('culture past the threshold claims one adjacent unowned tile', () => {
@@ -232,29 +234,6 @@ describe('improvements', () => {
     expect(events).toContainEqual({ type: 'improvementBuilt', tile: a, player: HUMAN, improvement: 'farm' });
     expect(p.gold).toBe(10_000 - first);
     expect(improvementCost(state, HUMAN, b, 'farm')).toBe(Math.round(farm.goldCost * (1 + IMPROVEMENT_SCALING)));
-    expect(buildImprovement(state, HUMAN, a, 'farm', emit)).toBe('Already built');
+    expect(buildImprovement(state, HUMAN, a, 'farm', emit)).toBe('Already built.');
   });
 });
-
-describe('capture', () => {
-  it('halves population, transfers territory, damages the city and flags a lost capital', () => {
-    const { state, cityId } = plainGame('CITY-CAPTURE');
-    const city = state.cities[cityId];
-    city.pop = 7;
-    const territory = cityTerritory(state, city);
-    const { emit, events } = recorder();
-    const rivalCapital = state.cities[state.players[1].capitalId!];
-    captureCity(state, city, 1, emit);
-    expect(state.players[1].capitalId).toBe(rivalCapital.id);
-    expect(city.isCapital).toBe(false);
-    expect(city.owner).toBe(1);
-    expect(city.pop).toBe(3);
-    expect(city.buildings).not.toContain('palace');
-    expect(city.hp).toBe(Math.max(1, Math.round(city.maxHp * CAPTURE_HP_FRACTION)));
-    for (const i of territory) expect(state.map.tiles[i].owner).toBe(1);
-    expect(state.players[HUMAN].counters.capitalLost).toBe(1);
-    expect(state.players[HUMAN].capitalId).toBeNull();
-    expect(events.some((e) => e.type === 'cityCaptured' && e.from === HUMAN && e.to === 1)).toBe(true);
-  });
-});
-

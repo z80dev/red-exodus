@@ -1,10 +1,11 @@
-// SOL REPORT — Output × Hope resolves into Viability through a sound-synced scoring ceremony.
-// Crew fire left-to-right; number bursts, Hope multipliers, and the final target slam keep the loop tactile.
+// CHAPTER REPORT — Points × Multiplier resolves into the Score through a sound-synced scoring ceremony.
+// Crew fire left-to-right; number bursts, Multiplier jumps, and the final target slam keep the loop tactile.
 // Tap the stage to speed up (1× → 2× → instant). Profile `fastAnimations` starts at 2×.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useGame, useSim } from '../../game/store';
 import type { ChronicleResult, ChronicleStep, DoctrineInstance, PillarId, RunState } from '../../sim/types';
+import { CRISIS_CHAPTER, DARK_AGE_LABEL, DARK_AGE_TARGET_MUL, FINAL_ERA } from '../../sim/roguelite';
 import { Button } from '../kit';
 import { Icon } from '../icons/Icon';
 import { Card } from './Card';
@@ -32,7 +33,7 @@ interface Row {
 type Stage = 'intro' | 'steps' | 'slam' | 'fill' | 'stamp' | 'tally' | 'done';
 
 const SOURCE_ICON: Record<string, string> = {
-  doctrine: 'doctrine', edition: 'star', crisis: 'crisis', darkAge: 'skull', omen: 'omen', reform: 'reform',
+  doctrine: 'doctrine', edition: 'star', crisis: 'crisis', darkAge: 'skull',
   leader: 'crown', bonus: 'renown', ascension: 'trophy', city: 'city',
 };
 
@@ -104,9 +105,9 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
     const cardEl = (uid: string) => stageRef.current?.querySelector<HTMLElement>(`[data-chron-uid="${uid}"]`) ?? null;
     const floaterFor = (s: ChronicleStep) => {
       const parts: { html: string; tone: string }[] = [];
-      if (s.renownAdd) parts.push({ html: `${s.renownAdd > 0 ? '+' : '−'}${fmt(Math.abs(s.renownAdd))} Output`, tone: 'renown' });
-      if (s.splendorAdd) parts.push({ html: `${s.splendorAdd > 0 ? '+' : '−'}${fmtSplendor(Math.abs(s.splendorAdd))} Hope`, tone: 'splendor' });
-      if (s.splendorMul != null && s.splendorMul !== 1) parts.push({ html: `${fmtMul(s.splendorMul)} Hope`, tone: s.splendorMul >= 1 ? 'mul' : 'bad' });
+      if (s.renownAdd) parts.push({ html: `${s.renownAdd > 0 ? '+' : '−'}${fmt(Math.abs(s.renownAdd))} ${T.renown}`, tone: 'renown' });
+      if (s.splendorAdd) parts.push({ html: `${s.splendorAdd > 0 ? '+' : '−'}${fmtSplendor(Math.abs(s.splendorAdd))} ${T.splendor}`, tone: 'splendor' });
+      if (s.splendorMul != null && s.splendorMul !== 1) parts.push({ html: `${fmtMul(s.splendorMul)} ${T.splendor}`, tone: s.splendorMul >= 1 ? 'mul' : 'bad' });
       return parts;
     };
 
@@ -139,7 +140,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
       }
     };
 
-    const addRow = (r: Row) => setRows((rs) => [...rs, { ...r, label: reportLabel(r.label) }]);
+    const addRow = (r: Row) => setRows((rs) => [...rs, r]);
     const patchRow = (key: string, fn: (r: Row) => Row) => setRows((rs) => rs.map((r) => (r.key === key ? fn(r) : r)));
 
     const playStep = async (s: ChronicleStep, i: number) => {
@@ -189,12 +190,12 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
             el?.classList.remove('is-focus-flash');
             void el?.offsetWidth;
             el?.classList.add('is-focus-flash');
-            floatAt(el, 'PRIORITY ×2', { tone: 'gold', size: 26, rise: -30, duration: 1000 });
+            floatAt(el, `${T.focus.toUpperCase()} ×2`, { tone: 'gold', size: 26, rise: -30, duration: 1000 });
             sfx('levelUp', { pitch: 1.1 });
             haptic(18);
             streak(el, renownRef.current, '#f28c28', 10);
           } else if (s.splendorAdd) {
-            floatAt(el, `+${fmtSplendor(s.splendorAdd)} Hope`, { tone: 'splendor', size: 20 });
+            floatAt(el, `+${fmtSplendor(s.splendorAdd)} ${T.splendor}`, { tone: 'splendor', size: 20 });
           }
         }
         await wait(doubling ? 260 : 180);
@@ -205,10 +206,10 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
       }
       if (src === 'city') {
         const key = 'cities';
-        const chip = { key: `c${i}`, name: s.label, text: floaterFor(s).map((f) => f.html.replace(' Hope', '').replace(' Output', '')).join(' ') };
+        const chip = { key: `c${i}`, name: s.label, text: floaterFor(s).map((f) => f.html.replace(` ${T.splendor}`, '').replace(` ${T.renown}`, '')).join(' ') };
         setRows((rs) => {
           const has = rs.some((r) => r.key === key);
-          if (!has) return [...rs, { key, source: src, label: 'Colonies', icon: 'city', renown: 0, splendorAdd: 0, splendorMul: null, focus: false, tone: 'splendor', chips: [chip] }];
+          if (!has) return [...rs, { key, source: src, label: T.cities, icon: 'city', renown: 0, splendorAdd: 0, splendorMul: null, focus: false, tone: 'splendor', chips: [chip] }];
           return rs.map((r) => (r.key === key ? { ...r, chips: [...(r.chips ?? []), chip] } : r));
         });
         await wait(90);
@@ -245,7 +246,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         setActive(null);
         return;
       }
-      // crisis / darkAge / omen / reform / leader / bonus / ascension / anything new
+      // crisis / darkAge / leader / bonus / ascension / anything new
       const bad = src === 'crisis' || src === 'darkAge' || (mul != null && mul < 1) || (s.renownAdd ?? 0) < 0 || (s.splendorAdd ?? 0) < 0;
       const key = `${src}:${i}`;
       addRow({
@@ -282,7 +283,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         const c = centerOf(legacyRef.current);
         particles.current?.burst(c.x, c.y, { colors: ['#fff0c0', '#f6dd8f', '#5fd4e8', '#f28c28'], count: 70, speed: 11, kind: 'spark', life: 1100 });
       }
-      // Count Viability up with rising ticks
+      // Count the Score up with rising ticks
       if (countMs > 0) {
         const t0 = performance.now();
         let lastTick = 0;
@@ -322,6 +323,15 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         }
       }
       await wait(650);
+      const up = result.focusLevelUp;
+      if (up) {
+        if (juice()) {
+          sfx('levelUp');
+          haptic([10, 30, 20]);
+          floatAt(barRef.current, `${pillarInfo(up.pillar).name} level ${up.level}`, { tone: 'gold', size: 22, rise: -40, duration: 1100 });
+        }
+        await wait(700);
+      }
       if (result.mandateLost > 0) {
         setShatter(result.mandateLost);
         if (juice()) {
@@ -421,8 +431,18 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
   const stamped = stage === 'stamp' || stage === 'tally' || stage === 'done';
   const finaleUi = stage === 'tally' || stage === 'done';
   const doomed = run.mandate <= 0;
-  const lastEra = result.era === 5 && result.chapter === 2;
-  const cta = doomed ? 'Face the Reckoning' : result.passed && lastEra ? 'Secure New Earth' : `To ${T.council}`;
+  const lastEra = result.era === FINAL_ERA && result.chapter === CRISIS_CHAPTER;
+  const cta = doomed ? 'See the result' : result.passed && lastEra ? 'Finish the run' : `Go to the ${T.council}`;
+  const levelUp = result.focusLevelUp;
+  // the Second Chance is gone at high Difficulty: its income line is cancelled there
+  const relief = result.influenceEarned.filter((l) => l.label.includes(DARK_AGE_LABEL)).reduce((a, l) => a + l.amount, 0);
+  const lives = (n: number) => `${n} ${n === 1 ? 'Life' : 'Lives'}`;
+  const note = result.passed
+    ? levelUp ? `${pillarInfo(levelUp.pillar).name} is now level ${levelUp.level}.` : null
+    : doomed ? 'You missed the target and have no Lives left.'
+      : relief > 0
+        ? `You missed the target. You lose ${lives(result.mandateLost).toLowerCase()}, get ${relief} bonus ${T.influence}, and the next target is ${Math.round((1 - DARK_AGE_TARGET_MUL) * 100)}% lower.`
+        : `You missed the target. You lose ${lives(result.mandateLost).toLowerCase()}.`;
 
   return (
     <div data-tutorial="chronicle" className={`ro-overlay rch rch--${stage} ${result.passed ? 'is-pass' : 'is-fail'}`} onPointerDown={speedUp}>
@@ -446,7 +466,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
             <div className="rch-bar-labels num">
               <span>0</span>
               <span className="rch-bar-target"><Icon name="trophy" size={12} /> Target {fmt(result.target)}</span>
-              <span className="rch-bar-triumph">Triumph {fmt(result.target * 2)}</span>
+              <span className="rch-bar-triumph">{T.triumph} {fmt(result.target * 2)}</span>
             </div>
           </div>
 
@@ -474,13 +494,13 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
             {rows.map((r) => (
               <LedgerRow key={r.key} row={r} tweenMs={dur(420)} />
             ))}
-            {rows.length === 0 && <div className="rch-ledger-empty display">Let the scribes record your deeds…</div>}
+            {rows.length === 0 && <div className="rch-ledger-empty display">Counting your {T.renown}…</div>}
           </div>
           <div className="rch-scroll-rod rch-scroll-rod--bottom" />
           {stamped && (
             <div className={`rch-stamp display ${result.passed ? 'is-pass' : 'is-fail'}`}>
               <span>{result.passed ? 'Passed' : 'Failed'}</span>
-              <small>{result.passed ? `${(result.score / Math.max(1, result.target)).toFixed(1)}× target` : result.mandateLost ? `−${result.mandateLost} Charter` : 'Short of target'}</small>
+              <small>{result.passed ? `${(result.score / Math.max(1, result.target)).toFixed(1)}× target` : result.mandateLost ? `−${lives(result.mandateLost)}` : 'Below target'}</small>
             </div>
           )}
           {triumphIn && (
@@ -495,7 +515,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
                   </linearGradient>
                 </defs>
               </svg>
-              <span>Triumph!</span>
+              <span>{T.triumph}!</span>
             </div>
           )}
         </section>
@@ -503,7 +523,7 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
         <section className={`rch-bottom ${finaleUi ? 'is-tally' : ''}`}>
           {!finaleUi ? (
             <div className="rch-doctrines">
-              {doctrines.length === 0 && <div className="rch-nodoc">No Crew yet — The Uplink awaits.</div>}
+              {doctrines.length === 0 && <div className="rch-nodoc">No {T.doctrines} yet. You can buy them in the {T.council}.</div>}
               {doctrines.map((d) => (
                 <div key={d.uid} className={`rch-doc ${active === String(d.uid) ? 'is-active' : ''} ${d.disabled ? 'is-off' : ''}`} data-chron-uid={d.uid}>
                   <Card card={doctrineCard(d.id, d.edition)} width="var(--rch-doc-w)" tilt={false} zoomable={false} disabled={d.disabled} />
@@ -512,8 +532,14 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
             </div>
           ) : (
             <div className="rch-tally" onPointerDown={(e) => e.stopPropagation()}>
+              {note && (
+                <div className={`rch-note ${result.passed ? 'is-pass' : 'is-fail'}`} style={levelUp && result.passed ? ({ '--row-c': pillarInfo(levelUp.pillar).color } as CSSProperties) : undefined}>
+                  <Icon name={result.passed && levelUp ? pillarInfo(levelUp.pillar).icon : 'mandate'} size={16} />
+                  <span>{note}</span>
+                </div>
+              )}
               <div className="rch-tally-head">
-                <span className="display">Ark Scrip</span>
+                <span className="display">{T.influence}</span>
                 <div className="rch-tally-total num" ref={tallyTotalRef}>
                   <Icon name="influence" size={18} /> {fmt(influenceShown)}
                 </div>
@@ -521,8 +547,8 @@ function Ceremony({ result, run, doctrines }: { result: ChronicleResult; run: Ru
               <div className="rch-tally-lines">
                 {result.influenceEarned.slice(0, tallyShown).map((l, k) => (
                   <div key={k} className="rch-tally-line" data-tally={k}>
-                    <span>{reportLabel(l.label)}</span>
-                    <span className="num">+{l.amount} <Icon name="influence" size={13} /></span>
+                    <span>{l.label}</span>
+                    <span className="num">{l.amount >= 0 ? '+' : '−'}{Math.abs(l.amount)} <Icon name="influence" size={13} /></span>
                   </div>
                 ))}
               </div>
@@ -575,18 +601,4 @@ function LedgerRow({ row, tweenMs }: { row: Row; tweenMs: number }) {
       </span>
     </div>
   );
-}
-function reportLabel(label: string): string {
-  return label
-    .replace(/\bLegacy\b/gi, T.score)
-    .replace(/\bRenown\b/gi, T.renown)
-    .replace(/\bSplendor\b/gi, T.splendor)
-    .replace(/\bDoctrine(s)?\b/gi, T.doctrines)
-    .replace(/\bEdict(s)?\b/gi, T.edicts)
-    .replace(/\bScroll(s)?\b/gi, T.scrolls)
-    .replace(/\bInfluence\b/gi, T.influence)
-    .replace(/\bMandate\b/gi, T.mandate)
-    .replace(/\bOmen(s)?\b/gi, T.omens)
-    .replace(/\bDark Age\b/gi, T.darkAge)
-    .replace(/\bFocus\b/gi, T.focus);
 }

@@ -1,16 +1,13 @@
-// OWNER: ContentRogue. Integrity + smoke tests for the roguelite content set: doctrines, edicts, scrolls,
-// crises, omens, leaders (+ uniques), reforms, ascension.
+// OWNER: ContentRogue. Integrity + smoke tests for the roguelite content set: doctrines, edicts,
+// crises, leaders (+ uniques), ascension.
 import { describe, expect, it } from 'vitest';
 import type { ChronicleCtx, CombatArgs, CostItem, EffectHooks, HookCtx } from '../sim/defs';
 import type { City, CouncilState, DoctrineInstance, GameState, SimEvent, Unit, Yields } from '../sim/types';
-import { BARBARIAN, HUMAN, PILLARS } from '../sim/types';
+import { BARBARIAN, HUMAN } from '../sim/types';
 import { DOCTRINES } from './index';
 import { EDICTS } from './edicts';
-import { SCROLLS } from './scrolls';
 import { CRISES } from './crises';
-import { OMENS } from './omens';
 import { LEADERS } from './leaders';
-import { REFORMS } from './reforms';
 import { ASCENSIONS } from './ascension';
 import { UNIQUE_BUILDINGS, UNIQUE_UNITS } from './uniques';
 import { BUILDINGS } from './buildings';
@@ -19,6 +16,7 @@ import { ICON_NAMES } from '../ui/icons/registry';
 import { makeCtx } from '../sim/effects';
 import type { ActiveEffect } from '../sim/effects';
 import { createGame } from '../sim/engine';
+import { CRISIS_CHAPTER } from '../sim/roguelite/constants';
 import { humanCities } from '../sim/roguelite/stats';
 import { autoplay, findNonFinite } from '../sim/testkit';
 
@@ -26,9 +24,9 @@ const MOTIFS = 'sun moon star river wave mountain tree wheat coin scroll flask l
 const ICONS = new Set<string>(ICON_NAMES);
 const TOKENS = new Set(['food', 'prod', 'gold', 'sci', 'cul', 'happy', 'influence', 'renown', 'splendor', 'mandate']);
 const UNLOCK_RULES = new Set([
-  'reachEra2', 'reachEra3', 'reachEra4', 'reachEra5', 'win', 'winAsc2', 'winAsc4', 'winAsc8', 'capture5', 'kills40',
+  'reachEra2', 'reachEra3', 'reachEra4', 'reachEra5', 'win', 'winAsc2', 'winAsc4', 'winAsc8', 'camps10', 'kills40',
   'wonders4', 'wonders8', 'techs24', 'cities8', 'score100k', 'score1m', 'triumphs5', 'legendary', 'noMandateLost',
-  'runs3', 'runs10', 'crises6', 'omens5', 'festival2000',
+  'runs3', 'runs10', 'crises6', 'focusLevel5', 'festival2000',
   ...Object.keys(LEADERS).map((id) => `winWith:${id}`),
 ]);
 
@@ -132,7 +130,7 @@ describe('leaders & uniques', () => {
   });
 });
 
-describe('edicts, scrolls, crises, omens, reforms, ascension', () => {
+describe('edicts, crises, ascension', () => {
   it('edicts: ~30, valid art/icons/tokens/unlocks', () => {
     const list = Object.values(EDICTS);
     expect(list.length).toBeGreaterThanOrEqual(26);
@@ -142,17 +140,6 @@ describe('edicts, scrolls, crises, omens, reforms, ascension', () => {
       expect(ICONS.has(e.icon), `${e.id} icon ${e.icon}`).toBe(true);
       expect(badTokens(e.description), e.id).toEqual([]);
       if (e.unlock?.rule) expect(UNLOCK_RULES.has(e.unlock.rule), e.id).toBe(true);
-    }
-  });
-
-  it('scrolls: one per pillar plus variants, all with a valid pillar', () => {
-    const list = Object.values(SCROLLS);
-    for (const p of PILLARS) expect(list.some((s) => s.pillar === p), p).toBe(true);
-    expect(list.length).toBeGreaterThanOrEqual(PILLARS.length + 2);
-    for (const s of list) {
-      expect(PILLARS).toContain(s.pillar);
-      expect(ICONS.has(s.icon), `${s.id} icon ${s.icon}`).toBe(true);
-      expect(badTokens(s.description), s.id).toEqual([]);
     }
   });
 
@@ -170,21 +157,7 @@ describe('edicts, scrolls, crises, omens, reforms, ascension', () => {
     }
   });
 
-  it('omens: 24+, goals positive, rewards valid', () => {
-    const list = Object.values(OMENS);
-    expect(list.length).toBeGreaterThanOrEqual(24);
-    const { state } = fixture();
-    for (const o of list) {
-      const g = typeof o.goal === 'number' ? o.goal : o.goal(state);
-      expect(g, o.id).toBeGreaterThan(0);
-      expect(Number.isFinite(g)).toBe(true);
-      expect(ICONS.has(o.icon), `${o.id} icon ${o.icon}`).toBe(true);
-      expect(badTokens(o.description + o.rewardText), o.id).toEqual([]);
-      if (o.reward.kind === 'doctrine') expect(['common', 'uncommon', 'rare', 'legendary']).toContain(o.reward.rarity);
-    }
-  });
-
-  it('Mars Salvage, Crisis, and Directive behavior', () => {
+  it('Mars Salvage and Crisis behavior', () => {
     const { state } = fixture();
     const crisisCtx = makeCtx(state, HUMAN, { kind: 'crisis', id: 'steppe_horde', hooks: {}, counters: {} }, () => {});
     const feralsBefore = Object.values(state.units).filter((unit) => unit.owner === BARBARIAN).length;
@@ -198,25 +171,6 @@ describe('edicts, scrolls, crises, omens, reforms, ascension', () => {
     if (!spawnStorms) throw new Error('Global Dust Storm has no start effect');
     spawnStorms(crisisCtx);
     expect(state.storms.length).toBe(stormsBefore + 3);
-    const drop = OMENS.drop_two_colonies;
-    expect(drop.progress({ type: 'podLanded', player: HUMAN, tile: 0 }, state, HUMAN)).toBe(1);
-    expect(drop.progress({ type: 'cityFounded', cityId: 1, player: HUMAN, tile: 0 }, state, HUMAN)).toBe(0);
-    expect(OMENS.weather_three_hits.progress({ type: 'stormDamage', tile: 0, amount: 5, player: HUMAN }, state, HUMAN)).toBe(1);
-    expect(OMENS.weather_three_hits.progress({ type: 'stormDamage', tile: 0, amount: 5, player: HUMAN, killed: true }, state, HUMAN)).toBe(0);
-    expect(OMENS.thaw_four_colonists.progress({ type: 'colonistsThawed', player: HUMAN, cityId: 1, pop: 2 }, state, HUMAN)).toBe(2);
-    expect(OMENS.reroll_research_twice.progress({ type: 'researchOffered', player: HUMAN, techs: [], reroll: true }, state, HUMAN)).toBe(1);
-    expect(OMENS.reroll_research_twice.progress({ type: 'researchOffered', player: HUMAN, techs: [] }, state, HUMAN)).toBe(0);
-  });
-
-  it('reforms: tier pairs with valid requirements', () => {
-    const list = Object.values(REFORMS);
-    expect(list.length).toBeGreaterThanOrEqual(10);
-    for (const r of list) {
-      expect(badTokens(r.description), r.id).toEqual([]);
-      if (r.tier === 2) {
-        expect(REFORMS[r.requires ?? '']?.tier, r.id).toBe(1);
-      } else expect(r.requires).toBeUndefined();
-    }
   });
 
   it('ascension: levels 1..8 in order', () => {
@@ -235,7 +189,7 @@ function fixture(leaderId = Object.keys(LEADERS)[0]): { state: GameState; city: 
   const unit = Object.values(state.units).find((u) => u.owner === HUMAN && u.type === 'warrior')!;
   const enemy: Unit = { ...unit, id: 999_999, owner: BARBARIAN };
   state.run.phase = 'playing';
-  state.run.chapter = 2;
+  state.run.chapter = CRISIS_CHAPTER;
   state.run.crisisActive = true;
   state.run.influence = 23;
   return { state, city, unit, enemy };
@@ -246,8 +200,8 @@ const zero = (): Yields => ({ food: 0, prod: 0, gold: 0, sci: 0, cul: 0 });
 function chronicleCtx(state: GameState): ChronicleCtx & { r: number; s: number } {
   const c = {
     r: 100, s: 4,
-    stats: { ...state.run.stats, kills: 3, techs: 2, culture: 50, gold: 80, popGrown: 3, citiesCaptured: 1, campsCleared: 1, wonders: 1, extra: {} },
-    focus: 'arts' as const, era: 2, chapter: 2, cities: humanCities(state),
+    stats: { ...state.run.stats, kills: 3, techs: 2, culture: 50, gold: 80, popGrown: 3, campsCleared: 1, wonders: 1, extra: {} },
+    focus: 'arts' as const, era: 2, chapter: CRISIS_CHAPTER, cities: humanCities(state),
     renown() { return c.r; },
     splendor() { return c.s; },
     addRenown(n: number) { c.r += n; },
@@ -259,7 +213,8 @@ function chronicleCtx(state: GameState): ChronicleCtx & { r: number; s: number }
 
 function sampleEvents(state: GameState, city: City, unit: Unit): SimEvent[] {
   const result = {
-    era: 0, chapter: 2, target: 100, steps: [], renown: 100, splendor: 3, score: 300, passed: true, triumph: true, mandateLost: 0, influenceEarned: [],
+    era: 0, chapter: CRISIS_CHAPTER, target: 100, steps: [], renown: 100, splendor: 3, score: 300, passed: true, triumph: true, mandateLost: 0, influenceEarned: [],
+    focusLevelUp: null,
   };
   return [
     { type: 'turnStart', turn: state.turn, player: HUMAN },
@@ -268,7 +223,6 @@ function sampleEvents(state: GameState, city: City, unit: Unit): SimEvent[] {
     { type: 'combat', attacker: { player: HUMAN, unitId: unit.id, tile: unit.tile }, defender: { player: BARBARIAN, tile: unit.tile }, ranged: false, dmgToAttacker: 10, dmgToDefender: 100, attackerKilled: false, defenderKilled: true },
     { type: 'cityFounded', cityId: city.id, player: HUMAN, tile: city.tile },
     { type: 'cityGrew', cityId: city.id, player: HUMAN, pop: city.pop },
-    { type: 'cityCaptured', cityId: city.id, from: 1, to: HUMAN, tile: city.tile },
     { type: 'buildingBuilt', cityId: city.id, player: HUMAN, building: 'monument' },
     { type: 'wonderBuilt', cityId: city.id, player: HUMAN, wonder: 'pyramids' },
     { type: 'improvementBuilt', tile: city.tile, player: HUMAN, improvement: 'farm' },
@@ -279,11 +233,8 @@ function sampleEvents(state: GameState, city: City, unit: Unit): SimEvent[] {
     { type: 'ruinExplored', player: HUMAN, tile: 0, reward: 'gold' },
     { type: 'campCleared', player: HUMAN, tile: 0, gold: 25 },
     { type: 'unitPromoted', unitId: unit.id, promotion: 'drill_1' },
-    { type: 'warDeclared', by: 1, target: HUMAN },
-    { type: 'peaceMade', a: HUMAN, b: 1 },
     { type: 'edictUsed', uid: 1, id: Object.keys(EDICTS)[0] ?? 'x' },
     { type: 'doctrineLost', uid: 424_242, id: 'riverfolk' },
-    { type: 'omenCompleted', id: Object.keys(OMENS)[0] ?? 'x' },
     { type: 'chapterStarted', era: 0, chapter: 1, target: 450 },
     { type: 'eraStarted', era: 1 },
     { type: 'chronicle', result },
@@ -296,10 +247,9 @@ function councilFixture(): CouncilState {
     items: [
       { kind: 'doctrine', id: 'riverfolk', edition: 'base', price: 4 },
       { kind: 'doctrine', id: 'ferrymen', edition: 'gilded', price: 6 },
-      { kind: 'scroll', id: Object.keys(SCROLLS)[0] ?? 'x', price: 3 },
+      { kind: 'edict', id: Object.keys(EDICTS)[0] ?? 'x', price: 3 },
       { kind: 'pack', pack: 'doctrine', size: 'normal', price: 4 },
-      { kind: 'pack', pack: 'archive', size: 'jumbo', price: 6 },
-      { kind: 'reform', id: Object.keys(REFORMS)[0] ?? 'x', price: 10 },
+      { kind: 'pack', pack: 'edict', size: 'jumbo', price: 6 },
     ],
     rerollCost: 2, rerolls: 0, pack: null,
   };
@@ -335,7 +285,7 @@ function exercise(state: GameState, city: City, unit: Unit, enemy: Unit, kind: A
   const items: CostItem[] = [
     { kind: 'unit', id: 'settler' }, { kind: 'unit', id: 'warrior' }, { kind: 'building', id: 'monument' },
     { kind: 'wonder', id: 'pyramids' }, { kind: 'project', id: 'festival' }, { kind: 'improvement', id: 'farm' },
-    { kind: 'tech', id: 'agriculture' }, { kind: 'upgrade', id: 'swordsman' },
+    { kind: 'tech', id: 'agriculture' },
   ];
   for (const item of items) for (const currency of ['prod', 'gold', 'sci', 'influence'] as const) {
     const a = { city, item, currency, cost: 100 };
@@ -390,7 +340,7 @@ describe('hook smoke tests', () => {
     }
   });
 
-  it('every leader, crisis, reform and ascension hook runs', () => {
+  it('every leader, crisis and ascension hook runs', () => {
     for (const l of Object.values(LEADERS)) {
       const f = fixture(l.id);
       exercise(f.state, f.city, f.unit, f.enemy, 'leader', l.id, l.effects);
@@ -400,10 +350,6 @@ describe('hook smoke tests', () => {
       f.state.run.crisis = c.id;
       f.state.run.doctrines = [{ uid: 7, id: 'riverfolk', edition: 'base', counters: {}, disabled: false, sellValue: 2 }];
       exercise(f.state, f.city, f.unit, f.enemy, 'crisis', c.id, c.effects);
-    }
-    for (const r of Object.values(REFORMS)) {
-      const f = fixture();
-      exercise(f.state, f.city, f.unit, f.enemy, 'reform', r.id, r.effects);
     }
     for (const a of ASCENSIONS) {
       const f = fixture();
@@ -434,16 +380,6 @@ describe('hook smoke tests', () => {
       }
       expect(findNonFinite(state.players[HUMAN]), e.id).toEqual([]);
       expect(findNonFinite(state.run), e.id).toEqual([]);
-    }
-  });
-
-  it('omen progress functions return finite non-negative increments', () => {
-    const { state, city, unit } = fixture();
-    for (const o of Object.values(OMENS)) {
-      for (const ev of sampleEvents(state, city, unit)) {
-        const n = o.progress(ev, state, HUMAN);
-        expect(Number.isFinite(n) && n >= 0, `${o.id} ${ev.type}`).toBe(true);
-      }
     }
   });
 });

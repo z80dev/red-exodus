@@ -4,6 +4,7 @@ import { createGame } from './engine';
 import { neighbors } from './hex';
 import { attackTargets, cityStrength, previewAttack, resolveAttack } from './combat';
 import type { City, GameState, SimEvent, Unit } from './types';
+import { BARBARIAN } from './types';
 
 function fixture(): { state: GameState; attacker: Unit; defender: Unit; events: SimEvent[] } {
   const { state } = createGame({ seed: 'COMBAT-REGRESSION', leaderId: Object.keys(LEADERS)[0], ascension: 0,
@@ -12,14 +13,12 @@ function fixture(): { state: GameState; attacker: Unit; defender: Unit; events: 
     neighbors(state.map, t.idx).some(n => state.map.tiles[n].terrain === 'grassland' && state.map.tiles[n].elevation === 'flat' && !state.map.tiles[n].cityId))!;
   const to = neighbors(state.map, from.idx).find(n => state.map.tiles[n].terrain === 'grassland' && state.map.tiles[n].elevation === 'flat' && !state.map.tiles[n].cityId)!;
   for (const unit of Object.values(state.units)) if (unit.tile === from.idx || unit.tile === to) delete state.units[unit.id];
-  state.players[0].relations[1] = 'war';
-  state.players[1].relations[0] = 'war';
   state.players[0].vis[to] = 2;
-  state.players[1].vis[from.idx] = 2;
+  state.players.find(p => p.id === BARBARIAN)!.vis[from.idx] = 2;
   const make = (id: number, owner: number, tile: number): Unit => ({ id, owner, tile, type: 'warrior',
-    hp: 100, moves: 2, hasAttacked: false, xp: 0, level: 0, promotions: [], promotionChoices: null, order: null, fortifyTurns: 0, age: 0 });
+    hp: 100, moves: 2, hasAttacked: false, xp: 0, level: 0, promotions: [], order: null, fortifyTurns: 0, age: 0 });
   const attacker = make(state.nextId++, 0, from.idx);
-  const defender = make(state.nextId++, 1, to);
+  const defender = make(state.nextId++, BARBARIAN, to);
   state.units[attacker.id] = attacker;
   state.units[defender.id] = defender;
   const events: SimEvent[] = [];
@@ -57,7 +56,7 @@ describe('combat', () => {
     expect(attacker.hp).toBe(100);
     expect(events.some(ev => ev.type === 'combat' && ev.ranged)).toBe(true);
     delete state.units[defender.id];
-    const city: City = { id: state.nextId++, owner: 1, originalOwner: 1, name: 'Test City', tile: defender.tile,
+    const city: City = { id: state.nextId++, owner: BARBARIAN, name: 'Test City', tile: defender.tile,
       pop: 3, foodStored: 0, prodStored: 0, queue: [], buildings: [], wonders: [], focus: 'balanced', worked: [],
       cultureStored: 0, hp: 1, maxHp: 100, isCapital: false, foundedTurn: 0, hasStruck: false,
       yields: { food: 1, prod: 1, gold: 1, sci: 1, cul: 1 }, starving: false, order: 1 };
@@ -66,7 +65,7 @@ describe('combat', () => {
     expect(cityStrength(state, city)).toBeGreaterThan(8);
     expect(resolveAttack(state, attacker, city.tile, ev => events.push(ev))).toBeNull();
     expect(city.hp).toBe(1);
-    expect(city.owner).toBe(1);
+    expect(city.owner).toBe(BARBARIAN);
   });
 
   it('does not reveal concealed enemy positions through attack previews', () => {
@@ -76,21 +75,39 @@ describe('combat', () => {
     expect(attackTargets(state, attacker)).not.toContain(defender.tile);
   });
 
-  it('melee captures an undefended city at zero HP and awards kill XP', () => {
+  it('never lets two nations fight: rival units are not targets', () => {
+    const { state, attacker, defender } = fixture();
+    defender.owner = 1;
+    expect(previewAttack(state, attacker, defender.tile)).toBeNull();
+    expect(attackTargets(state, attacker)).not.toContain(defender.tile);
+    const events: SimEvent[] = [];
+    expect(resolveAttack(state, attacker, defender.tile, ev => events.push(ev))).not.toBeNull();
+    expect(events).toHaveLength(0);
+  });
+
+  it('Raiders that break a colony loot Credits and leave it standing', () => {
     const { state, attacker, defender, events } = fixture();
     delete state.units[defender.id];
-    const city: City = { id: state.nextId++, owner: 1, originalOwner: 1, name: 'Outpost', tile: defender.tile,
+    attacker.owner = BARBARIAN;
+    const raider = attacker;
+    const city: City = { id: state.nextId++, owner: 0, name: 'Outpost', tile: defender.tile,
       pop: 2, foodStored: 0, prodStored: 0, queue: [], buildings: [], wonders: [], focus: 'balanced', worked: [],
       cultureStored: 0, hp: 1, maxHp: 100, isCapital: false, foundedTurn: 0, hasStruck: false,
       yields: { food: 2, prod: 2, gold: 1, sci: 0, cul: 0 }, starving: false, order: 1 };
     state.cities[city.id] = city;
-    state.map.tiles[city.tile].owner = 1;
+    state.map.tiles[city.tile].owner = 0;
     state.map.tiles[city.tile].cityId = city.id;
-    expect(resolveAttack(state, attacker, city.tile, ev => events.push(ev))).toBeNull();
+    state.players.find(p => p.id === BARBARIAN)!.vis[city.tile] = 2;
+    state.players[0].gold = 200;
+    const from = raider.tile;
+    expect(resolveAttack(state, raider, city.tile, ev => events.push(ev))).toBeNull();
     expect(state.cities[city.id].owner).toBe(0);
-    expect(attacker.xp).toBe(10);
-    expect(events.some(ev => ev.type === 'cityCaptured' && ev.cityId === city.id)).toBe(true);
+    expect(city.hp).toBe(25);
+    expect(state.players[0].gold).toBe(200 - Math.min(50, 25 + 10 * state.run.era));
+    expect(raider.tile).toBe(from);
+    expect(events.some(ev => ev.type === 'notify' && ev.tone === 'bad')).toBe(true);
   });
+
   it('clears a defended barbarian camp only after winning melee and entering it', () => {
     const { state, attacker, defender, events } = fixture();
     defender.owner = 99;
@@ -115,8 +132,11 @@ describe('combat', () => {
     expect(hit?.type).toBe('combat');
     if (hit?.type !== 'combat') throw new Error('Expected a combat result');
     expect(state.players[0].gold).toBe(gold + 20);
-    expect(attacker.hp).toBe(Math.min(100, 80 - hit.dmgToAttacker + 25));
+    // the kill XP reaches level 1: the automatic promotion heals +50 before the Command Frame kill heal (+25)
+    expect(attacker.hp).toBe(Math.min(100, Math.min(100, 80 - hit.dmgToAttacker + 50) + 25));
     expect(attacker.xp).toBe(15);
+    expect(attacker.level).toBe(1);
+    expect(attacker.promotions).toHaveLength(4);
     expect(events.filter(ev => ev.type === 'unitDied' && ev.unitId === defender.id)).toHaveLength(1);
   });
 

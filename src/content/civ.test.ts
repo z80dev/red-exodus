@@ -60,13 +60,18 @@ describe('tech web', () => {
     }
   });
 
-  it('prereqs exist, point backwards (earlier era or left column), and only era-0 roots lack prereqs', () => {
+  it('prereqs are flat: 1–2 techs from the era before (era 0: an era-0 root); only era-0 roots lack prereqs', () => {
     for (const t of Object.values(TECHS)) {
-      if (t.prereqs.length === 0) expect(t.era).toBe(0);
+      if (t.prereqs.length === 0) {
+        expect(t.era, `${t.id} has no prereqs`).toBe(0);
+        continue;
+      }
+      expect(t.prereqs.length, `${t.id} prereq count`).toBeLessThanOrEqual(2);
       for (const p of t.prereqs) {
         const pre = TECHS[p];
         expect(pre, `${t.id} prereq ${p}`).toBeDefined();
-        expect(pre.era < t.era || (pre.era === t.era && pre.pos.col < t.pos.col), `${p} → ${t.id} must point forward`).toBe(true);
+        if (t.era === 0) expect(pre.era === 0 && pre.prereqs.length === 0, `${p} → ${t.id} must be an era-0 root`).toBe(true);
+        else expect(pre.era, `${p} → ${t.id} must come from the era before`).toBe(t.era - 1);
       }
     }
   });
@@ -141,17 +146,17 @@ describe('units', () => {
     expect(UNITS.tank.resource).toBe('oil');
   });
 
-  it('ranged units carry range + ranged strength; base-roster anti-cavalry, siege and mounted get their modifiers', () => {
+  it('ranged units carry range + ranged strength; base-roster anti-cavalry get their modifier; no unit has a colony bonus', () => {
     for (const u of Object.values(UNITS)) {
       if (u.class === 'ranged' || u.class === 'siege') {
         expect(u.rangedStrength, u.id).toBeGreaterThan(0);
         expect(u.range, u.id).toBeGreaterThan(0);
       }
+      // players cannot attack colonies, so a colony bonus would do nothing
+      expect(u.bonusVs?.city, u.id).toBeUndefined();
       // leader uniques may deliberately break the class rules
       if (u.uniqueTo) continue;
-      if (u.class === 'siege') expect(u.bonusVs?.city, u.id).toBe(200);
       if (u.class === 'antiCavalry') expect(u.bonusVs?.mounted, u.id).toBe(100);
-      if (u.class === 'mounted') expect(u.bonusVs?.city ?? 0, u.id).toBeLessThan(0);
     }
     expect(UNITS.at_gun.bonusVs?.armor).toBe(100);
     expect(UNITS.settler.abilities).toContain('foundCity');
@@ -259,7 +264,7 @@ describe('map content', () => {
 describe('promotions', () => {
   it('spans 3 tiers with requirements from a lower tier sharing a class', () => {
     const promos = Object.values(PROMOTIONS);
-    expect(promos.length).toBeGreaterThanOrEqual(28);
+    expect(promos.length).toBeGreaterThanOrEqual(26);
     for (const tier of [1, 2, 3]) expect(promos.some((p) => p.tier === tier)).toBe(true);
     for (const p of promos) {
       if (p.tier === 1) expect(p.requires ?? []).toHaveLength(0);

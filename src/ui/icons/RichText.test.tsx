@@ -32,4 +32,11 @@ describe('RichText', () => {
     const out = html('**+1 {gold} Tax**\nnext');
     expect(out).toMatch(/<b>.*rt-y-gold.*Tax<\/b><br\/>next/);
   });
+
+  it('names score and yield tokens after the icon, singular only after exactly 1', () => {
+    expect(html('Lose 1 {mandate}')).toContain('Life</span>');
+    expect(html('Lose 2 {mandate}')).toContain('Lives</span>');
+    expect(html('+10 {influence}')).toContain('Coins</span>');
+    expect(html('{renown} from Culture')).toMatch(/Points<\/span> from Culture/);
+  });
 });

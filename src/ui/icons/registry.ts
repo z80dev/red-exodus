@@ -9,8 +9,8 @@ import { BUILDING_GLYPHS } from './glyphs/buildings';
 import { WONDER_GLYPHS } from './glyphs/wonders';
 import { derivedNationGlyph, MARS_GLYPHS } from './glyphs/mars';
 import {
-  BUILDINGS, CRISES, DOCTRINES, EDICTS, IMPROVEMENTS, LEADERS, NATURAL_WONDERS, OMENS, PROMOTIONS, REFORMS,
-  RESOURCES, SCROLLS, TECHS, UNITS, WONDERS,
+  BUILDINGS, CRISES, DOCTRINES, EDICTS, IMPROVEMENTS, LEADERS, NATURAL_WONDERS, PROMOTIONS, RESOURCES, TECHS, UNITS,
+  WONDERS,
 } from '../../content';
 
 const BASE = {
@@ -84,10 +84,7 @@ function fromContent(id: string): Glyph | undefined {
   if (un) return named(un.icon) ?? named(un.class) ?? NAMED.melee;
   if (DOCTRINES[id]) return named(DOCTRINES[id].icon) ?? NAMED.doctrine;
   if (EDICTS[id]) return named(EDICTS[id].icon) ?? NAMED.edict;
-  if (SCROLLS[id]) return named(SCROLLS[id].icon) ?? NAMED.scroll;
   if (CRISES[id]) return named(CRISES[id].icon) ?? NAMED.crisis;
-  if (OMENS[id]) return named(OMENS[id].icon) ?? NAMED.omen;
-  if (REFORMS[id]) return named(REFORMS[id].icon) ?? NAMED.reform;
   if (PROMOTIONS[id]) return named(PROMOTIONS[id].icon) ?? NAMED.promote;
   if (LEADERS[id]) return NAMED.crown;
   return undefined;

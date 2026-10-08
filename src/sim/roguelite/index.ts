@@ -1,9 +1,9 @@
-// OWNER: Roguelite. Run structure: eras/chapters, chronicle scoring, council, omens, edicts, crises.
+// OWNER: Roguelite. Run structure: eras/chapters, chronicle scoring, shop, edicts, crises.
 // Public entry points for the engine & UI; implementation lives in the sibling modules.
 import type { Action, Emit, GameState } from '../types';
 import { councilBuy, councilReroll, moveDoctrine, packPick, sellDoctrine } from './council';
 import { discardEdict, useEdict } from './edicts';
-import { ackChronicle, ackCrisis, chooseChapterStart, continueEndless, leaveCouncil } from './run';
+import { ackChronicle, chooseChapterStart, continueEndless, leaveCouncil } from './run';
 
 export { chronicleTarget, computeChronicle, eraBaseTarget, previewChronicle, projectPillars } from './chronicle';
 export {
@@ -11,7 +11,6 @@ export {
 } from './council';
 export { useEdictError } from './edicts';
 export type { EdictTargetArgs } from './edicts';
-export { omenGoal } from './omens';
 export {
   addInfluence, changeMandate, defeatRun, grantDoctrine, initRun, isEndless, mapActionsAllowed, onTurnEnd,
 } from './run';
@@ -20,7 +19,7 @@ export { DARK_AGE_EFFECTS, DARK_AGE_LABEL, DARK_AGE_TARGET_MUL } from './darkAge
 export * from './constants';
 
 const RUN_ACTIONS: Record<string, true> = {
-  ackCrisis: true, chooseChapterStart: true, ackChronicle: true, councilBuy: true, councilReroll: true, packPick: true,
+  chooseChapterStart: true, ackChronicle: true, councilBuy: true, councilReroll: true, packPick: true,
   sellDoctrine: true, moveDoctrine: true, useEdict: true, discardEdict: true, leaveCouncil: true, continueEndless: true,
 };
 
@@ -32,8 +31,7 @@ export function isRunAction(action: Action): boolean {
 export function handleRunAction(state: GameState, action: Action, emit: Emit): string | null {
   if (state.gameOver) return 'The run is over';
   switch (action.type) {
-    case 'ackCrisis': return ackCrisis(state);
-    case 'chooseChapterStart': return chooseChapterStart(state, action.focus, action.omen, emit);
+    case 'chooseChapterStart': return chooseChapterStart(state, action.focus, emit);
     case 'ackChronicle': return ackChronicle(state, emit);
     case 'councilBuy': return councilBuy(state, action.slot, emit);
     case 'councilReroll': return councilReroll(state, emit);

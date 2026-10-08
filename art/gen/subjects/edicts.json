@@ -55,17 +55,9 @@
   "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Colony Repair Kit: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Colony Repair Kit. Restore all your units and colonies to full health.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 160
  },
- "forge_of_heroes": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Field Retrofit Kit: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Field Retrofit Kit. Upgrade one of your units for free, even outside your borders.. Use a subtle gear-shaped prop or silhouette. Witty, tactile, immediately readable.",
-  "hue": 30
- },
  "veterans_laurels": {
   "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Combat Data Cache: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Combat Data Cache. A combat unit instantly gains the field experience for its next promotion.. Use a subtle bolt-shaped prop or silhouette. Witty, tactile, immediately readable.",
   "hue": 50
- },
- "olive_branch": {
-  "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Ceasefire Packet: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Ceasefire Packet. Make peace with every rival nation currently at war with you.. Use a subtle keycard-shaped prop or silhouette. Witty, tactile, immediately readable.",
-  "hue": 110
  },
  "revelation": {
   "subject": "A striking square-card tableau for a single piece of Martian colony salvage called Breakthrough Injection: depict its most legible physical form or a colonist using it, with a clear prop that communicates its use. Theme drawn from this catalog description, never rendered as text: Breakthrough Injection. Instantly complete your current research project.. Use a subtle flask-shaped prop or silhouette. Witty, tactile, immediately readable.",

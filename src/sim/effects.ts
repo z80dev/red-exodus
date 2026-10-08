@@ -1,13 +1,13 @@
 // Unified effect pipeline. Collects every active EffectHooks source for a player in a stable order and
 // invokes hooks. Rule modules call these; content never calls rule modules through here.
 //
-// Order (matters for the Chronicle): leader → ascension → reforms → natural wonders → wonders →
+// Order (matters for the Chronicle): leader → ascension → natural wonders → wonders →
 // buildings → doctrines (left→right, disabled skipped) → crisis (if active) → dark age.
 import type { EffectHooks, EffectKind, HookCtx } from './defs';
 import type { CityId, GameState, PlayerId, SimEvent, Uid } from './types';
 import { HUMAN } from './types';
 import {
-  ASCENSIONS, BUILDINGS, CRISES, DOCTRINES, LEADERS, NATURAL_WONDERS, REFORMS, WONDERS,
+  ASCENSIONS, BUILDINGS, CRISES, DOCTRINES, LEADERS, NATURAL_WONDERS, WONDERS,
 } from '../content';
 import { DARK_AGE_EFFECTS } from './roguelite/darkAge';
 
@@ -39,10 +39,7 @@ export function collectEffects(state: GameState, pid: PlayerId): ActiveEffect[] 
   if (leader) push('leader', leader.id, leader.effects);
 
   const run = state.run;
-  if (pid === HUMAN) {
-    for (const a of ASCENSIONS) if (a.level <= run.ascension) push('ascension', String(a.level), a.effects);
-    for (const r of run.reforms) push('reform', r, REFORMS[r]?.effects);
-  }
+  if (pid === HUMAN) for (const a of ASCENSIONS) if (a.level <= run.ascension) push('ascension', String(a.level), a.effects);
 
   const seen = state.naturalWondersSeen[pid] ?? [];
   for (const nw of seen) {
@@ -109,13 +106,13 @@ export function runHook<K extends keyof EffectHooks>(
 /**
  * Per-state cache of effect lists for broadcastEvent (it runs for every event of every dispatch, and AI turns emit
  * hundreds). Invalidated when an event changes which effects exist, and by the engine at the start of each dispatch
- * (`invalidateEffectCache`) so non-event mutations (doctrine reorder, reform purchase) are always picked up.
+ * (`invalidateEffectCache`) so non-event mutations (doctrine reorder) are always picked up.
  * Counters are shared references, so cached entries never hold stale counter values.
  */
 const effectCache = new WeakMap<GameState, Map<PlayerId, ActiveEffect[]>>();
 const STRUCTURAL_EVENTS: Partial<Record<SimEvent['type'], true>> = {
-  cityFounded: true, cityCaptured: true, cityRazed: true, buildingBuilt: true, wonderBuilt: true, naturalWonderFound: true,
-  playerEliminated: true, doctrineGained: true, doctrineLost: true, crisisBegan: true, crisisEnded: true, eraStarted: true,
+  cityFounded: true, buildingBuilt: true, wonderBuilt: true, naturalWonderFound: true,
+  doctrineGained: true, doctrineLost: true, crisisBegan: true, crisisEnded: true, eraStarted: true,
   influenceChanged: true, chronicle: true,
 };
 

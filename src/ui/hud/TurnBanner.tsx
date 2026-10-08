@@ -22,8 +22,8 @@ export function TurnBanner() {
   const era = banner.era;
   return (
     <div className={`tbn ${era != null ? 'tbn--era' : ''}`} key={banner.key} aria-live="polite">
-      {era != null && <div className="tbn__eyebrow">A new age dawns</div>}
-      <div className="tbn__title display">{era != null ? `The ${eraName(era)} Era` : `Turn ${banner.turn}`}</div>
+      {era != null && <div className="tbn__eyebrow">New era</div>}
+      <div className="tbn__title display">{era != null ? eraName(era) : `Turn ${banner.turn}`}</div>
       <Ornament className="tbn__orn" />
     </div>
   );

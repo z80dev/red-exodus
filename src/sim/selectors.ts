@@ -1,7 +1,7 @@
 // OWNER: SimCore. Read-only helpers for UI/renderer. Pure functions of state (never mutate).
 import type {
   BuildingId, City, CityFocus, CityId, ElevationId, FeatureId, GameState, ImprovementId, NaturalWonderId, Player,
-  PlayerId, ProductionItem, Relation, ResourceId, TechId, TerrainId, TileIdx, UnitId, UnitTypeId, WonderId, Yields,
+  PlayerId, ProductionItem, ResourceId, TechId, TerrainId, TileIdx, UnitId, UnitTypeId, WonderId, Yields,
 } from './types';
 import { BARBARIAN, HUMAN } from './types';
 import type { ResourceKind } from './defs';
@@ -49,7 +49,7 @@ export interface TileInfo {
   city: { id: CityId; name: string; owner: PlayerId; pop: number; hp: number; maxHp: number } | null;
   worked: boolean;
   resource: { id: ResourceId; name: string; kind: ResourceKind; improved: boolean; improvement: ImprovementId } | null;
-  improvement: { id: ImprovementId; name: string; pillaged: boolean } | null;
+  improvement: { id: ImprovementId; name: string } | null;
   naturalWonder: { id: NaturalWonderId; name: string; description: string } | null;
   units: { id: UnitId; type: UnitTypeId; name: string; owner: PlayerId; hp: number }[];
   camp: boolean;
@@ -149,7 +149,8 @@ export interface EmpireYields {
   research: { tech: TechId; name: string; progress: number; cost: number; turns: number | null } | null;
 }
 
-export type Attention = { kind: 'unit'; id: UnitId } | { kind: 'city'; id: CityId } | { kind: 'research' } | null;
+/** the only things End Turn asks about: research not chosen, a colony with nothing to build */
+export type Attention = { kind: 'research' } | { kind: 'city'; id: CityId } | null;
 
 export interface RivalSummary {
   id: PlayerId;
@@ -159,7 +160,6 @@ export interface RivalSummary {
   colors: { primary: string; secondary: string };
   alive: boolean;
   met: boolean;
-  relation: Relation;
   personality: string | null;
   cities: number;
   pop: number;
@@ -233,11 +233,11 @@ export function tileInfo(state: GameState, idx: TileIdx): TileInfo {
     if (r && revealed) {
       base.resource = {
         id: r.id, name: r.name, kind: r.kind, improvement: r.improvement,
-        improved: (t.improvement === r.improvement && !t.pillaged) || !!c,
+        improved: t.improvement === r.improvement || !!c,
       };
     }
   }
-  if (t.improvement) base.improvement = { id: t.improvement, name: IMPROVEMENTS[t.improvement]?.name ?? t.improvement, pillaged: t.pillaged };
+  if (t.improvement) base.improvement = { id: t.improvement, name: IMPROVEMENTS[t.improvement]?.name ?? t.improvement };
   if (t.naturalWonder) {
     const nw = NATURAL_WONDERS[t.naturalWonder];
     base.naturalWonder = { id: t.naturalWonder, name: nw?.name ?? t.naturalWonder, description: nw?.description ?? '' };
@@ -324,9 +324,9 @@ export function productionOptions(state: GameState, city: City): ProductionOptio
     push({ kind: 'building', id }, 'building', d.icon, d.description);
   }
   for (const id in WONDERS) push({ kind: 'wonder', id }, 'wonder', WONDERS[id].icon, WONDERS[id].description);
-  push({ kind: 'project', id: 'wealth' }, 'project', 'gold', 'Convert Industry into Credits (1:1).');
-  push({ kind: 'project', id: 'research' }, 'project', 'sci', 'Convert Industry into Data (1:1).');
-  if (player.isHuman) push({ kind: 'project', id: 'festival' }, 'project', 'renown', 'Convert Industry into Heritage Output for the Sol Report.');
+  push({ kind: 'project', id: 'wealth' }, 'project', 'gold', 'Turn {prod} into {gold} (1 for 1).');
+  push({ kind: 'project', id: 'research' }, 'project', 'sci', 'Turn {prod} into {sci} (1 for 1).');
+  if (player.isHuman) push({ kind: 'project', id: 'festival' }, 'project', 'renown', 'Turn {prod} into {renown} for the Chapter Report.');
   return out.sort((a, b) =>
     (a.lockedReason ? 1 : 0) - (b.lockedReason ? 1 : 0)
     || CATEGORY_ORDER[a.category] - CATEGORY_ORDER[b.category]
@@ -381,9 +381,9 @@ export function goldBreakdown(state: GameState, pid: PlayerId = HUMAN): GoldBrea
   const expenses: BreakdownLine[] = [];
   for (const c of citiesOf(state, pid)) if (c.yields.gold) income.push({ label: c.name, amount: c.yields.gold });
   const wealth = projectOutput(state, pid, 'wealth');
-  if (wealth) income.push({ label: 'Wealth projects', amount: round1(wealth) });
+  if (wealth) income.push({ label: 'Credits projects', amount: round1(wealth) });
   const maint = buildingMaintenance(state, pid);
-  if (maint) expenses.push({ label: 'Building maintenance', amount: round1(maint) });
+  if (maint) expenses.push({ label: 'Building upkeep', amount: round1(maint) });
   const units = unitCount(state, pid);
   const free = freeUnits(state, pid);
   const upkeep = unitUpkeep(state, pid);
@@ -435,25 +435,23 @@ function needsResearch(state: GameState): boolean {
   return !p.researching && Object.keys(TECHS).some((id) => !p.techs.includes(id) && TECHS[id].prereqs.every((r) => p.techs.includes(r)));
 }
 
-/** next thing needing the human's attention: idle units (cycling after `afterUnitId`), then idle cities, then research */
-export function nextAttention(state: GameState, afterUnitId?: UnitId): Attention {
-  const idle = idleUnits(state, HUMAN).slice().sort((a, b) => a.id - b.id);
-  if (idle.length) {
-    const next = afterUnitId != null ? idle.find((u) => u.id > afterUnitId) ?? idle[0] : idle[0];
-    return { kind: 'unit', id: next.id };
-  }
-  const city = citiesOf(state, HUMAN).find((c) => c.queue.length === 0);
-  if (city) return { kind: 'city', id: city.id };
+/** next thing needing the human's attention: research first, then a colony with an empty build queue */
+export function nextAttention(state: GameState): Attention {
   if (needsResearch(state)) return { kind: 'research' };
-  return null;
+  const city = citiesOf(state, HUMAN).find((c) => c.queue.length === 0);
+  return city ? { kind: 'city', id: city.id } : null;
 }
 
-/** badge count for the Next button */
+/** how many things End Turn asks about (idle units never count) */
 export function attentionCount(state: GameState): number {
-  let n = idleUnits(state, HUMAN).length;
-  n += citiesOf(state, HUMAN).filter((c) => c.queue.length === 0).length;
-  if (needsResearch(state)) n++;
-  return n;
+  return citiesOf(state, HUMAN).filter((c) => c.queue.length === 0).length + (needsResearch(state) ? 1 : 0);
+}
+
+/** optional "next unit" cycling: the next human unit with moves and no order, after `afterUnitId` */
+export function nextIdleUnit(state: GameState, afterUnitId?: UnitId): UnitId | null {
+  const idle = idleUnits(state, HUMAN).map((u) => u.id).sort((a, b) => a - b);
+  if (!idle.length) return null;
+  return afterUnitId != null ? idle.find((id) => id > afterUnitId) ?? idle[0] : idle[0];
 }
 
 /** summed combat strength of a player's military units (same scale for everyone) */
@@ -482,11 +480,10 @@ export function rivalsSummary(state: GameState): RivalSummary[] {
         if (u.owner === p.id && human.vis[u.tile] === 2) { met = true; break; }
       }
     }
-    if (!met && p.relations[HUMAN] === 'war') met = true;
     const cap = p.capitalId != null ? state.cities[p.capitalId] : undefined;
     out.push({
       id: p.id, name: p.name, civName: p.civName, leaderId: p.leaderId, colors: { ...p.colors }, alive: p.alive, met,
-      relation: p.relations[HUMAN] ?? 'peace', personality: p.ai?.personality ?? null,
+      personality: p.ai?.personality ?? null,
       cities: cities.length, pop: cities.reduce((s, c) => s + c.pop, 0), techs: p.techs.length, military,
       wonders: cities.reduce((s, c) => s + c.wonders.length, 0),
       capital: cap && human.vis[cap.tile] > 0 ? { id: cap.id, name: cap.name, tile: cap.tile } : null,

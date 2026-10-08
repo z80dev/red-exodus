@@ -1,11 +1,10 @@
 // Chapter/run statistics and small run-state helpers shared by the roguelite modules.
-import type { ChapterStats, City, Emit, GameState, Player, RunState, SimEvent } from '../types';
+import type { ChapterStats, City, GameState, Player, RunState, SimEvent } from '../types';
 import { BARBARIAN, HUMAN } from '../types';
-import { progressOmen } from './omens';
 
 export function emptyStats(): ChapterStats {
   return {
-    culture: 0, science: 0, gold: 0, techs: 0, kills: 0, unitsLost: 0, citiesCaptured: 0, campsCleared: 0,
+    culture: 0, science: 0, gold: 0, techs: 0, kills: 0, unitsLost: 0, campsCleared: 0,
     popGrown: 0, citiesFounded: 0, improvements: 0, buildings: 0, wonders: 0, naturalWonders: 0, tilesExplored: 0,
     extra: {},
   };
@@ -42,7 +41,7 @@ export function addStat(state: GameState, key: NumericStat, amount: number): voi
   bump(state.run, key, amount);
 }
 
-/** free-form counters (festival, bonusRenown, tradeRoutes, content-specific) into chapter + run totals */
+/** free-form counters (festival, bonusRenown, food, buildProd, unitProd, content-specific) into chapter + run totals */
 export function addExtraStat(state: GameState, key: string, amount: number): void {
   if (!Number.isFinite(amount) || amount === 0) return;
   const { stats, totals } = state.run;
@@ -50,8 +49,8 @@ export function addExtraStat(state: GameState, key: string, amount: number): voi
   totals.extra[key] = (totals.extra[key] ?? 0) + amount;
 }
 
-/** called by the engine for every emitted event: stat tallies + omen progress (human only) */
-export function trackEvent(state: GameState, ev: SimEvent, emit: Emit): void {
+/** called by the engine for every emitted event: stat tallies (human only) */
+export function trackEvent(state: GameState, ev: SimEvent): void {
   const run = state.run;
   if (!run || state.gameOver) return;
   switch (ev.type) {
@@ -61,9 +60,6 @@ export function trackEvent(state: GameState, ev: SimEvent, emit: Emit): void {
         bump(run, 'kills', 1);
         if (ev.player === BARBARIAN) addExtraStat(state, 'barbarianKills', 1);
       }
-      break;
-    case 'cityCaptured':
-      if (ev.to === HUMAN) bump(run, 'citiesCaptured', 1);
       break;
     case 'campCleared':
       if (ev.player === HUMAN) bump(run, 'campsCleared', 1);
@@ -98,5 +94,4 @@ export function trackEvent(state: GameState, ev: SimEvent, emit: Emit): void {
     default:
       break;
   }
-  progressOmen(state, ev, emit);
 }

@@ -1,4 +1,4 @@
-// OWNER: SimCore. Cities: founding, territory, worked tiles, yields, growth, production, improvements, capture.
+// OWNER: SimCore. Cities: founding, territory, worked tiles, yields, growth, production, improvements, Raider raids.
 import type { ActiveEffect } from './effects';
 import type { CostItem } from './defs';
 import type {
@@ -11,10 +11,9 @@ import {
 import { collectEffects, makeCtx, runHook } from './effects';
 import { addGold, connectedResources, effectLabel, getPlayer, round1, updateHappiness } from './economy';
 import { hexDistance, neighbors, tilesInRadius } from './hex';
-import { createUnit } from './units';
+import { createUnit, isHostile } from './units';
 import { recomputeVisibility } from './visibility';
 import { addExtraStat } from './roguelite';
-import { randInt } from './rng';
 import { STORM_YIELD_MUL, stormAt } from './mars';
 
 // ───────────────────────────── tunables ─────────────────────────────
@@ -33,10 +32,13 @@ export const BORDER_EXP = 1.35;
 export const GROWTH_BASE = 15;
 export const GROWTH_PER = 6;
 export const GROWTH_EXP = 1.8;
-/** RED EXODUS pacing (≈1.6× faster per turn): multipliers on the raw formulas / authored costs, before hooks */
-export const GROWTH_PACE = 1 / 1.6;
-export const BORDER_PACE = 1 / 1.6;
-export const PRODUCTION_PACE = 1 / 1.6;
+/**
+ * RED EXODUS pacing for 54-turn runs: multipliers on the raw formulas / authored costs, before hooks. Growth and
+ * borders run ≈2.3× faster per turn; production ≈2.8×, so a colony finishes something every ~3 turns (`bun scripts/sim.ts`).
+ */
+export const GROWTH_PACE = 1 / 2.3;
+export const BORDER_PACE = 1 / 2.3;
+export const PRODUCTION_PACE = 1 / 2.8;
 export const FOOD_PER_POP = 2;
 /** city center is always worked and yields at least this */
 export const CENTER_MIN_YIELDS: Readonly<Yields> = { food: 2, prod: 1, gold: 1, sci: 0, cul: 0 };
@@ -55,13 +57,15 @@ export const BUY_LINEAR = 2;
 export const BUY_EXP = 1.15;
 /** improvement cost: goldCost × (1 + IMPROVEMENT_SCALING × improvements owned) */
 export const IMPROVEMENT_SCALING = 0.08;
-export const IMPROVEMENT_REPAIR_FRACTION = 0.5;
 export const SETTLER_MIN_POP = 2;
 export const MAX_QUEUE = 6;
 /** production stored while a city has nothing queued is capped at this many turns of output */
 export const IDLE_PROD_TURNS = 3;
-export const CAPTURE_BUILDING_LOSS = 1 / 3;
-export const CAPTURE_HP_FRACTION = 0.25;
+/** a raided colony keeps this share of its max HP */
+export const RAID_HP_FRACTION = 0.25;
+/** Credits Raiders loot from a broken colony: at most a quarter of the treasury, capped at BASE + PER_ERA × era */
+export const RAID_LOOT_BASE = 25;
+export const RAID_LOOT_PER_ERA = 10;
 /** balanced focus aims for this food surplus before optimizing other yields */
 export const BALANCED_FOOD_TARGET = 2;
 export const FOCUS_WEIGHTS: Record<CityFocus, Yields> = {
@@ -128,10 +132,10 @@ function tileBase(t: Tile, player: Player | undefined): Yields {
     const r = RESOURCES[t.resource];
     if (r) {
       addInto(y, r.yields);
-      if (t.improvement === r.improvement && !t.pillaged) addInto(y, r.improvedYields);
+      if (t.improvement === r.improvement) addInto(y, r.improvedYields);
     }
   }
-  if (t.improvement && !t.pillaged) addInto(y, IMPROVEMENTS[t.improvement]?.yields);
+  if (t.improvement) addInto(y, IMPROVEMENTS[t.improvement]?.yields);
   if (t.riverEdges) y.gold += RIVER_GOLD;
   return y;
 }
@@ -162,7 +166,7 @@ export function tileYieldsDetailed(state: GameState, tile: TileIdx, pid: PlayerI
   if (state.storms.length && stormAt(state, tile)) {
     const food = Math.floor(y.food * STORM_YIELD_MUL);
     const prod = Math.floor(y.prod * STORM_YIELD_MUL);
-    if (hookLines && (food !== y.food || prod !== y.prod)) hookLines.push({ label: 'Dust storm', yields: { food: food - y.food, prod: prod - y.prod } });
+    if (hookLines && (food !== y.food || prod !== y.prod)) hookLines.push({ label: 'Dust Storm', yields: { food: food - y.food, prod: prod - y.prod } });
     y.food = food;
     y.prod = prod;
   }
@@ -202,20 +206,20 @@ export function cityTerritory(state: GameState, city: City): TileIdx[] {
 
 export function canFoundCity(state: GameState, pid: PlayerId, tile: TileIdx): string | null {
   const t = state.map.tiles[tile];
-  if (!t) return 'Invalid tile';
-  if (pid === BARBARIAN) return 'Ferals do not build colonies';
-  if (isWater(t)) return 'Cannot land a colony on a dust sea';
-  if (ELEVATIONS[t.elevation]?.impassable ?? t.elevation === 'mountain') return 'Cannot build on a massif';
-  if (t.naturalWonder) return 'Cannot build on a landmark';
-  if (cityAt(state, tile)) return 'There is already a colony here';
-  if (t.owner != null && t.owner !== pid) return `Inside ${getPlayer(state, t.owner).civName} territory`;
-  if (t.camp) return 'Clear the Feral Den first';
+  if (!t) return 'Invalid tile.';
+  if (pid === BARBARIAN) return 'Raiders do not build colonies';
+  if (isWater(t)) return 'You cannot build a colony on a Dust Sea.';
+  if (ELEVATIONS[t.elevation]?.impassable ?? t.elevation === 'mountain') return 'You cannot build a colony on Mountains.';
+  if (t.naturalWonder) return 'You cannot build a colony on a Landmark.';
+  if (cityAt(state, tile)) return 'There is already a colony here.';
+  if (t.owner != null && t.owner !== pid) return `This tile belongs to ${getPlayer(state, t.owner).civName}.`;
+  if (t.camp) return 'Clear the Raider Camp first.';
   const args: { tile: Tile; minDistance: number; allowed: boolean; reason?: string } = { tile: t, minDistance: CITY_MIN_DISTANCE, allowed: true };
   runHook(state, pid, 'canFoundCity', NOOP, null, args);
-  if (!args.allowed) return args.reason ?? 'Cannot found a colony here';
+  if (!args.allowed) return args.reason ?? 'You cannot build a colony here.';
   for (const id in state.cities) {
     const c = state.cities[id];
-    if (hexDistance(state.map, c.tile, tile) < args.minDistance) return `Too close to ${c.name}`;
+    if (hexDistance(state.map, c.tile, tile) < args.minDistance) return `Too close to ${c.name}.`;
   }
   return null;
 }
@@ -272,7 +276,6 @@ export function foundCity(state: GameState, pid: PlayerId, tile: TileIdx, emit: 
   const city: City = {
     id: state.nextId++,
     owner: pid,
-    originalOwner: pid,
     name: cityName(state, player),
     tile,
     pop: 1,
@@ -315,14 +318,12 @@ export function foundCity(state: GameState, pid: PlayerId, tile: TileIdx, emit: 
 
 // ───────────────────────────── worked tiles & yields ─────────────────────────────
 
-/** tiles standing under a military unit of someone at war with `pid` */
+/** tiles standing under a hostile (Raider) military unit */
 function enemyOccupied(state: GameState, pid: PlayerId): Set<TileIdx> {
   const out = new Set<TileIdx>();
-  const rel = getPlayer(state, pid).relations;
   for (const id in state.units) {
     const u = state.units[id];
-    if (u.owner === pid) continue;
-    if (u.owner !== BARBARIAN && rel[u.owner] !== 'war') continue;
+    if (!isHostile(pid, u.owner)) continue;
     if (UNITS[u.type]?.class === 'civilian') continue;
     out.add(u.tile);
   }
@@ -441,7 +442,7 @@ export function computeCityYields(
   const pct = emptyYields();
 
   if (lines) {
-    lines.push({ label: 'Colony core', kind: 'center', yields: { ...center } });
+    lines.push({ label: 'Colony center', kind: 'center', yields: { ...center } });
     // attribute tile hook deltas of worked tiles by source
     for (const i of worked) tileYieldsDetailed(state, i, pid, fx, tileHooks);
     lines.push({ label: `Worked tiles (${worked.length})`, kind: 'tiles', yields: { ...tilesSum } });
@@ -455,7 +456,7 @@ export function computeCityYields(
       addInto(y, SPECIALIST_YIELDS, specialists);
       lines.push({ label: `Specialists (${specialists})`, kind: 'specialists', yields: y });
     }
-    lines.push({ label: 'Settlement', kind: 'base', yields: { ...CITY_BASE_YIELDS } });
+    lines.push({ label: 'Colony base', kind: 'base', yields: { ...CITY_BASE_YIELDS } });
     const py = emptyYields();
     addInto(py, POP_YIELDS, city.pop);
     lines.push({ label: `Colonists (${city.pop})`, kind: 'population', yields: py });
@@ -499,7 +500,7 @@ export function computeCityYields(
     if (lines) {
       const p = emptyYields();
       for (const k of YIELD_KEYS) p[k] = UNHAPPY_YIELD_PCT;
-      lines.push({ label: 'Widespread unrest', kind: 'happiness', yields: {}, pct: p });
+      lines.push({ label: 'Unhappiness', kind: 'happiness', yields: {}, pct: p });
     }
   }
 
@@ -585,7 +586,7 @@ export function productionItemName(item: ProductionItem): string {
     case 'unit': return UNITS[item.id]?.name ?? item.id;
     case 'building': return BUILDINGS[item.id]?.name ?? item.id;
     case 'wonder': return WONDERS[item.id]?.name ?? item.id;
-    case 'project': return item.id === 'wealth' ? 'Credit Drive' : item.id === 'research' ? 'Data Sprint' : 'Festival';
+    case 'project': return item.id === 'wealth' ? 'Credits Project' : item.id === 'research' ? 'Science Project' : 'Festival';
   }
 }
 
@@ -619,7 +620,7 @@ export function buyCost(state: GameState, city: City, item: ProductionItem): num
 }
 
 /** the unit type this player actually builds for a base id (leader uniques replace base units) */
-function ownUnitVariant(leaderId: string, id: string): string {
+export function ownUnitVariant(leaderId: string, id: string): string {
   for (const uid in UNITS) {
     const u = UNITS[uid];
     if (u.uniqueTo === leaderId && u.replaces === id) return uid;
@@ -629,13 +630,13 @@ function ownUnitVariant(leaderId: string, id: string): string {
 
 function unitReason(state: GameState, city: City, player: Player, id: string, conn: Set<string>): string | null {
   const d = UNITS[id];
-  if (!d) return 'Unknown unit';
-  if (d.uniqueTo && d.uniqueTo !== player.leaderId) return 'Unique to another nation';
-  if (!d.uniqueTo && ownUnitVariant(player.leaderId, id) !== id) return `Replaced by ${UNITS[ownUnitVariant(player.leaderId, id)].name}`;
-  if (d.tech && !player.techs.includes(d.tech)) return `Requires ${TECHS[d.tech]?.name ?? d.tech}`;
-  if (d.resource && !conn.has(d.resource)) return `Requires ${RESOURCES[d.resource]?.name ?? d.resource}`;
-  if (d.class === 'naval' && !isCoastal(state, city.tile)) return 'Requires a colony on the dust shore';
-  if (d.abilities?.includes('foundCity') && city.pop < SETTLER_MIN_POP) return `Requires ${SETTLER_MIN_POP} population`;
+  if (!d) return 'Unknown unit.';
+  if (d.uniqueTo && d.uniqueTo !== player.leaderId) return 'Only another nation can build this.';
+  if (!d.uniqueTo && ownUnitVariant(player.leaderId, id) !== id) return `Your nation uses ${UNITS[ownUnitVariant(player.leaderId, id)].name} instead.`;
+  if (d.tech && !player.techs.includes(d.tech)) return `Research ${TECHS[d.tech]?.name ?? d.tech} first.`;
+  if (d.resource && !conn.has(d.resource)) return `You need ${RESOURCES[d.resource]?.name ?? d.resource}.`;
+  if (d.class === 'naval' && !isCoastal(state, city.tile)) return 'The colony must be next to water.';
+  if (d.abilities?.includes('foundCity') && city.pop < SETTLER_MIN_POP) return `The colony needs ${SETTLER_MIN_POP} colonists.`;
   return null;
 }
 
@@ -649,42 +650,42 @@ function unitObsolete(state: GameState, city: City, player: Player, id: string, 
 
 function buildingReason(state: GameState, city: City, player: Player, id: string): string | null {
   const d = BUILDINGS[id];
-  if (!d) return 'Unknown building';
-  if (id === 'palace') return 'Only the Ark Hab has Ark Hab Command';
-  if (d.cost <= 0) return 'Cannot be built';
-  if (city.buildings.includes(id)) return 'Already built';
-  if (d.uniqueTo && d.uniqueTo !== player.leaderId) return 'Unique to another nation';
+  if (!d) return 'Unknown building.';
+  if (id === 'palace') return 'Only your Capital can have this.';
+  if (d.cost <= 0) return 'You cannot build this.';
+  if (city.buildings.includes(id)) return 'Already built.';
+  if (d.uniqueTo && d.uniqueTo !== player.leaderId) return 'Only another nation can build this.';
   if (!d.uniqueTo) {
     for (const bid in BUILDINGS) {
       const u = BUILDINGS[bid];
-      if (u.uniqueTo === player.leaderId && u.replaces === id) return `Replaced by ${u.name}`;
+      if (u.uniqueTo === player.leaderId && u.replaces === id) return `Your nation uses ${u.name} instead.`;
     }
   }
-  if (d.replaces && city.buildings.includes(d.replaces)) return 'Already built';
-  if (d.tech && !player.techs.includes(d.tech)) return `Requires ${TECHS[d.tech]?.name ?? d.tech}`;
+  if (d.replaces && city.buildings.includes(d.replaces)) return 'Already built.';
+  if (d.tech && !player.techs.includes(d.tech)) return `Research ${TECHS[d.tech]?.name ?? d.tech} first.`;
   if (d.requires && !city.buildings.includes(d.requires) && !city.buildings.some((b) => BUILDINGS[b]?.replaces === d.requires)) {
-    return `Requires ${BUILDINGS[d.requires]?.name ?? d.requires}`;
+    return `Build ${BUILDINGS[d.requires]?.name ?? d.requires} first.`;
   }
-  if (d.coastal && !isCoastal(state, city.tile)) return 'Requires a colony on the dust shore';
-  if (d.river && !state.map.tiles[city.tile].riverEdges) return 'Requires an ancient channel';
+  if (d.coastal && !isCoastal(state, city.tile)) return 'The colony must be next to water.';
+  if (d.river && !state.map.tiles[city.tile].riverEdges) return 'The colony must be next to an Ice Channel.';
   return null;
 }
 
 function wonderReason(state: GameState, city: City, player: Player, id: string): string | null {
   const d = WONDERS[id];
-  if (!d) return 'Unknown wonder';
+  if (!d) return 'Unknown Wonder.';
   const ownerCity = state.wonderOwners[id];
   if (ownerCity != null) {
     const c = state.cities[ownerCity];
-    return c ? `Built in ${c.name}` : 'Already built';
+    return c ? `Already built in ${c.name}.` : 'Already built.';
   }
-  if (d.tech && !player.techs.includes(d.tech)) return `Requires ${TECHS[d.tech]?.name ?? d.tech}`;
-  if (d.requiresCoastal && !isCoastal(state, city.tile)) return 'Requires a colony on the dust shore';
-  if (d.requiresRiver && !state.map.tiles[city.tile].riverEdges) return 'Requires an ancient channel';
+  if (d.tech && !player.techs.includes(d.tech)) return `Research ${TECHS[d.tech]?.name ?? d.tech} first.`;
+  if (d.requiresCoastal && !isCoastal(state, city.tile)) return 'The colony must be next to water.';
+  if (d.requiresRiver && !state.map.tiles[city.tile].riverEdges) return 'The colony must be next to an Ice Channel.';
   if (d.requiresTerrain?.length) {
     const near = [city.tile, ...neighbors(state.map, city.tile)];
     if (!near.some((i) => d.requiresTerrain!.includes(state.map.tiles[i].terrain))) {
-      return `Requires ${d.requiresTerrain.map((t) => TERRAINS[t]?.name ?? t).join(' or ')} nearby`;
+      return `Needs ${d.requiresTerrain.map((t) => TERRAINS[t]?.name ?? t).join(' or ')} nearby.`;
     }
   }
   return null;
@@ -693,14 +694,14 @@ function wonderReason(state: GameState, city: City, player: Player, id: string):
 /** null when producible. `conn` = precomputed connected resources */
 export function productionReason(state: GameState, city: City, item: ProductionItem, conn?: Set<string>): string | null {
   const player = getPlayer(state, city.owner);
-  if (city.owner === BARBARIAN) return 'Barbarians do not build';
+  if (city.owner === BARBARIAN) return 'Raiders do not build.';
   switch (item.kind) {
     case 'unit': return unitReason(state, city, player, item.id, conn ?? connectedResources(state, city.owner));
     case 'building': return buildingReason(state, city, player, item.id);
     case 'wonder': return wonderReason(state, city, player, item.id);
     case 'project':
-      if (item.id === 'festival' && !player.isHuman) return 'Festivals are for the chronicle';
-      return item.id === 'wealth' || item.id === 'research' || item.id === 'festival' ? null : 'Unknown project';
+      if (item.id === 'festival' && !player.isHuman) return 'Only you can hold Festivals.';
+      return item.id === 'wealth' || item.id === 'research' || item.id === 'festival' ? null : 'Unknown project.';
   }
 }
 
@@ -752,7 +753,7 @@ function resolveWonderRace(state: GameState, winner: City, id: string, emit: Emi
     c.queue = c.queue.filter((q) => !(q.kind === 'wonder' && q.id === id));
     emit({ type: 'wonderLost', cityId: c.id, wonder: id, by: winner.owner });
     if (c.owner === HUMAN) {
-      emit({ type: 'notify', text: `${getPlayer(state, winner.owner).civName} finished ${WONDERS[id]?.name ?? id} first — ${c.name}'s Industry carries over.`, icon: 'wonder', tile: c.tile, tone: 'bad' });
+      emit({ type: 'notify', text: `${getPlayer(state, winner.owner).civName} finished ${WONDERS[id]?.name ?? id} first. ${c.name} keeps its Production.`, icon: 'wonder', tile: c.tile, tone: 'bad' });
     }
   }
 }
@@ -824,7 +825,7 @@ function processProduction(state: GameState, city: City, emit: Emit): void {
     const reason = canProduce(state, city, city.queue[0]);
     if (!reason) break;
     const dropped = city.queue.shift()!;
-    if (city.owner === HUMAN) emit({ type: 'notify', text: `${city.name} can no longer build ${productionItemName(dropped)}: ${reason}.`, icon: 'city', tile: city.tile, tone: 'info' });
+    if (city.owner === HUMAN) emit({ type: 'notify', text: `${city.name} can no longer build ${productionItemName(dropped)}. ${reason}`, icon: 'city', tile: city.tile, tone: 'info' });
   }
   const item = city.queue[0];
   if (!item) {
@@ -840,6 +841,12 @@ function processProduction(state: GameState, city: City, emit: Emit): void {
     return;
   }
   city.prodStored = round1(city.prodStored + prod);
+  // Chapter Report: Production put into combat units (Military) or buildings and Wonders (Wonders)
+  if (city.owner === HUMAN && prod > 0) {
+    const unitClass = item.kind === 'unit' ? UNITS[item.id]?.class : null;
+    if (item.kind !== 'unit') addExtraStat(state, 'buildProd', prod);
+    else if (unitClass !== 'civilian' && unitClass !== 'recon') addExtraStat(state, 'unitProd', prod);
+  }
   const cost = productionCost(state, city, item);
   if (city.prodStored < cost) return;
   if (completeItemInner(state, city, item, emit)) {
@@ -857,6 +864,7 @@ function processGrowth(state: GameState, city: City, emit: Emit): void {
   const surplus = city.yields.food;
   if (surplus > 0 && player.happiness < 0) return; // unrest: no growth
   city.foodStored = round1(city.foodStored + surplus);
+  if (city.owner === HUMAN && surplus > 0) addExtraStat(state, 'food', surplus);
   const threshold = growthThreshold(state, city);
   if (city.foodStored >= threshold) {
     city.pop += 1;
@@ -920,27 +928,27 @@ function improvementsOwned(state: GameState, pid: PlayerId): number {
 
 function improvementReason(state: GameState, pid: PlayerId, t: Tile, id: ImprovementId): string | null {
   const d = IMPROVEMENTS[id];
-  if (!d) return 'Unknown improvement';
+  if (!d) return 'Unknown Improvement.';
   const player = getPlayer(state, pid);
-  if (t.owner !== pid) return 'Must be inside your borders';
-  if (cityAt(state, t.idx)) return 'Cannot improve a city center';
-  if (t.naturalWonder) return 'Natural wonders cannot be improved';
-  if (t.improvement === id && !t.pillaged) return 'Already built';
-  if (d.tech && !player.techs.includes(d.tech)) return `Requires ${TECHS[d.tech]?.name ?? d.tech}`;
+  if (t.owner !== pid) return 'This tile must be inside your borders.';
+  if (cityAt(state, t.idx)) return 'You cannot improve a colony center.';
+  if (t.naturalWonder) return 'You cannot improve a Landmark.';
+  if (t.improvement === id) return 'Already built.';
+  if (d.tech && !player.techs.includes(d.tech)) return `Research ${TECHS[d.tech]?.name ?? d.tech} first.`;
   const water = isWater(t);
   const r = t.resource && resourceVisible(player, t.resource) ? RESOURCES[t.resource] : undefined;
   // a tile whose (revealed) resource is connected by this improvement always accepts it
   if (r?.improvement === id) return null;
-  if (d.requiresResource) return 'Requires a matching resource';
-  if (!!d.water !== water) return d.water ? 'Must be on water' : 'Cannot be built on water';
-  if (d.terrains && !d.terrains.includes(t.terrain)) return `Requires ${d.terrains.map((x) => TERRAINS[x]?.name ?? x).join(' or ')}`;
-  if (d.elevations && !d.elevations.includes(t.elevation)) return `Requires ${d.elevations.map((x) => ELEVATIONS[x]?.name ?? x).join(' or ')}`;
-  if (!d.elevations && ELEVATIONS[t.elevation]?.impassable) return 'Cannot build on mountains';
-  if (t.feature && !d.features?.includes(t.feature)) return `Cannot be built on ${FEATURES[t.feature]?.name ?? t.feature}`;
+  if (d.requiresResource) return 'You need a matching resource.';
+  if (!!d.water !== water) return d.water ? 'Must be on water.' : 'You cannot build on water.';
+  if (d.terrains && !d.terrains.includes(t.terrain)) return `Needs ${d.terrains.map((x) => TERRAINS[x]?.name ?? x).join(' or ')}.`;
+  if (d.elevations && !d.elevations.includes(t.elevation)) return `Needs ${d.elevations.map((x) => ELEVATIONS[x]?.name ?? x).join(' or ')}.`;
+  if (!d.elevations && ELEVATIONS[t.elevation]?.impassable) return 'You cannot build on Mountains.';
+  if (t.feature && !d.features?.includes(t.feature)) return `You cannot build on ${FEATURES[t.feature]?.name ?? t.feature}.`;
   if (d.requiresRiverOrLake && !t.riverEdges && !neighbors(state.map, t.idx).some((n) => state.map.tiles[n].terrain === 'lake')) {
-    return 'Requires a river or lake';
+    return 'Needs an Ice Channel or Salt Lake.';
   }
-  if (d.coastal && !isCoastal(state, t.idx)) return 'Must be on the coast';
+  if (d.coastal && !isCoastal(state, t.idx)) return 'Must be next to water.';
   return null;
 }
 
@@ -950,7 +958,6 @@ export function improvementCost(state: GameState, pid: PlayerId, tile: TileIdx, 
   if (!d) return Infinity;
   const t = state.map.tiles[tile];
   let cost = d.goldCost * (1 + IMPROVEMENT_SCALING * (owned ?? improvementsOwned(state, pid)));
-  if (t?.improvement === id && t.pillaged) cost = d.goldCost * IMPROVEMENT_REPAIR_FRACTION;
   const city = t?.cityId != null ? state.cities[t.cityId] ?? null : null;
   const args = { city, item: { kind: 'improvement' as const, id }, currency: 'gold' as const, cost };
   if (pid !== BARBARIAN) runHook(state, pid, 'cost', NOOP, null, args);
@@ -969,22 +976,21 @@ export function improvementOptions(state: GameState, pid: PlayerId, tile: TileId
     if (!!IMPROVEMENTS[id].water !== isWater(t)) continue;
     const cost = improvementCost(state, pid, tile, id, owned);
     const reason = improvementReason(state, pid, t, id);
-    out.push({ id, cost, placeable: reason == null, error: reason ?? (player.gold < cost ? `Need ${cost} gold` : null) });
+    out.push({ id, cost, placeable: reason == null, error: reason ?? (player.gold < cost ? `You need ${cost} Credits.` : null) });
   }
   return out.sort((a, b) => Number(b.placeable) - Number(a.placeable) || (a.error ? 1 : 0) - (b.error ? 1 : 0) || a.cost - b.cost || (a.id < b.id ? -1 : 1));
 }
 
 export function buildImprovement(state: GameState, pid: PlayerId, tile: TileIdx, id: ImprovementId, emit: Emit): string | null {
   const t = state.map.tiles[tile];
-  if (!t) return 'Invalid tile';
+  if (!t) return 'Invalid tile.';
   const err = improvementReason(state, pid, t, id);
   if (err) return err;
   const cost = improvementCost(state, pid, tile, id);
   const player = getPlayer(state, pid);
-  if (player.gold < cost) return `Need ${cost} gold`;
+  if (player.gold < cost) return `You need ${cost} Credits.`;
   addGold(state, pid, -cost, `${IMPROVEMENTS[id].name}`, emit);
   t.improvement = id;
-  t.pillaged = false;
   if (IMPROVEMENTS[id].removesFeature && t.feature && !IMPROVEMENTS[id].features?.includes(t.feature)) t.feature = null;
   emit({ type: 'improvementBuilt', tile, player: pid, improvement: id });
   updateHappiness(state, pid, emit);
@@ -992,102 +998,15 @@ export function buildImprovement(state: GameState, pid: PlayerId, tile: TileIdx,
   return null;
 }
 
-// ───────────────────────────── capture ─────────────────────────────
+// ───────────────────────────── raids ─────────────────────────────
 
-function relocatePalace(state: GameState, pid: PlayerId): void {
-  const p = getPlayer(state, pid);
-  const rest = citiesOf(state, pid);
-  p.capitalId = null;
-  if (!rest.length) return;
-  const next = rest.reduce((a, b) => (b.pop > a.pop ? b : a));
-  makeCapital(state, next);
-}
-
-export function captureCity(state: GameState, city: City, newOwner: PlayerId, emit: Emit): void {
-  const from = city.owner;
-  if (from === newOwner) return;
-  const oldPlayer = getPlayer(state, from);
-  const wasCapital = city.isCapital;
-
-  if (newOwner === BARBARIAN) {
-    // barbarians sack: small cities are razed, larger ones plundered
-    if (city.pop <= 1 && !wasCapital) {
-      razeCity(state, city, emit);
-      if (from === HUMAN) emit({ type: 'notify', text: `Ferals razed ${city.name} and dragged off the oxygen tanks!`, icon: 'skull', tile: city.tile, tone: 'bad' });
-      oldPlayer.counters.lastCapturedBy = BARBARIAN;
-      updateHappiness(state, from, emit);
-      return;
-    }
-    city.pop = Math.max(1, Math.floor(city.pop / 2));
-    destroyBuildings(state, city);
-    city.hp = Math.round(city.maxHp * CAPTURE_HP_FRACTION);
-    const stolen = Math.min(Math.max(0, Math.floor(oldPlayer.gold / 3)), 100);
-    if (stolen > 0) addGold(state, from, -stolen, 'Feral raid', emit);
-    if (from === HUMAN) emit({ type: 'notify', text: `Ferals sacked ${city.name}!`, icon: 'skull', tile: city.tile, tone: 'bad' });
-    updateHappiness(state, from, emit);
-    refreshCity(state, city);
-    return;
+/** Raiders broke a colony's defenses: they loot Credits and leave; the colony recovers a quarter of its HP. */
+export function raidCity(state: GameState, city: City, emit: Emit): void {
+  const owner = getPlayer(state, city.owner);
+  city.hp = Math.max(1, Math.round(city.maxHp * RAID_HP_FRACTION));
+  const loot = Math.min(Math.max(0, Math.floor(owner.gold / 4)), RAID_LOOT_BASE + RAID_LOOT_PER_ERA * state.run.era);
+  if (loot > 0) addGold(state, city.owner, -loot, 'Raider raid', emit);
+  if (city.owner === HUMAN) {
+    emit({ type: 'notify', text: loot > 0 ? `Raiders broke into ${city.name} and took ${loot} Credits.` : `Raiders broke into ${city.name}.`, icon: 'skull', tile: city.tile, tone: 'bad' });
   }
-
-  const newPlayer = getPlayer(state, newOwner);
-  city.owner = newOwner;
-  city.pop = Math.max(1, Math.floor(city.pop / 2));
-  city.buildings = city.buildings.filter((b) => b !== 'palace');
-  city.isCapital = false;
-  destroyBuildings(state, city);
-  // leader-unique buildings revert to their generic counterpart
-  city.buildings = city.buildings.map((b) => {
-    const d = BUILDINGS[b];
-    return d?.uniqueTo && d.uniqueTo !== newPlayer.leaderId && d.replaces ? d.replaces : b;
-  }).filter((b, i, arr) => arr.indexOf(b) === i);
-  city.queue = [];
-  city.prodStored = 0;
-  city.foodStored = 0;
-  city.cultureStored = 0;
-  city.focus = 'balanced';
-  city.order = nextOrder(state, newOwner);
-  city.hasStruck = true;
-  for (const t of state.map.tiles) if (t.cityId === city.id) t.owner = newOwner;
-  city.maxHp = cityMaxHp(city);
-  city.hp = Math.max(1, Math.round(city.maxHp * CAPTURE_HP_FRACTION));
-
-  oldPlayer.counters.lastCapturedBy = newOwner;
-  if (wasCapital) {
-    oldPlayer.counters.capitalLost = 1;
-    relocatePalace(state, from);
-  }
-  if (newPlayer.capitalId == null || !state.cities[newPlayer.capitalId]) makeCapital(state, city);
-
-  emit({ type: 'cityCaptured', cityId: city.id, from, to: newOwner, tile: city.tile });
-  updateHappiness(state, from, emit);
-  updateHappiness(state, newOwner, emit);
-  refreshAllCities(state, from);
-  refreshAllCities(state, newOwner);
-  recomputeVisibility(state, newOwner, emit);
-  recomputeVisibility(state, from, emit);
 }
-
-function destroyBuildings(state: GameState, city: City): void {
-  const destroyable = city.buildings.filter((b) => b !== 'palace');
-  let n = Math.floor(destroyable.length * CAPTURE_BUILDING_LOSS);
-  while (n-- > 0 && destroyable.length) {
-    const [gone] = destroyable.splice(randInt(state.rng, destroyable.length), 1);
-    city.buildings = city.buildings.filter((b) => b !== gone);
-  }
-  city.maxHp = cityMaxHp(city);
-}
-
-/** remove a city from the map entirely (territory released; built wonders stay claimed) */
-export function razeCity(state: GameState, city: City, emit: Emit): void {
-  const owner = city.owner;
-  for (const t of state.map.tiles) {
-    if (t.cityId !== city.id) continue;
-    t.cityId = null;
-    t.owner = null;
-  }
-  delete state.cities[city.id];
-  emit({ type: 'cityRazed', cityId: city.id, tile: city.tile });
-  if (city.isCapital) relocatePalace(state, owner);
-  refreshAllCities(state, owner);
-}
-

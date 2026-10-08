@@ -11,7 +11,7 @@ import type { CombatPreview } from '../sim/combat';
 import { makeCtx } from '../sim/effects';
 import { neighbors } from '../sim/hex';
 import { findPath, reachableTiles, turnsToReach } from '../sim/pathfinding';
-import { nextAttention } from '../sim/selectors';
+import { nextAttention, nextIdleUnit } from '../sim/selectors';
 import { isCivilian } from '../sim/units';
 import { HUMAN } from '../sim/types';
 import { canOrbitalDrop } from '../sim/mars';
@@ -42,7 +42,8 @@ export interface InteractionState {
   /** end-turn processing (AI turns + playback) in progress */
   endingTurn: boolean;
   turnBanner: TurnBanner | null;
-
+  /** the pick-one-of-three research modal is open */
+  researchPick: boolean;
 }
 export const useInteraction = create<InteractionState>(() => ({
   preview: null,
@@ -51,8 +52,8 @@ export const useInteraction = create<InteractionState>(() => ({
   hoverPath: [],
   endingTurn: false,
   turnBanner: null,
+  researchPick: false,
 }));
-
 
 const setUi = (p: Partial<InteractionState>) => useInteraction.setState(p);
 
@@ -84,14 +85,14 @@ function isVisible(s: GameState, idx: TileIdx): boolean {
 
 /** does the unit still need orders this turn? (for picking which of two stacked units to select) */
 function needsOrders(u: Unit): boolean {
-  return !!u.promotionChoices?.length || (u.moves > 0 && !u.order);
+  return u.moves > 0 && !u.order;
 }
 
 /** Run a player action; every failure surfaces as a toast. */
 export function act(action: Action, okSfx?: SfxName): ActionResult {
   const res = useGame.getState().dispatch(action);
   if (!res.ok) {
-    toast(res.error ?? 'That cannot be done right now.', 'bad');
+    toast(res.error ?? 'You cannot do that now.', 'bad');
     audio.sfx('error');
   } else if (okSfx) audio.sfx(okSfx);
   return res;
@@ -153,7 +154,7 @@ export function startOrbitalDrop(): void {
   const s = game();
   if (!s || inputBlocked()) return;
   if (orbitalDropSiteCount(s) === 0) {
-    toast('No landing site yet — explore within 8 hexes of a colony; sites must be clear of storms and other colonies.', 'bad', 'cryo');
+    toast('No tile to land on yet. Explore within 8 hexes of a colony. The tile must be free of Dust Storms and units.', 'bad', 'cryo');
     audio.sfx('error');
     return;
   }
@@ -273,7 +274,7 @@ function tapWithUnit(s: GameState, unit: Unit, idx: TileIdx): boolean {
       return true;
     }
     const preview = previewAttack(s, unit, idx);
-    if (!preview) { toast('No valid target there.', 'bad'); audio.sfx('error'); return true; }
+    if (!preview) { toast('You cannot target that tile.', 'bad'); audio.sfx('error'); return true; }
     setUi({ preview: { kind: 'combat', unitId: unit.id, target: idx, preview }, hoverPath: [] });
     audio.sfx('tap');
     return true;
@@ -304,15 +305,19 @@ function tapWithUnit(s: GameState, unit: Unit, idx: TileIdx): boolean {
   return false;
 }
 
+/** Your colony wins the first tap on its tile (the guide says "tap your Capital"); tapping it again while the
+ * colony is selected picks a unit standing there. */
 function tapFresh(s: GameState, idx: TileIdx): void {
   const own = unitsOnTile(s, idx).filter((u) => u.owner === HUMAN);
+  const city = cityOnTile(s, idx);
+  const sel = useGame.getState().selection;
+  const cityAlreadySelected = !!city && sel?.kind === 'city' && sel.id === city.id;
+  if (city && city.owner === HUMAN && !(cityAlreadySelected && own.length)) { selectCity(city.id); return; }
   if (own.length) {
     const pick = own.find((u) => needsOrders(u) && !isCivilian(u.type)) ?? own.find(needsOrders) ?? own.find((u) => !isCivilian(u.type)) ?? own[0];
     selectUnit(pick.id);
     return;
   }
-  const city = cityOnTile(s, idx);
-  if (city && city.owner === HUMAN) { selectCity(city.id); return; }
   if ((s.players[HUMAN]?.vis[idx] ?? 0) === 0) { deselect(); return; }
   const ui = useInteraction.getState();
   if (ui.preview?.kind === 'tile' && ui.preview.idx === idx) { deselect(); audio.sfx('close'); return; }
@@ -342,9 +347,9 @@ export function startCityStrike(cityId: CityId): void {
   const s = game();
   const c = s?.cities[cityId];
   if (!s || !c || inputBlocked()) return;
-  if (c.hasStruck) { toast(`${c.name} has already struck this turn.`, 'bad'); audio.sfx('error'); return; }
+  if (c.hasStruck) { toast(`${c.name} already fired this turn.`, 'bad'); audio.sfx('error'); return; }
   const targets = cityStrikeTargets(s, c);
-  if (!targets.length) { toast('No enemies within range of the walls.', 'info'); audio.sfx('error'); return; }
+  if (!targets.length) { toast('No enemies in range.', 'info'); audio.sfx('error'); return; }
   const g = useGame.getState();
   g.setPanel('none');
   g.select({ kind: 'city', id: cityId });
@@ -359,7 +364,7 @@ function tapStrike(s: GameState, cityId: CityId, idx: TileIdx): void {
   const p = useInteraction.getState().preview;
   if (p?.kind === 'strike' && p.target === idx) { confirmPreview(); return; }
   const preview = previewCityStrike(s, c, idx);
-  if (!preview) { toast('No valid target there.', 'bad'); audio.sfx('error'); return; }
+  if (!preview) { toast('You cannot target that tile.', 'bad'); audio.sfx('error'); return; }
   setUi({ preview: { kind: 'strike', cityId, target: idx, preview } });
   audio.sfx('tap');
 }
@@ -387,7 +392,7 @@ export function startImprove(cityId: CityId | null): void {
   const s = game();
   if (!s || inputBlocked()) return;
   const tiles = improveTiles(s, cityId);
-  if (!tiles.length) { toast('No tiles here can be improved yet.', 'info'); audio.sfx('error'); return; }
+  if (!tiles.length) { toast('You cannot improve any tiles here yet.', 'info'); audio.sfx('error'); return; }
   const g = useGame.getState();
   g.setPanel('none');
   g.setMode({ kind: 'improve', cityId });
@@ -474,20 +479,73 @@ function tapEdict(s: GameState, uid: number, idx: TileIdx): void {
 }
 
 // ───────────────────────────── attention / Next ─────────────────────────────
-/** Next button: cycle to the attention item after the current selection. Returns false if nothing needs input. */
+/** End Turn button while something needs input: research → the pick modal, idle colony → its sheet. */
 export function focusNext(): boolean {
   const s = game();
   if (!s || inputBlocked()) return false;
-  const sel = useGame.getState().selection;
-  const next = nextAttention(s, sel?.kind === 'unit' ? sel.id : undefined);
+  const next = nextAttention(s);
   if (!next) return false;
-  if (next.kind === 'unit') selectUnit(next.id, { focus: true });
-  else if (next.kind === 'city') selectCity(next.id, { focus: true });
+  if (next.kind === 'city') selectCity(next.id, { focus: true });
   else {
-    useGame.getState().setPanel('tech');
+    openResearchPick();
     audio.sfx('open');
   }
   return true;
+}
+
+/** Select and center the next idle unit after the selected one. Returns false when no unit is idle. */
+export function focusNextUnit(): boolean {
+  const s = game();
+  if (!s || inputBlocked()) return false;
+  const sel = useGame.getState().selection;
+  const id = nextIdleUnit(s, sel?.kind === 'unit' ? sel.id : undefined);
+  if (id == null) return false;
+  selectUnit(id, { focus: true });
+  return true;
+}
+
+// ───────────────────────────── research pick ─────────────────────────────
+/** set when the player closed the pick modal while research was still empty; cleared once research is chosen */
+let researchDismissed = false;
+
+function researchEmpty(s: GameState | null): boolean {
+  const p = s?.players[HUMAN];
+  return !!p && !p.researching && p.researchOffer.length > 0;
+}
+
+export function openResearchPick(): void {
+  if (!researchEmpty(game())) return;
+  researchDismissed = false;
+  const g = useGame.getState();
+  if (g.panel === 'tech') g.setPanel('none');
+  setUi({ researchPick: true });
+}
+
+/** "Later": stays closed until the player asks for it or research runs out again */
+export function closeResearchPick(): void {
+  researchDismissed = researchEmpty(game());
+  setUi({ researchPick: false });
+}
+
+/** Open the pick modal by itself whenever research is empty during normal play. */
+function syncResearchPick(): void {
+  const g = useGame.getState();
+  const s = g.state;
+  const ui = useInteraction.getState();
+  if (!s || !researchEmpty(s)) {
+    researchDismissed = false;
+    if (ui.researchPick) setUi({ researchPick: false });
+    return;
+  }
+  // the research sheet shows the same choices; leaving it without a pick counts as "Later"
+  if (g.panel === 'tech') {
+    researchDismissed = true;
+    if (ui.researchPick) setUi({ researchPick: false });
+    return;
+  }
+  if (ui.researchPick || researchDismissed) return;
+  if (s.run.phase !== 'playing' || s.gameOver || ui.endingTurn || g.busy) return;
+  setUi({ researchPick: true });
 }
 
 // ───────────────────────────── end turn ─────────────────────────────
@@ -531,10 +589,6 @@ export async function requestEndTurn(): Promise<void> {
   if (!res.ok || !s || s.gameOver) return;
   const era = res.events.find((e): e is Extract<SimEvent, { type: 'eraStarted' }> => e.type === 'eraStarted');
   setUi({ turnBanner: { key: ++bannerKey, turn: s.turn, era: era ? era.era : null } });
-  if (s.run.phase === 'playing') {
-    const first = nextAttention(s);
-    if (first?.kind === 'unit') selectUnit(first.id, { focus: true, quiet: true });
-  }
 }
 
 // ───────────────────────────── highlights ─────────────────────────────
@@ -597,7 +651,7 @@ export function refreshHighlights(): void {
   getRenderer()?.setHighlights(computeHighlights());
 }
 
-/** drop selections/previews that no longer make sense after a state change (unit died, city captured…) */
+/** drop selections/previews that no longer make sense after a state change (unit died, colony razed…) */
 function validate(): void {
   const s = game();
   if (!s) return;
@@ -635,17 +689,21 @@ export function bindInteraction(): () => void {
       if (g.mode !== prev.mode && useInteraction.getState().preview?.kind === 'improve' && g.mode.kind !== 'improve') setUi({ preview: null });
       schedule();
     }
+    if (g.version !== prev.version || g.state !== prev.state || g.busy !== prev.busy || g.panel !== prev.panel) syncResearchPick();
   });
   const unUi = useInteraction.subscribe((u, prev) => {
     if (u.preview !== prev.preview || u.strikeCity !== prev.strikeCity || u.dropTargeting !== prev.dropTargeting || u.hoverPath !== prev.hoverPath || u.endingTurn !== prev.endingTurn) schedule();
+    if (u.endingTurn !== prev.endingTurn) syncResearchPick();
   });
   validate();
   schedule();
+  syncResearchPick();
   return () => {
     cancelAnimationFrame(raf);
     unGame();
     unUi();
     getRenderer()?.setHighlights(EMPTY_HIGHLIGHTS);
-    setUi({ preview: null, strikeCity: null, dropTargeting: false, hoverPath: [], endingTurn: false, turnBanner: null });
+    researchDismissed = false;
+    setUi({ preview: null, strikeCity: null, dropTargeting: false, hoverPath: [], endingTurn: false, turnBanner: null, researchPick: false });
   };
 }

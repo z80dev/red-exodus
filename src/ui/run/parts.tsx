@@ -1,4 +1,4 @@
-// Shared run-overlay pieces: Charter hearts, Scrip counter, divider and orientation hook.
+// Shared run-overlay pieces: Lives hearts, Coins counter, divider and orientation hook.
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { PILLARS } from '../../sim/types';
@@ -34,7 +34,7 @@ export function Ornament({ className = '', draw = false }: { className?: string;
   );
 }
 
-/** Mandate hearts. `shatter` = how many of the rightmost filled hearts break (animated). */
+/** Lives hearts (internal: mandate). `shatter` = how many of the rightmost filled hearts break (animated). */
 export function Hearts({ total, filled, shatter = 0, size = 20 }: { total: number; filled: number; shatter?: number; size?: number }) {
   return (
     <div className="ro-hearts" aria-label={`${T.mandate} ${Math.max(0, filled - shatter)} of ${total}`}>
@@ -72,10 +72,10 @@ export function usePortrait(): boolean {
   return p;
 }
 
-/** Six pillar level chips (fly-to targets for Scrolls: `[data-pillar=<id>]`). */
+/** Six Focus pillar level chips (`[data-pillar=<id>]`). */
 export function PillarStrip({ levels, focus, className = '' }: { levels: Record<PillarId, number>; focus?: PillarId; className?: string }) {
   return (
-    <div className={`ro-pillars ${className}`} aria-label="Priority levels">
+    <div className={`ro-pillars ${className}`} aria-label={`${T.focus} levels`}>
       {PILLARS.map((p) => {
         const info = pillarInfo(p);
         return (

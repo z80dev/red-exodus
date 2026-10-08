@@ -10,10 +10,9 @@ export function newGame(seed: string, rivals = 3): GameState {
   return createGame({ seed, leaderId, ascension: 0, mapSize: 'standard', rivals, tutorial: false, daily: false }).state;
 }
 
-/** acknowledge the opening crisis reveal & chapter start so map actions are legal */
+/** pick the opening chapter's Focus so map actions are legal */
 export function startPlaying(state: GameState): void {
-  if (state.run.phase === 'crisisReveal') applyAction(state, { type: 'ackCrisis' });
-  if (state.run.phase === 'chapterStart') applyAction(state, { type: 'chooseChapterStart', focus: 'prosperity', omen: null });
+  if (state.run.phase === 'chapterStart') applyAction(state, { type: 'chooseChapterStart', focus: 'prosperity' });
 }
 
 /**
@@ -25,7 +24,6 @@ export function plainGame(seed: string): { state: GameState; cityId: number } {
   startPlaying(state);
   state.players[HUMAN].leaderId = '__plain__';
   state.run.doctrines = [];
-  state.run.reforms = [];
   state.run.crisis = null;
   state.run.crisisActive = false;
   state.run.darkAge = false;
@@ -33,7 +31,7 @@ export function plainGame(seed: string): { state: GameState; cityId: number } {
   state.storms = [];
   refreshAllCities(state, HUMAN);
   const cityId = state.players[HUMAN].capitalId;
-  if (cityId == null) throw new Error('no Ark Hab at landfall');
+  if (cityId == null) throw new Error('no Capital at landfall');
   return { state, cityId };
 }
 

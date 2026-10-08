@@ -1,11 +1,11 @@
 // OWNER: ContentRogue. Doctrines — the Balatro joker set — plus the shared roguelite content kit
-// (small pure helpers used by doctrines, edicts, crises, omens, leaders, reforms and ascension).
+// (small pure helpers used by doctrines, edicts, crises, leaders and ascension).
 import type { BuildingDef,ChronicleCtx,CombatArgs,DoctrineDef,EffectHooks,HookCtx,UnitClass } from '../sim/defs';
 import type {
 ChapterStats,City,CouncilState,DoctrineInstance,Emit,GameState,LeaderId,PillarId,PlayerId,Rarity,ShopItem,SimEvent,
 Tile,TileIdx,Unit,UnitTypeId,
 } from '../sim/types';
-import { BARBARIAN,PILLARS } from '../sim/types';
+import { PILLARS } from '../sim/types';
 import { BUILDINGS } from './buildings';
 import { UNITS } from './units';
 import { RESOURCES } from './resources';
@@ -15,11 +15,9 @@ import { neighbors } from '../sim/hex';
 import { citiesOf } from '../sim/cities';
 import { connectedResources } from '../sim/economy';
 import { weightedIndex } from '../sim/rng';
-import { EDICT_PRICE_BY_RARITY,PACKS,SCROLL_PRICE } from '../sim/roguelite/constants';
+import { EDICT_PRICE_BY_RARITY,PACKS } from '../sim/roguelite/constants';
 import { doctrinePrice,rollEdition } from '../sim/roguelite/council';
 import { addExtraStat,markSeen } from '../sim/roguelite/stats';
-import { SCROLLS } from './scrolls';
-import { REFORMS } from './reforms';
 import { DOCTRINES } from './doctrineRegistry';
 
 export { DOCTRINES };
@@ -101,12 +99,6 @@ export function luxuriesOwned(state: GameState, pid: PlayerId): number {
 export function unitClassOf(type: UnitTypeId): UnitClass {
   return UNITS[type]?.class ?? 'civilian';
 }
-/** at war with any living major civ (barbarians excluded) */
-export function isAtWar(state: GameState, pid: PlayerId): boolean {
-  const p = state.players.find((pl) => pl.id === pid);
-  if (!p) return false;
-  return state.players.some((o) => o.id !== pid && o.id !== BARBARIAN && o.alive && p.relations[o.id] === 'war');
-}
 /** 1-based era number (Ancient = 1) */
 export function eraNumber(state: GameState): number {
   return state.run.era + 1;
@@ -161,7 +153,7 @@ export function ownTile(a: CombatArgs): Tile {
 
 /**
  * If `ev` is a lethal unit-vs-unit combat won by one of `pid`'s units, returns that surviving unit's id and the
- * tile where the enemy fell; city strikes and city captures don't count.
+ * tile where the enemy fell; city strikes don't count.
  */
 export function unitKillBy(ev: SimEvent, pid: PlayerId): { unitId: number; tile: TileIdx } | null {
   if (ev.type !== 'combat') return null;
@@ -201,8 +193,8 @@ export function pillarRenown(state: GameState, stats: ChapterStats, pillar: Pill
   for (const l of def.renown(stats, state.run.pillarLevels[pillar] ?? 1)) n += l.amount;
   return n;
 }
-/** sum of pillar levels above 1 across all pillars (= Scroll levels gained) */
-export function scrollLevels(state: GameState): number {
+/** sum of pillar levels above 1 across all pillars (levels gained from passed Focus pillars) */
+export function pillarLevelsGained(state: GameState): number {
   let n = 0;
   for (const p of PILLARS) n += Math.max(0, (state.run.pillarLevels[p] ?? 1) - 1);
   return n;
@@ -216,7 +208,6 @@ const COUNCIL_PRICE_MODS: Record<string, Partial<Record<ShopItem['kind'] | 'all'
   'doctrine:patrons_seal': { doctrine: -1 },
   'doctrine:silver_tongue': { all: -1 },
   'doctrine:pack_rat': { pack: -2 },
-  'reform:grand_bazaar': { pack: -1 },
   'ascension:3': { all: 1 },
 };
 export function councilPriceDelta(state: GameState, kind: ShopItem['kind']): number {
@@ -227,7 +218,6 @@ export function councilPriceDelta(state: GameState, kind: ShopItem['kind']): num
     if (m) d += (m[kind] ?? 0) + (m.all ?? 0);
   };
   for (const inst of run.doctrines) if (!inst.disabled) add(`doctrine:${inst.id}`);
-  for (const r of run.reforms) add(`reform:${r}`);
   for (let lvl = 1; lvl <= run.ascension; lvl++) add(`ascension:${lvl}`);
   return d;
 }
@@ -236,9 +226,7 @@ export function baseCouncilPrice(item: ShopItem): number {
   switch (item.kind) {
     case 'doctrine': { const d = DOCTRINES[item.id]; return d ? doctrinePrice(d.rarity, item.edition) : item.price; }
     case 'edict': { const e = EDICTS[item.id]; return e ? (e.cost > 0 ? e.cost : EDICT_PRICE_BY_RARITY[e.rarity]) : item.price; }
-    case 'scroll': { const sc = SCROLLS[item.id]; return sc ? (sc.cost > 0 ? sc.cost : SCROLL_PRICE) : item.price; }
     case 'pack': return PACKS[item.pack][item.size].price;
-    case 'reform': return REFORMS[item.id]?.cost ?? item.price;
   }
 }
 /** set every Council item's price to base + all active modifiers (min 1); idempotent */
@@ -324,7 +312,7 @@ export function coastalCount(state: GameState, c: ChronicleCtx): number {
 export function focusBonus(id: string, name: string, pillar: PillarId, label: string, motif: string, hue: number, flavor: string, nation: LeaderId): DoctrineDef {
   return {
     id, name, rarity: 'common', cost: 4, nation,
-    description: `**+4** {splendor} if your Priority is ${label}.`,
+    description: `**+4** {splendor} if your Focus is ${label}.`,
     flavor, tags: ['focus', pillar, 'splendor'], icon: pillar, art: { hue, motif },
     effects: {
       chronicle(_ctx, c) {

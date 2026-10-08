@@ -9,7 +9,7 @@ const LIST: NaturalWonderDef[] = [
   {
     id: 'sky_arch', name: 'Valles Marineris', yields: y(0, 0, 2, 0, 3), happiness: 2, terrains: ['desert', 'plains'], impassable: false,
     model: 'nw_sky_arch',
-    description: 'A colossal canyon system cut into red stone. **Discovered:** all your units gain +1 vision.',
+    description: 'A huge canyon cut into red rock. **When found:** all your units get +1 vision.',
     effects: {
       unitVision(_ctx, a) { a.value += 1; },
     },
@@ -17,17 +17,17 @@ const LIST: NaturalWonderDef[] = [
   {
     id: 'ember_peak', name: 'Olympus Mons', yields: y(0, 3, 0, 2), happiness: 1, terrains: ['plains', 'grassland', 'tundra'], impassable: true,
     model: 'nw_ember_peak',
-    description: 'A shield volcano broad enough to have its own weather. **Discovered:** every Regolith Mine and Basalt Quarry you own yields +1 {prod}.',
+    description: 'A giant volcano with its own weather. **When found:** every Ground Mine and Rock Quarry you own gets +1 {prod}.',
     effects: {
       tileYield(_ctx, a) {
-        if (!a.tile.pillaged && (a.tile.improvement === 'mine' || a.tile.improvement === 'quarry')) a.yields.prod += 1;
+        if (a.tile.improvement === 'mine' || a.tile.improvement === 'quarry') a.yields.prod += 1;
       },
     },
   },
   {
     id: 'crystal_falls', name: 'Korolev Ice Crater', yields: y(2, 0, 0, 3), happiness: 2, terrains: ['grassland', 'tundra'], impassable: true,
     model: 'nw_crystal_falls',
-    description: 'A crater hoards a glacier under a deep blanket of dust. **Discovered:** +10% {sci} in every colony.',
+    description: 'A crater with a glacier hidden under the dust. **When found:** +10% {sci} in every colony.',
     effects: {
       cityYield(_ctx, a) { a.pct.sci += 10; },
     },
@@ -35,7 +35,7 @@ const LIST: NaturalWonderDef[] = [
   {
     id: 'elder_tree', name: 'Jezero Delta', yields: y(3, 0, 0, 0, 2), happiness: 3, terrains: ['grassland', 'plains'], impassable: false,
     model: 'nw_elder_tree',
-    description: 'Ancient channels once fed this delta; microbes may have had their moment. **Discovered:** Hoodoo Fields and Lava Tubes in your territory yield +1 {cul}.',
+    description: 'Old river channels fed this delta. Tiny life may have started here. **When found:** Rock Spires and Lava Tubes in your land get +1 {cul}.',
     effects: {
       tileYield(_ctx, a) {
         if (a.tile.feature === 'forest' || a.tile.feature === 'jungle') a.yields.cul += 1;
@@ -45,7 +45,7 @@ const LIST: NaturalWonderDef[] = [
   {
     id: 'titan_bones', name: 'Face of Cydonia', yields: y(0, 0, 1, 2, 2), happiness: 1, terrains: ['desert', 'plains', 'tundra'], impassable: false,
     model: 'nw_titan_bones',
-    description: 'A weathered mesa suggests a face, if you squint and need company. **Discovered:** your units fight with +10% combat strength.',
+    description: 'A rocky hill that looks like a face. **When found:** your units fight with +10% combat strength.',
     effects: {
       combat(_ctx, a) {
         if (a.side === 'attack') a.attackMods.push({ label: 'Cydonia Resolve', pct: 10 });
@@ -54,11 +54,11 @@ const LIST: NaturalWonderDef[] = [
     },
   },
   {
-    id: 'mirror_lake', name: 'Hellas Brine Sea', yields: y(2, 0, 2, 0, 1), happiness: 2, terrains: ['grassland', 'tundra', 'plains'], impassable: true,
+    id: 'mirror_lake', name: 'Hellas Salt Sea', yields: y(2, 0, 2, 0, 1), happiness: 2, terrains: ['grassland', 'tundra', 'plains'], impassable: true,
     model: 'nw_mirror_lake',
-    description: 'A vast brine basin catches the sky like a polished lens. **Discovered:** +1 {influence} at the end of every chapter.',
+    description: 'A huge salt sea that shines like a mirror. **When found:** +1 {influence} at the end of every chapter.',
     effects: {
-      influenceIncome(_ctx, a) { a.lines.push({ label: 'Hellas Brine Sea', amount: 1 }); },
+      influenceIncome(_ctx, a) { a.lines.push({ label: 'Hellas Salt Sea', amount: 1 }); },
     },
   },
 ];

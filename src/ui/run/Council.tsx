@@ -1,10 +1,10 @@
-// THE UPLINK. Crew, Salvage, Blueprints, Supply Drops and Ark Modules arrive aboard the passing Ark.
-// Inspect, buy, reroll when permitted, reorder Crew, and open drops without leaving the run.
+// THE SHOP (internal: Council). Crew, Boosts and Packs between chapters.
+// Inspect, buy, reroll when permitted, reorder or sell Crew, and open Packs without leaving the run.
 import { T } from '../terms';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useGame, useSim } from '../../game/store';
-import { chronicleTarget, councilBuyError, doctrineSlotsUsed } from '../../sim/roguelite';
+import { chronicleTarget, councilBuyError, CRISIS_CHAPTER, doctrineSlotsUsed } from '../../sim/roguelite';
 import type { ShopItem } from '../../sim/types';
 import { Button } from '../kit';
 import { Icon } from '../icons/Icon';
@@ -18,10 +18,10 @@ import { floatAt, shake, snapshotEl } from './fx';
 import { landPurchase, runBefore } from './landing';
 import { PackOpen } from './PackOpen';
 import { Hearts, InfluencePill, Ornament, PillarStrip } from './parts';
-import { act, chapterName, eraTitle, fmt, haptic, nextChapter, roman, sfx, uiSettings } from './runUtil';
+import { act, chapterName, eraTitle, fmt, haptic, nextChapter, sfx, uiSettings } from './runUtil';
 import './council.css';
 
-const SECTION_OF: Record<ShopItem['kind'], 'offer' | 'pack'> = { doctrine: 'offer', edict: 'offer', scroll: 'offer', pack: 'pack', reform: 'pack' };
+const SECTION_OF: Record<ShopItem['kind'], 'offer' | 'pack'> = { doctrine: 'offer', edict: 'offer', pack: 'pack' };
 
 export function Council() {
   const run = useSim((s) => s.run);
@@ -65,13 +65,13 @@ export function Council() {
   const items = council.items;
   const errors = items.map((it, i) => {
     if (!it) return null;
-    try { return councilBuyError(state, i); } catch { return run.influence < it.price ? `Need ${it.price - run.influence} more ${T.influence}` : null; }
+    try { return councilBuyError(state, i); } catch { return run.influence < it.price ? `You need ${it.price - run.influence} more ${T.influence}` : null; }
   });
   const sel = selected != null ? items[selected] ?? null : null;
-  const selCard = sel ? shopItemCard(sel, state) : null;
+  const selCard = sel ? shopItemCard(sel) : null;
   const selError = selected != null ? errors[selected] : null;
   const canReroll = !council.rerollLocked && run.influence >= council.rerollCost;
-  const nextIsCrisis = next.chapter === 2 && next.era === run.era && !!run.crisis;
+  const nextIsCrisis = next.chapter === CRISIS_CHAPTER && next.era === run.era && !!run.crisis;
 
   const buy = (slot: number) => {
     const item = items[slot];
@@ -102,7 +102,7 @@ export function Council() {
   const reroll = () => {
     if (!canReroll) {
       sfx('error');
-      toast(`Rerolling costs ${council.rerollCost} ${T.influence}`, 'bad');
+      toast(`New items cost ${council.rerollCost} ${T.influence}.`, 'bad');
       return;
     }
     setSweeping(true);
@@ -128,7 +128,7 @@ export function Council() {
         </div>
       );
     }
-    const card = shopItemCard(it, state);
+    const card = shopItemCard(it);
     const err = errors[i];
     const isSel = selected === i;
     return (
@@ -169,7 +169,7 @@ export function Council() {
       <header className="rco-head">
         <div className="rco-titles">
           <h1 className="rco-title display">{T.council}</h1>
-          <div className="rco-sub">Era {roman(run.era + 1)} · after {chapterName(run.chapter)}</div>
+          <div className="rco-sub">{eraTitle(run.era)} · after {chapterName(run.chapter)}</div>
         </div>
         <div className="rco-head-right">
           <Hearts total={run.maxMandate} filled={run.mandate} size={16} />
@@ -180,28 +180,28 @@ export function Council() {
       <button type="button" className={`rco-next ${nextIsCrisis ? 'is-crisis' : ''}`} onClick={() => { if (nextIsCrisis) { sfx('open'); setZoomCrisis(true); } }}>
         <span className="rco-next-label">Next</span>
         <span className="rco-next-ch display">
-          {next.era !== run.era ? `${eraTitle(next.era)} · ` : ''}Chapter {roman(next.chapter + 1)}
+          {next.era !== run.era ? `${eraTitle(next.era)} · ` : ''}{chapterName(next.chapter)}
         </span>
         <span className="rco-next-target num"><Icon name="trophy" size={13} /> {T.score} {fmt(nextTarget)}</span>
         {nextIsCrisis && run.crisis && <span className="rco-next-crisis"><Icon name="crisis" size={13} /> {crisisCard(run.crisis).title}</span>}
-        {next.era !== run.era && <span className="rco-next-era"><Icon name="star" size={13} /> New era</span>}
+        {next.era !== run.era && <span className="rco-next-era"><Icon name="star" size={13} /> New era · +Pods</span>}
       </button>
 
       <section className={`rco-shop ${sweeping ? 'is-sweeping' : ''}`} ref={shopRef}>
         <div className="rco-group">
-          <div className="rco-group-label display">{T.council} Inventory</div>
+          <div className="rco-group-label display">For sale</div>
           <div className="rco-row">{offers.map(({ it, i }) => renderItem(it, i))}</div>
         </div>
         <div className="rco-group">
-          <div className="rco-group-label display">Supply Drops &amp; Ark Modules</div>
+          <div className="rco-group-label display">{T.pack}s</div>
           <div className="rco-row">{packs.map(({ it, i }) => renderItem(it, i))}</div>
         </div>
       </section>
 
       <section className="rco-owned">
-        <div className="rco-owned-docs">
+        <div className="rco-owned-docs" data-tutorial="crew-slots">
           <div className="rco-owned-label display">
-            {T.doctrines} <span className="num">{doctrineSlotsUsed(run)}/{run.doctrineSlots}</span> <small>drag to reorder · drop to sell</small>
+            {T.doctrines} <span className="num">{doctrineSlotsUsed(run)}/{run.doctrineSlots}</span> <small>drag to move, tap to sell</small>
           </div>
           <DoctrineBar compact={false} sellable slotsBadge={false} cardWidth="var(--rco-doc-w)" />
         </div>
@@ -212,10 +212,8 @@ export function Council() {
       </section>
 
       <section className="rco-pillarbox">
+        <span className="rco-pillarbox-label">Focus levels</span>
         <PillarStrip levels={run.pillarLevels} focus={run.focus} />
-        <div className="rco-reforms" data-reforms title="Reforms enacted">
-          <Icon name="reform" size={14} /> {run.reforms.length}
-        </div>
       </section>
 
       <section className={`rco-info ${selCard ? 'is-on' : ''}`}>
@@ -237,14 +235,14 @@ export function Council() {
         ) : (
           <div className="rco-info-hint">
             <Ornament />
-            <p>Tap a card to inspect it · hold to zoom</p>
+            <p>Tap a card to see what it does. Hold it to zoom in.</p>
           </div>
         )}
       </section>
 
       <footer className="rco-foot">
-        <Button className={`rco-reroll ${council.rerollLocked ? 'is-locked' : ''}`} onClick={reroll} disabled={council.rerollLocked || !canReroll || sweeping} title={council.rerollLocked ? 'Rerolls locked for this Uplink visit' : undefined}>
-          {council.rerollLocked ? <Icon name="lock" size={16} /> : <Icon name="reroll" size={16} />} {council.rerollLocked ? 'Reroll locked' : 'Reroll'} {!council.rerollLocked && <span className="rco-cost num">{council.rerollCost}<Icon name="influence" size={12} /></span>}
+        <Button className={`rco-reroll ${council.rerollLocked ? 'is-locked' : ''}`} onClick={reroll} disabled={council.rerollLocked || !canReroll || sweeping} title={council.rerollLocked ? 'You cannot refresh this Shop' : undefined}>
+          {council.rerollLocked ? <Icon name="lock" size={16} /> : <Icon name="reroll" size={16} />} {council.rerollLocked ? 'No refresh' : 'New items'} {!council.rerollLocked && <span className="rco-cost num">{council.rerollCost}<Icon name="influence" size={12} /></span>}
         </Button>
         <Button variant="gold" className="rco-leave" onClick={leave}>
           Next Chapter <Icon name="chevronRight" size={16} />

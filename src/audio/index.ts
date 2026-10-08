@@ -8,6 +8,7 @@ import type { UnitClass } from '../sim/defs';
 import { glide, impulse, Synth } from './synth';
 import { Score } from './music';
 import { playSfx } from './sfx';
+import { CRISIS_CHAPTER } from '../sim/roguelite/constants';
 export { SFX_NAMES, EVENT_SFX_NAMES } from './sfx';
 export type { KnownSfxName } from './sfx';
 
@@ -95,13 +96,12 @@ function syncState(): void {
     }
     score?.setStormIntensity(Math.min(1, nearbyStorms / 3));
   } else score?.setStormIntensity(0);
-  if (state.run.crisisActive || state.run.chapter === 2) { setMood('crisis'); return; }
-  if (human && state.players.some(p => !p.isHuman && p.id !== BARBARIAN && p.alive && human.relations[p.id] === 'war')) { setMood('war'); return; }
-  // Only visible enemies count: audio must not reveal fog-of-war information.
+  if (state.run.crisisActive || state.run.chapter === CRISIS_CHAPTER) { setMood('crisis'); return; }
+  // Only visible Raiders count (nations are at peace): audio must not reveal fog-of-war information.
   if (human) {
     const cities = Object.values(state.cities).filter(city => city.owner === human.id);
     const near = Object.values(state.units).some(unit => {
-      if (unit.owner === human.id || human.vis[unit.tile] !== 2) return false;
+      if (unit.owner !== BARBARIAN || human.vis[unit.tile] !== 2) return false;
       const tile = state.map.tiles[unit.tile];
       return tile && cities.some(city => {
         const home = state.map.tiles[city.tile];
@@ -190,7 +190,7 @@ function handleBatch(events: SimEvent[]): void {
         sound = cls === 'armor' || (modern && (cls === 'siege' || event.ranged)) ? 'cannon' : event.ranged ? 'arrows' : 'attack';
         break;
       }
-      case 'unitDied': case 'cityGrew': case 'wonderBuilt': case 'cityCaptured': case 'borderGrew': case 'campCleared': case 'ruinExplored': case 'doctrineTriggered': sound = event.type; break;
+      case 'unitDied': case 'cityGrew': case 'wonderBuilt': case 'borderGrew': case 'campCleared': case 'ruinExplored': case 'doctrineTriggered': sound = event.type; break;
       case 'cityFounded': sound = 'found'; break;
       case 'buildingBuilt': case 'improvementBuilt': sound = 'build'; break;
       case 'techResearched': sound = 'research'; break;
@@ -200,9 +200,8 @@ function handleBatch(events: SimEvent[]): void {
       case 'colonistsThawed': sound = 'thaw'; break;
       case 'researchOffered': sound = 'breakthrough'; break;
       case 'cryoChanged': sound = 'cryo'; break;
-      case 'unitLevelUp': case 'unitPromoted': sound = 'levelUp'; break;
-      case 'warDeclared': if (event.by === 0 || event.target === 0) sound = 'warDeclared'; break;
-      case 'crisisBegan': sound = 'crisisReveal'; break;
+      case 'unitPromoted': sound = 'levelUp'; break;
+      case 'crisisBegan': sound = 'crisisAlarm'; break;
       case 'eraStarted': sound = 'eraFanfare'; break;
       case 'naturalWonderFound': sound = 'ruinExplored'; break;
       case 'renownGained': sound = 'renownAdd'; break;

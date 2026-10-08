@@ -14,11 +14,11 @@ function edictCtx(state: GameState, id: string, emit: Emit): HookCtx {
 /** null if the edict `uid` can be used on `t` right now */
 export function useEdictError(state: GameState, uid: Uid, t: EdictTargetArgs): string | null {
   const run = state.run;
-  if (run.phase !== 'playing' || state.gameOver) return 'Salvage can only be used during play';
+  if (run.phase !== 'playing' || state.gameOver) return 'You can only use Boosts during a turn';
   const inst = run.edicts.find((e) => e.uid === uid);
-  if (!inst) return 'No such Salvage';
+  if (!inst) return 'No such Boost';
   const def = EDICTS[inst.id];
-  if (!def) return 'Unknown Salvage';
+  if (!def) return 'Unknown Boost';
   const human = state.players.find((p) => p.id === HUMAN)!;
   switch (def.target) {
     case 'none':
@@ -38,7 +38,7 @@ export function useEdictError(state: GameState, uid: Uid, t: EdictTargetArgs): s
     case 'tile': {
       const tile = t.tile != null ? state.map.tiles[t.tile] : undefined;
       if (!tile) return 'Choose a tile';
-      if (!human.vis[tile.idx]) return 'That ground is unsurveyed';
+      if (!human.vis[tile.idx]) return 'You have not explored that tile';
       break;
     }
     case 'unit': {
@@ -68,7 +68,7 @@ export function discardEdict(state: GameState, uid: Uid): string | null {
   const run = state.run;
   if (run.phase === 'victory' || run.phase === 'defeat') return 'The run is over';
   const idx = run.edicts.findIndex((e) => e.uid === uid);
-  if (idx < 0) return 'No such Salvage';
+  if (idx < 0) return 'No such Boost';
   run.edicts.splice(idx, 1);
   return null;
 }

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { LEADERS, PROMOTIONS } from '../content';
 import { createGame } from './engine';
 import { hexDistance, neighbors } from './hex';
-import { applyPromotion, grantXp, moveUnitTo, unitsTurnStart } from './units';
+import { autoUpgrade, bestPromotion, createUnit, grantXp, idleUnits, moveUnitTo, unitsTurnStart } from './units';
 import type { GameState, SimEvent, Unit } from './types';
+import { BARBARIAN } from './types';
 
 function fixture(): { state: GameState; unit: Unit; target: number; events: SimEvent[] } {
   const { state } = createGame({ seed: 'UNIT-REGRESSION', leaderId: Object.keys(LEADERS)[0], ascension: 0,
@@ -14,7 +15,7 @@ function fixture(): { state: GameState; unit: Unit; target: number; events: SimE
   for (const occupant of Object.values(state.units)) if (occupant.tile === from.idx || occupant.tile === target ||
     neighbors(state.map, target).includes(occupant.tile)) delete state.units[occupant.id];
   const unit: Unit = { id: state.nextId++, owner: 0, type: 'warrior', tile: from.idx,
-    hp: 100, moves: 2, hasAttacked: false, xp: 0, level: 0, promotions: [], promotionChoices: null, order: null, fortifyTurns: 0, age: 1 };
+    hp: 100, moves: 2, hasAttacked: false, xp: 0, level: 0, promotions: [], order: null, fortifyTurns: 0, age: 1 };
   state.units[unit.id] = unit;
   state.map.tiles[target].owner = null;
   state.map.tiles[target].cityId = null;
@@ -52,17 +53,25 @@ describe('units', () => {
     expect(events.filter(e => e.type === 'ruinExplored')).toHaveLength(1);
   });
 
-  it('captures an undefended wartime settler and converts it to the victor', () => {
+  it('lets a Raider destroy an undefended settler without converting it', () => {
     const { state, unit, target, events } = fixture();
-    state.players[0].relations[1] = 'war';
-    state.players[1].relations[0] = 'war';
-    const enemy: Unit = { ...unit, id: state.nextId++, owner: 1, type: 'settler', tile: target };
-    state.units[enemy.id] = enemy;
+    unit.owner = BARBARIAN;
+    const victim: Unit = { ...unit, id: state.nextId++, owner: 0, type: 'settler', tile: target };
+    state.units[victim.id] = victim;
+    state.players.find(p => p.id === BARBARIAN)!.vis[target] = 2;
     expect(moveUnitTo(state, unit, target, ev => events.push(ev))).toBeNull();
     expect(unit.tile).toBe(target);
-    expect(state.units[enemy.id]).toBeUndefined();
-    expect(Object.values(state.units).some(u => u.owner === 0 && u.type === 'settler' && u.tile === target)).toBe(true);
-    expect(events.some(e => e.type === 'unitDied' && e.unitId === enemy.id && e.killer === 0)).toBe(true);
+    expect(state.units[victim.id]).toBeUndefined();
+    expect(Object.values(state.units).some(u => u.type === 'settler' && u.tile === target)).toBe(false);
+    expect(events.some(e => e.type === 'unitDied' && e.unitId === victim.id && e.killer === BARBARIAN)).toBe(true);
+  });
+
+  it('never lets a nation step onto a rival civilian (nations are at peace)', () => {
+    const { state, unit, target, events } = fixture();
+    const rival: Unit = { ...unit, id: state.nextId++, owner: 1, type: 'settler', tile: target };
+    state.units[rival.id] = rival;
+    expect(moveUnitTo(state, unit, target, ev => events.push(ev))).not.toBeNull();
+    expect(state.units[rival.id]).toBe(rival);
   });
 
   it('transits a friendly military tile without ever ending stacked', () => {
@@ -87,14 +96,14 @@ describe('units', () => {
     expect(events.some(e => e.type === 'unitMoved' && e.unitId === unit.id && e.path.includes(target))).toBe(true);
   });
 
-  it('exhausts movement when crossing adjacent hostile zone of control', () => {
+  it('exhausts movement when crossing an adjacent Raider zone of control', () => {
     const { state, unit, target, events } = fixture();
     const hostileTile = neighbors(state.map, target).find(n => n !== unit.tile && neighbors(state.map, unit.tile).includes(n) &&
       state.map.tiles[n].elevation !== 'mountain' && state.map.tiles[n].cityId === null)!;
     state.map.tiles[hostileTile].terrain = 'grassland';
     state.players[0].vis[hostileTile] = 2;
     state.players[0].vis[unit.tile] = 2;
-    const enemy: Unit = { ...unit, id: state.nextId++, owner: 1, tile: hostileTile };
+    const enemy: Unit = { ...unit, id: state.nextId++, owner: BARBARIAN, tile: hostileTile };
     state.units[enemy.id] = enemy;
     expect(moveUnitTo(state, unit, target, ev => events.push(ev))).toBeNull();
     expect(unit.tile).toBe(target);
@@ -136,20 +145,59 @@ describe('units', () => {
     expect(unit.order).toBeNull();
   });
 
-  it('offers legal promotions at XP thresholds, applies one and heals half the health bar', () => {
-    const { state, unit, events } = fixture();
+  it('applies the best legal promotion automatically at each XP threshold and heals half the health bar', () => {
+    const { unit, events } = fixture();
     unit.hp = 20;
-    grantXp(state, unit, 10, ev => events.push(ev));
+    grantXp(unit, 10, ev => events.push(ev));
     expect(unit.level).toBe(1);
-    expect(unit.promotionChoices?.length).toBe(2);
-    expect(unit.promotionChoices!.every(id => PROMOTIONS[id].classes.includes('melee') && PROMOTIONS[id].tier === 1)).toBe(true);
-    expect(events.some(e => e.type === 'unitLevelUp' && e.unitId === unit.id)).toBe(true);
-    expect(applyPromotion(state, unit, 'nonexistent', ev => events.push(ev))).not.toBeNull();
-    const chosen = unit.promotionChoices![0];
-    expect(applyPromotion(state, unit, chosen, ev => events.push(ev))).toBeNull();
+    expect(unit.promotions).toHaveLength(1);
+    const first = PROMOTIONS[unit.promotions[0]];
+    expect(first.classes).toContain('melee');
+    expect(first.tier).toBe(1);
     expect(unit.hp).toBe(70);
-    expect(unit.promotions).toContain(chosen);
-    expect(unit.promotionChoices).toBeNull();
+    expect(events.filter(e => e.type === 'unitPromoted' && e.unitId === unit.id)).toHaveLength(1);
+    // a big XP grant climbs several levels at once, each with its own promotion
+    grantXp(unit, 90, ev => events.push(ev));
+    expect(unit.level).toBe(4);
+    expect(unit.promotions).toHaveLength(4);
+    expect(new Set(unit.promotions).size).toBe(4);
+    for (const id of unit.promotions) for (const req of PROMOTIONS[id].requires ?? []) expect(unit.promotions).toContain(req);
+    expect(events.filter(e => e.type === 'unitPromoted')).toHaveLength(4);
+  });
+
+  it('prefers the highest unlocked tier when picking a promotion', () => {
+    const { unit } = fixture();
+    unit.level = 3;
+    unit.promotions = ['drill_1'];
+    expect(PROMOTIONS[bestPromotion(unit)!].tier).toBe(2);
+  });
+
+  it('upgrades for free at turn start once the tech is known, keeping XP and promotions', () => {
+    const { state, unit, events } = fixture();
+    const player = state.players[0];
+    unit.xp = 12;
+    unit.level = 1;
+    unit.promotions = ['drill_1'];
+    const gold = player.gold;
+    autoUpgrade(state, unit, ev => events.push(ev));
+    expect(unit.type).toBe('warrior');
+    player.techs.push('bronze_working', 'iron_working');
+    unitsTurnStart(state, 0, ev => events.push(ev));
+    expect(unit.type).not.toBe('warrior');
+    expect(unit.xp).toBe(12);
+    expect(unit.promotions).toEqual(['drill_1']);
+    expect(player.gold).toBe(gold);
+    expect(events.some(e => e.type === 'unitUpgraded' && e.unitId === unit.id && e.from === 'warrior')).toBe(true);
+  });
+
+  it('starts human recon units on auto-explore and never counts ordered units as idle', () => {
+    const { state, unit, events } = fixture();
+    const scout = createUnit(state, 0, 'scout', unit.tile, ev => events.push(ev))!;
+    expect(scout.order).toEqual({ kind: 'explore' });
+    expect(idleUnits(state, 0).some(u => u.id === scout.id)).toBe(false);
+    expect(idleUnits(state, 0).some(u => u.id === unit.id)).toBe(true);
+    unit.order = { kind: 'fortify' };
+    expect(idleUnits(state, 0).some(u => u.id === unit.id)).toBe(false);
   });
 
   it('heals only rested units and fortifies in stages', () => {

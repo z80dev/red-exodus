@@ -7,8 +7,6 @@ import type { Profile } from '../../meta/profile';
 import { Icon } from '../icons/Icon';
 import './menu.css';
 
-export const ERA_NAMES = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'];
-export const chapterName = (chapter: number) => ['Dawn', 'Dusk', 'Crisis'][chapter] ?? String(chapter + 1);
 export const dailyDate = () => new Date().toISOString().slice(0, 10);
 export const number = (n: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(n);
 let dailyLaunch = false;
@@ -45,10 +43,10 @@ export function CopySeed({ seed, share = false }: { seed: string; share?: boolea
   async function copy() {
     try {
       const nativeShare = share && typeof navigator.share === 'function';
-      if (nativeShare) await navigator.share({ title: 'RED EXODUS — My Landfall', text: `Fifty Arks. One red world. Play my RED EXODUS seed: ${seed}` });
+      if (nativeShare) await navigator.share({ title: 'RED EXODUS — My run', text: `Fifty Arks. One red world. Play my RED EXODUS seed: ${seed}` });
       else await navigator.clipboard.writeText(seed);
       setStatus(nativeShare ? 'Shared' : 'Copied');
-    } catch { setStatus('Select the seed to copy'); }
+    } catch { setStatus('Select the seed and copy it'); }
   }
   return <button className="ae-button ae-button-small" onClick={() => void copy()} aria-label={share ? 'Share seed' : 'Copy seed'}><Icon name={share ? 'map' : 'seed'} size={16} />{status || (share ? 'Share' : 'Copy')}</button>;
 }

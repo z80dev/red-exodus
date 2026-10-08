@@ -1,7 +1,6 @@
 import { ELEVATIONS, FEATURES, NATURAL_WONDERS, TERRAINS } from '../content';
 import { dirBetween, hexDistance, neighbors } from './hex';
-import { isCivilian, maxMoves, unitDef } from './units';
-import { BARBARIAN } from './types';
+import { isCivilian, isHostile, maxMoves, unitDef } from './units';
 import type { GameState, TileIdx, Unit } from './types';
 const MOVEMENT_EPSILON = 1e-9;
 
@@ -18,11 +17,6 @@ interface MovementContext {
   enemyBlocked: Uint8Array;
   enemyCity: Uint8Array;
   enemyZoc: Uint8Array;
-}
-
-function atWar(state: GameState, owner: number, other: number): boolean {
-  if (owner === BARBARIAN || other === BARBARIAN) return true;
-  return state.players.find((player) => player.id === owner)?.relations[other] === 'war';
 }
 
 function createMovementContext(state: GameState, unit: Unit, planning: boolean): MovementContext {
@@ -45,7 +39,7 @@ function createMovementContext(state: GameState, unit: Unit, planning: boolean):
   for (const city of Object.values(state.cities)) {
     if (city.owner === unit.owner || !state.map.tiles[city.tile]) continue;
     context.enemyCity[city.tile] = 1;
-    if (atWar(state, unit.owner, city.owner) && (!planning || (visible?.[city.tile] ?? 0) > 0)) {
+    if (isHostile(unit.owner, city.owner) && (!planning || (visible?.[city.tile] ?? 0) > 0)) {
       for (const neighbor of neighbors(state.map, city.tile)) context.enemyZoc[neighbor] = 1;
     }
   }
@@ -57,9 +51,9 @@ function createMovementContext(state: GameState, unit: Unit, planning: boolean):
     }
     if (visible?.[other.tile] !== 2) continue;
     const enemyCivilian = isCivilian(other.type);
-    const canCapture = !context.civilian && enemyCivilian && atWar(state, unit.owner, other.owner);
+    const canCapture = !context.civilian && enemyCivilian && isHostile(unit.owner, other.owner);
     if (!canCapture) context.enemyBlocked[other.tile] = 1;
-    if (!enemyCivilian && atWar(state, unit.owner, other.owner)) {
+    if (!enemyCivilian && isHostile(unit.owner, other.owner)) {
       for (const neighbor of neighbors(state.map, other.tile)) context.enemyZoc[neighbor] = 1;
     }
   }

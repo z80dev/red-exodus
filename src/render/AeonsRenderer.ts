@@ -417,7 +417,7 @@ export class AeonsRenderer implements Renderer {
     let nsig = `${this.reveal ? 1 : 0}|${human?.techs.length ?? 0}|${state.run?.era ?? 0}|`;
     for (const t of state.map.tiles) {
       const e = this.reveal || (human?.vis[t.idx] ?? 0) > 0 ? 1 : 0;
-      nsig += `${e}${t.feature ?? ''}${t.improvement ?? ''}${t.pillaged ? 'p' : ''}${t.resource ?? ''}${t.camp ? 'c' : ''}${t.ruin ? 'r' : ''}${t.owner ?? ''},`;
+      nsig += `${e}${t.feature ?? ''}${t.improvement ?? ''}${t.resource ?? ''}${t.camp ? 'c' : ''}${t.ruin ? 'r' : ''}${t.owner ?? ''},`;
     }
     let csig = '';
     for (const c of Object.values(state.cities)) csig += `${c.id}:${c.owner}:${c.pop}:${c.buildings.join('.')}:${c.wonders.join('.')}:${c.tile}|`;
@@ -481,7 +481,7 @@ export class AeonsRenderer implements Renderer {
       flags.push({
         id: u.id, tile: u.tile, icon: UNITS[u.type]?.class ?? 'melee', hp: u.hp,
         primary: owner?.colors.primary ?? '#7a1414', secondary: owner?.colors.secondary ?? '#e8d9a8',
-        human: u.owner === HUMAN, promo: !!u.promotionChoices?.length && u.owner === HUMAN,
+        human: u.owner === HUMAN,
         fortified: u.order?.kind === 'fortify', level: u.level,
       });
     }

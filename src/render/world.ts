@@ -195,12 +195,8 @@ export function composeNature(state: GameState, f: TerrainField, layer: PropLaye
     }
     if (t.improvement) {
       const key = IMPROVEMENTS[t.improvement]?.model ?? `imp_${t.improvement}`;
-      if (t.pillaged) {
-        for (const p of scatter(seed + 91, 3, 0.1, 0.5, 0.2)) place(layer, 'rock_small', cx + p.x, g(p.x, p.z), cz + p.z, hash01(seed, p.x * 100) * 6, 0.9);
-      } else {
-        const rot = Math.floor(hash01(seed, 13) * 6) * (Math.PI / 3);
-        place(layer, key, cx, water ? 0 : g(0, 0), cz, rot, 1.0);
-      }
+      const rot = Math.floor(hash01(seed, 13) * 6) * (Math.PI / 3);
+      place(layer, key, cx, water ? 0 : g(0, 0), cz, rot, 1.0);
     }
     if (t.camp) place(layer, 'camp_barbarian', cx, g(0, 0), cz, hash01(seed, 14) * Math.PI * 2, 1.15);
     if (t.ruin) place(layer, 'ruin_ancient', cx, g(0, 0), cz, hash01(seed, 15) * Math.PI * 2, 1.1);

@@ -1,15 +1,15 @@
-// The Sol Report: chapter scoring (Viability = Output × Hope; ids renown/splendor/legacy) and targets. DESIGN §5.
+// The Chapter Report: chapter scoring (Score = Points × Multiplier; ids renown/splendor/legacy) and targets. DESIGN §5.
 import type { ChronicleCtx } from '../defs';
 import type { ActiveEffect } from '../effects';
 import { collectEffects, makeCtx, runHook } from '../effects';
 import type { ChronicleResult, ChronicleStep, ChronicleStepSource, Emit, GameState, PillarId } from '../types';
 import { HUMAN, PILLARS } from '../types';
 import {
-  ASCENSIONS, BUILDINGS, CRISES, DOCTRINES, LEADERS, NATURAL_WONDERS, PILLAR_DEFS, REFORMS, WONDERS,
+  ASCENSIONS, BUILDINGS, CRISES, DOCTRINES, LEADERS, NATURAL_WONDERS, PILLAR_DEFS, WONDERS,
 } from '../../content';
 import {
-  CHAPTER_NAMES, CHAPTER_TARGET_MUL, CITY_RENOWN_PER_POP, CITY_RENOWN_PER_WONDER, CRISIS_CHAPTER, ENDLESS_ERA_MUL,
-  ERA_TARGETS, FINAL_CRISIS_TARGET_MUL, FINAL_ERA, FOCUS_RENOWN_MUL, GILDED_RENOWN_BASE, GILDED_RENOWN_PER_ERA, INCOME_BASE,
+  BIG_WIN_LABEL, BONUS_COINS_LABEL, CHAPTER_NAMES, CHAPTER_TARGET_MUL, CITY_RENOWN_PER_POP, CITY_RENOWN_PER_WONDER, CRISIS_CHAPTER, ENDLESS_ERA_MUL,
+  ERA_TARGETS, FINAL_CRISIS_TARGET_MUL, FINAL_ERA, FIRST_CRISIS_TARGET_MUL, FOCUS_RENOWN_MUL, GILDED_RENOWN_BASE, GILDED_RENOWN_PER_ERA, INCOME_BASE,
   INCOME_CHAPTER_BONUS, INTEREST_CAP, INTEREST_PER, LIFELINE_INFLUENCE, MANDATE_LOSS_CRISIS_FAIL, MANDATE_LOSS_FAIL,
   OVERDRIVE_INFLUENCE_CAP, PRISMATIC_SPLENDOR_MUL, RADIANT_SPLENDOR, TRIUMPH_INFLUENCE, TRIUMPH_RATIO,
 } from './constants';
@@ -24,14 +24,19 @@ export function eraBaseTarget(era: number): number {
   return ERA_TARGETS[FINAL_ERA] * ENDLESS_ERA_MUL ** (era - FINAL_ERA);
 }
 
+/** era base × chapter multiplier (Landfall's and the final era's Crisis chapters have their own) */
+function chapterTargetMul(era: number, chapter: number): number {
+  if (chapter !== CRISIS_CHAPTER) return CHAPTER_TARGET_MUL[Math.min(chapter, CHAPTER_TARGET_MUL.length - 1)];
+  return era === 0 ? FIRST_CRISIS_TARGET_MUL : era === FINAL_ERA ? FINAL_CRISIS_TARGET_MUL : CHAPTER_TARGET_MUL[CRISIS_CHAPTER];
+}
+
 /**
  * Target for (era, chapter): era base × chapter multiplier × crisis targetMul (crisis chapter of the current era)
- * × `target` hooks (ascension, reforms, doctrines, crisis). Does not mutate state.
+ * × `target` hooks (ascension, doctrines, crisis). Does not mutate state.
  */
 export function chronicleTarget(state: GameState, era: number, chapter: number): number {
   const run = state.run;
-  let value = eraBaseTarget(era) * (era === FINAL_ERA && chapter === CRISIS_CHAPTER
-    ? FINAL_CRISIS_TARGET_MUL : CHAPTER_TARGET_MUL[Math.min(chapter, CHAPTER_TARGET_MUL.length - 1)]);
+  let value = eraBaseTarget(era) * chapterTargetMul(era, chapter);
   const crisisChapter = chapter === CRISIS_CHAPTER && era === run.era && run.crisis != null;
   const crisis = crisisChapter ? CRISES[run.crisis!] : undefined;
   if (crisis) value *= crisis.targetMul ?? 1;
@@ -61,9 +66,8 @@ function effectLabel(fx: ActiveEffect): string {
   switch (fx.kind) {
     case 'doctrine': return DOCTRINES[fx.id]?.name ?? fx.id;
     case 'crisis': return CRISES[fx.id]?.name ?? fx.id;
-    case 'reform': return REFORMS[fx.id]?.name ?? fx.id;
     case 'leader': return LEADERS[fx.id]?.civName ?? fx.id;
-    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Hazard ${fx.id}`;
+    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Difficulty ${fx.id}`;
     case 'building': return BUILDINGS[fx.id]?.name ?? fx.id;
     case 'wonder': return WONDERS[fx.id]?.name ?? fx.id;
     case 'naturalWonder': return NATURAL_WONDERS[fx.id]?.name ?? fx.id;
@@ -73,12 +77,12 @@ function effectLabel(fx: ActiveEffect): string {
 }
 
 const SOURCE_BY_KIND: Record<ActiveEffect['kind'], ChronicleStepSource> = {
-  leader: 'leader', doctrine: 'doctrine', crisis: 'crisis', reform: 'reform', wonder: 'city', building: 'city',
+  leader: 'leader', doctrine: 'doctrine', crisis: 'crisis', wonder: 'city', building: 'city',
   ascension: 'ascension', darkAge: 'darkAge', naturalWonder: 'city', edict: 'bonus',
 };
 
 /** tail hooks after the doctrine bar, in this order */
-const TAIL_KINDS: ActiveEffect['kind'][] = ['crisis', 'darkAge', 'reform', 'leader', 'ascension'];
+const TAIL_KINDS: ActiveEffect['kind'][] = ['crisis', 'darkAge', 'leader', 'ascension'];
 
 /**
  * Score the current chapter on `state` (hooks may update their counters: scaling doctrines grow here).
@@ -108,11 +112,11 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
   if (focusRenown) {
     const add = focusRenown * (FOCUS_RENOWN_MUL - 1);
     renown += add;
-    push({ source: 'focus', label: `Priority: ${focusDef.name} ×${FOCUS_RENOWN_MUL}`, ref: focus, renownAdd: add });
+    push({ source: 'focus', label: `Focus: ${focusDef.name} ×${FOCUS_RENOWN_MUL}`, ref: focus, renownAdd: add });
   }
   const baseSplendor = focusDef.splendor(run.pillarLevels[focus]);
   splendor += baseSplendor;
-  push({ source: 'focus', label: `${focusDef.name} Hope`, ref: focus, splendorAdd: baseSplendor });
+  push({ source: 'focus', label: `${focusDef.name} level ${run.pillarLevels[focus]}`, ref: focus, splendorAdd: baseSplendor });
 
   // 3. cities, capital first then founding order
   const cities = humanCities(state);
@@ -160,7 +164,7 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
   const bonus = run.stats.extra.bonusRenown ?? 0;
   if (bonus) {
     renown += bonus;
-    push({ source: 'bonus', label: 'Festivals & Salvage', renownAdd: bonus });
+    push({ source: 'bonus', label: 'Festivals and Boosts', renownAdd: bonus });
   }
 
   // 4. doctrine bar left → right, each followed by its edition
@@ -174,24 +178,24 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
     if (inst.edition === 'gilded') {
       const add = GILDED_RENOWN_BASE + GILDED_RENOWN_PER_ERA * era;
       renown += add;
-      push({ source: 'edition', label: `Decorated ${name}`, ref, renownAdd: add });
+      push({ source: 'edition', label: `Gold ${name}`, ref, renownAdd: add });
     } else if (inst.edition === 'radiant') {
       splendor += RADIANT_SPLENDOR;
-      push({ source: 'edition', label: `Inspired ${name}`, ref, splendorAdd: RADIANT_SPLENDOR });
+      push({ source: 'edition', label: `Shiny ${name}`, ref, splendorAdd: RADIANT_SPLENDOR });
     } else if (inst.edition === 'prismatic') {
       splendor *= PRISMATIC_SPLENDOR_MUL;
-      push({ source: 'edition', label: `Legendary Tale: ${name}`, ref, splendorMul: PRISMATIC_SPLENDOR_MUL });
+      push({ source: 'edition', label: `Rainbow ${name}`, ref, splendorMul: PRISMATIC_SPLENDOR_MUL });
     }
   }
 
-  // 5. crisis / dark age / reforms / leader / ascension
+  // 5. crisis / dark age / leader / ascension
   for (const kind of TAIL_KINDS) for (const fx of effects) if (fx.kind === kind) fire(fx);
 
   // final
   renown = Math.max(0, renown);
   splendor = Math.max(0, splendor);
   const score = Math.floor(renown * splendor);
-  push({ source: 'final', label: 'Viability' });
+  push({ source: 'final', label: 'Score' });
 
   const target = chronicleTarget(state, era, chapter);
   const passed = score >= target;
@@ -201,6 +205,7 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
     era, chapter, target, steps, renown, splendor, score, passed, triumph,
     mandateLost: passed ? 0 : crisisChapter ? MANDATE_LOSS_CRISIS_FAIL : MANDATE_LOSS_FAIL,
     influenceEarned: [],
+    focusLevelUp: passed ? { pillar: focus, level: run.pillarLevels[focus] + 1 } : null,
   };
   result.influenceEarned = influenceIncome(state, result, effects, emit);
   return result;
@@ -208,20 +213,20 @@ export function computeChronicle(state: GameState, emit: Emit): ChronicleResult 
 
 function influenceIncome(state: GameState, r: ChronicleResult, effects: ActiveEffect[], emit: Emit): { label: string; amount: number }[] {
   const run = state.run;
-  const lines: { label: string; amount: number }[] = [{ label: 'Ark stipend', amount: INCOME_BASE }];
+  const lines: { label: string; amount: number }[] = [{ label: 'Base pay', amount: INCOME_BASE }];
   if (r.passed) lines.push({ label: `${CHAPTER_NAMES[Math.min(r.chapter, CHAPTER_NAMES.length - 1)]} bonus`, amount: INCOME_CHAPTER_BONUS[Math.min(r.chapter, INCOME_CHAPTER_BONUS.length - 1)] });
   else lines.push({ label: DARK_AGE_LABEL, amount: LIFELINE_INFLUENCE });
   const cap = { value: INTEREST_CAP };
   runHook(state, HUMAN, 'interestCap', emit, effects, cap);
   const interest = Math.min(Math.max(0, Math.floor(cap.value)), Math.floor(Math.max(0, run.influence) / INTEREST_PER));
-  if (interest > 0) lines.push({ label: 'Interest', amount: interest });
+  if (interest > 0) lines.push({ label: 'Savings bonus', amount: interest });
   if (r.triumph) {
-    lines.push({ label: 'Triumph', amount: TRIUMPH_INFLUENCE });
+    lines.push({ label: BIG_WIN_LABEL, amount: TRIUMPH_INFLUENCE });
     const overdrive = Math.min(OVERDRIVE_INFLUENCE_CAP, Math.floor(r.score / r.target) - TRIUMPH_RATIO);
-    if (overdrive > 0) lines.push({ label: `Overdrive ×${Math.floor(r.score / r.target)}`, amount: overdrive });
+    if (overdrive > 0) lines.push({ label: `${BONUS_COINS_LABEL}: ${Math.floor(r.score / r.target)}× target`, amount: overdrive });
   }
   const crisis = r.chapter === CRISIS_CHAPTER && run.crisis ? CRISES[run.crisis] : undefined;
-  if (r.passed && crisis && crisis.reward > 0) lines.push({ label: `${crisis.name} overcome`, amount: crisis.reward });
+  if (r.passed && crisis && crisis.reward > 0) lines.push({ label: `${crisis.name} survived`, amount: crisis.reward });
   // buildings with `influence` pay out every chapter (one line per building type)
   const byBuilding: Record<string, { count: number; amount: number }> = {};
   for (const c of humanCities(state)) {
@@ -240,7 +245,7 @@ function influenceIncome(state: GameState, r: ChronicleResult, effects: ActiveEf
   return lines.filter((l) => l.amount !== 0 && Number.isFinite(l.amount)).map((l) => ({ label: l.label, amount: Math.round(l.amount) }));
 }
 
-/** pure: the chronicle as if the chapter ended now (HUD "projected Legacy" meter) */
+/** pure: the report as if the chapter ended now (HUD projected Score meter) */
 export function previewChronicle(state: GameState): ChronicleResult {
   return computeChronicle(structuredClone(state), noop);
 }

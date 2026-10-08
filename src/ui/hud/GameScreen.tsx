@@ -1,12 +1,12 @@
 // In-game HUD root: top bar, doctrine bar, side rail, bottom dock (edicts, next/end turn, unit panel, map cards),
 // sheets (city, tech, empire, journal), pause menu, floaters, toasts, run overlays and tutorial.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { audio } from '../../audio';
 import { bindInteraction, cancelMode, deselect, focusNext, requestEndTurn, useInteraction } from '../../game/interaction';
 import { useGame, useSim } from '../../game/store';
-import { attentionCount } from '../../sim/selectors';
+import { attentionCount, empireYields } from '../../sim/selectors';
 import type { Panel } from '../../game/store';
-import { HUMAN } from '../../sim/types';
 import { DoctrineBar } from '../run/DoctrineBar';
 import { EdictTray } from '../run/EdictTray';
 import { RunOverlays } from '../run/RunOverlays';
@@ -20,6 +20,7 @@ import { useHudEvents } from './hudEvents';
 import { JournalSheet, useJournalSeen } from './JournalSheet';
 import { MapCards, ModeBanner } from './MapCards';
 import { PauseMenu } from './PauseMenu';
+import { ResearchPick } from './ResearchPick';
 import { TechSheet } from './TechSheet';
 import { Toasts } from './Toasts';
 import { TopBar } from './TopBar';
@@ -46,14 +47,16 @@ export function GameScreen() {
     return () => ro.disconnect();
   }, []);
   const playing = phase === 'playing';
+  // portrait phones keep the top cluster short: the Crew strip opens from the rail and floats over the map
+  const [crewOpen, setCrewOpen] = useState(false);
 
   return (
     <div className={`hud ${playing ? '' : 'is-ceremony'}`} ref={rootRef}>
       <div className="hud__top" ref={topRef}>
         <TopBar />
-        <div className="hud__doctrines"><DoctrineBar compact /></div>
+        <div className={`hud__doctrines ${crewOpen ? 'is-open' : ''}`}><DoctrineBar compact /></div>
       </div>
-      <SideRail />
+      <SideRail crewOpen={crewOpen} onCrew={() => { audio.sfx(crewOpen ? 'close' : 'open'); setCrewOpen(!crewOpen); }} />
       <div className="hud__center"><ModeBanner /></div>
       <TurnBanner />
       <div className="hud__dock">
@@ -72,6 +75,7 @@ export function GameScreen() {
       {panel === 'empire' && <EmpireSheet />}
       {panel === 'journal' && <JournalSheet />}
       {panel === 'pause' && <PauseMenu />}
+      <ResearchPick />
 
       <Floaters />
       <RunOverlays />
@@ -81,9 +85,12 @@ export function GameScreen() {
   );
 }
 
-function SideRail() {
+function SideRail({ crewOpen, onCrew }: { crewOpen: boolean; onCrew: () => void }) {
   const panel = useGame((g) => g.panel);
-  const info = useSim((s) => ({ research: !s.players[HUMAN].researching, logLen: s.log.length, turn: s.turn, war: s.players[HUMAN] ? Object.values(s.players[HUMAN].relations).some((r) => r === 'war') : false }));
+  const info = useSim((s) => {
+    const r = empireYields(s)?.research;
+    return { research: r ? { pct: r.cost > 0 ? Math.min(1, r.progress / r.cost) : 0, turns: r.turns } : null, logLen: s.log.length };
+  });
   const seenLog = useJournalSeen();
   if (!info) return null;
   const toggle = (p: Panel) => () => {
@@ -91,10 +98,21 @@ function SideRail() {
     useGame.getState().setPanel(panel === p ? 'none' : p);
   };
   const unread = panel === 'journal' ? 0 : Math.max(0, info.logLen - seenLog);
+  const r = info.research;
   return (
-    <nav className="hud__rail" aria-label="Empire">
-      <IconButton icon="tech" label={T.breakthrough} onClick={toggle('tech')} active={panel === 'tech'} badge={info.research ? '!' : undefined} />
-      <IconButton icon="crown" label="Ark" onClick={toggle('empire')} active={panel === 'empire'} />
+    <nav className="hud__rail" aria-label={T.leader}>
+      <div className="rail-research" data-tutorial="research" style={{ '--ring': r?.pct ?? 0 } as CSSProperties}>
+        <IconButton icon="tech" label={r ? T.tech : `${T.tech}: pick one`} onClick={toggle('tech')} active={panel === 'tech'} badge={r ? undefined : '!'} />
+        {r && (
+          <svg className="rail-research__ring" viewBox="0 0 36 36" aria-hidden>
+            <circle cx="18" cy="18" r="16.5" className="rail-research__track" />
+            <circle cx="18" cy="18" r="16.5" className="rail-research__fill" pathLength={1} />
+          </svg>
+        )}
+        {r?.turns != null && <span className="rail-research__turns num">{r.turns}t</span>}
+      </div>
+      <IconButton icon="doctrine" label={T.doctrines} className="rail-crew" onClick={onCrew} active={crewOpen} />
+      <IconButton icon="crown" label={T.leader} onClick={toggle('empire')} active={panel === 'empire'} />
       <IconButton icon="journal" label="Log" onClick={toggle('journal')} active={panel === 'journal'} badge={unread > 0 ? (unread > 9 ? '9+' : unread) : undefined} />
     </nav>
   );

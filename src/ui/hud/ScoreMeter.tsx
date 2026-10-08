@@ -1,4 +1,4 @@
-// Legacy meter: live projection of this chapter's Chronicle (Renown × Splendor) against the target.
+// Score meter: live projection of this chapter's Score (Points × Multiplier) against the target.
 // The hook of the whole game — it fills, glows when the target is passed and bursts on crossing it.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
@@ -24,7 +24,7 @@ function useProjection(): ChronicleResult | null {
   return res;
 }
 
-export function LegacyMeter() {
+export function ScoreMeter() {
   const res = useProjection();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [burst, setBurst] = useState(0);
@@ -37,8 +37,8 @@ export function LegacyMeter() {
   const target = Math.max(1, res?.target ?? 1);
   const chapter = res ? `${res.era}:${res.chapter}` : '';
   const shown = useAnimatedNumber(score, 700);
-  const shownRenown = useAnimatedNumber(res?.renown ?? 0, 600);
-  const shownSplendor = useAnimatedNumber(res?.splendor ?? 0, 600);
+  const shownPoints = useAnimatedNumber(res?.renown ?? 0, 600);
+  const shownMult = useAnimatedNumber(res?.splendor ?? 0, 600);
   // visual state follows the animated number so the celebration lands when the bar actually crosses the target
   const passed = shown >= target;
 
@@ -61,22 +61,22 @@ export function LegacyMeter() {
   if (!res) return null;
   const ratio = shown / target;
   const fill = Math.min(1, ratio);
-  const triumph = ratio >= TRIUMPH_RATIO;
-  const tone = triumph ? 'is-triumph' : passed ? 'is-pass' : ratio >= 0.75 ? 'is-close' : '';
+  const bigWin = ratio >= TRIUMPH_RATIO;
+  const tone = bigWin ? 'is-triumph' : passed ? 'is-pass' : ratio >= 0.75 ? 'is-close' : '';
 
   return (
     <>
       <button
         type="button"
         className={`lm ${tone} ${anchor ? 'is-active' : ''}`}
-        data-tutorial="legacy"
+        data-tutorial="score"
         aria-label={`${T.score} ${fmt(score)} of ${fmt(target)}`}
         onClick={(e) => { audio.sfx('tap'); setAnchor(anchor ? null : e.currentTarget); }}
       >
-        <span className="lm__formula">
-          <span className="lm__chip lm__chip--renown num">{fmt(shownRenown, true)}</span>
+        <span className="lm__formula" aria-hidden>
+          <span className="lm__chip lm__chip--renown num">{fmt(shownPoints, true)}</span>
           <span className="lm__x">×</span>
-          <span className="lm__chip lm__chip--splendor num">{formatSplendor(shownSplendor)}</span>
+          <span className="lm__chip lm__chip--splendor num">{formatMult(shownMult)}</span>
         </span>
         <span className="lm__track" key={`bump${bump}`}>
           <span className="lm__fill" style={{ transform: `scaleX(${fill})` } as CSSProperties} />
@@ -86,19 +86,19 @@ export function LegacyMeter() {
             <span className="lm__target">/ {fmt(target, true)}</span>
           </span>
         </span>
-        {passed && <span className="lm__badge">{T.triumph}</span>}
+        {passed && <span className="lm__badge">{bigWin ? T.triumph : 'Passed'}</span>}
         {burst > 0 && <span className="lm__burst" key={`burst${burst}`} aria-hidden />}
       </button>
       {anchor && (
         <Popover anchor={anchor} onClose={close} width={330} className="lm-pop">
-          <LegacyBreakdown res={res} />
+          <ScoreBreakdown res={res} />
         </Popover>
       )}
     </>
   );
 }
 
-function formatSplendor(v: number): string {
+function formatMult(v: number): string {
   return v >= 100 ? fmt(v, true) : String(Math.round(v * 10) / 10);
 }
 
@@ -109,7 +109,7 @@ function stepValue(s: ChronicleStep): { text: string; cls: string } {
   return { text: '', cls: '' };
 }
 
-function LegacyBreakdown({ res }: { res: ChronicleResult }) {
+function ScoreBreakdown({ res }: { res: ChronicleResult }) {
   const run = useGame((g) => g.state?.run);
   const left = run ? Math.max(0, run.chapterLength - run.chapterTurn) : 0;
   const steps = res.steps.filter((s) => s.source !== 'final' && (s.renownAdd || s.splendorAdd || (s.splendorMul != null && s.splendorMul !== 1)));
@@ -118,15 +118,15 @@ function LegacyBreakdown({ res }: { res: ChronicleResult }) {
     <div className="lm-bd">
       <div className="lm-bd__head">
         <div>
-          <div className="k-title lm-bd__title">{T.score}</div>
-          <div className="lm-bd__sub">If the {T.report} were written now · {left} {left === 1 ? T.turn : `${T.turn}s`} left</div>
+          <div className="k-title lm-bd__title">{T.score} = {T.renown} × {T.splendor}</div>
+          <div className="lm-bd__sub">If the chapter ended now · {left} {left === 1 ? 'turn' : 'turns'} left</div>
         </div>
         <Icon name={passed ? 'trophy' : 'hourglass'} size={26} color={passed ? 'var(--gold-300)' : 'var(--text-dim)'} />
       </div>
       <div className="lm-bd__formula">
         <span className="lm__chip lm__chip--renown num">{fmt(res.renown)}</span>
         <span className="lm__x">×</span>
-        <span className="lm__chip lm__chip--splendor num">{formatSplendor(res.splendor)}</span>
+        <span className="lm__chip lm__chip--splendor num">{formatMult(res.splendor)}</span>
         <span className="lm__x">=</span>
         <span className={`lm-bd__score num ${passed ? 'is-pass' : ''}`}>{fmt(res.score)}</span>
       </div>
@@ -141,11 +141,12 @@ function LegacyBreakdown({ res }: { res: ChronicleResult }) {
             </div>
           );
         })}
-        {!steps.length && <p className="pop-note">Nothing recorded yet this chapter — grow, build, discover and conquer.</p>}
+        {!steps.length && <p className="pop-note">Nothing yet. Grow, build and research to get {T.renown}.</p>}
       </div>
-      <Line label={`${T.report} target`} value={fmt(res.target)} strong />
-      <Line label={passed ? 'Surplus' : 'Still needed'} value={fmt(Math.abs(res.score - res.target))} tone={passed ? 'good' : 'bad'} />
-      {res.score < res.target * TRIUMPH_RATIO && passed && <Line label={`${T.triumph} at ${TRIUMPH_RATIO}× target (+${TRIUMPH_INFLUENCE} ${T.influence})`} value={fmt(res.target * TRIUMPH_RATIO)} tone="dim" />}
+      <Line label="Target" value={fmt(res.target)} strong />
+      <Line label={passed ? 'Above target' : 'Still needed'} value={fmt(Math.abs(res.score - res.target))} tone={passed ? 'good' : 'bad'} />
+      {res.score < res.target * TRIUMPH_RATIO && <Line label={`${T.triumph} at ${TRIUMPH_RATIO}× target: +${TRIUMPH_INFLUENCE} ${T.influence}`} value={fmt(res.target * TRIUMPH_RATIO)} tone="dim" />}
+      <p className="pop-note">Miss the target and you lose a life.</p>
     </div>
   );
 }

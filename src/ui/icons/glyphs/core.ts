@@ -85,6 +85,7 @@ export const CORE_GLYPHS = {
   settings: u(fe(`${gear(12, 12, 10, 7.6, 8)}${circle(12, 12, 3.2)}`), s(circle(12, 12, 5.3), 'a', 1.2)),
   pause: u(f(rect(5.5, 4, 4.6, 16, 1.4)), f(rect(13.9, 4, 4.6, 16, 1.4))),
   close: u(s('M6 6 18 18M18 6 6 18', 'm', 2.8)),
+  more: u(f(circle(5, 12, 2.2)), f(circle(12, 12, 2.2)), f(circle(19, 12, 2.2))),
   back: u(s('M19.5 12H6', 'a', 2.6), s('M11.5 5 4.5 12l7 7', 'm', 2.8)),
   next: u(s('M5 5.5l6.5 6.5L5 18.5', 'a', 2.8), s('M12 5.5l6.5 6.5-6.5 6.5', 'm', 2.8)),
   endturn: u(
