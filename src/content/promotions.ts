@@ -1,5 +1,6 @@
-// OWNER: ContentCiv. Unit promotions: 3 tiers. On level-up a unit is offered 2 random promotions it qualifies for
-// (class listed in `classes`, every id in `requires` already owned, not yet owned).
+// OWNER: ContentCiv. Unit promotions: 3 tiers. On level-up the sim applies one automatically (sim/units.ts
+// bestPromotion): among those the unit qualifies for (class listed in `classes`, every id in `requires` already
+// owned, not yet owned, tier unlocked by level) it takes the highest tier, then the first in this list's order.
 // `combat(a, unit)` is pure: it only pushes modifiers onto the promoted unit's side (a.side).
 // `onKill` rewards (gold/heal/xp) are applied by sim/combat.ts when the promoted unit destroys an enemy unit.
 import type { CombatArgs, PromotionDef, UnitClass } from '../sim/defs';
@@ -31,19 +32,17 @@ function enemyClass(a: CombatArgs): UnitClass | null {
   return enemy ? UNITS[enemy.type]?.class ?? null : null;
 }
 
-const vsCity = (a: CombatArgs): boolean => a.side === 'attack' && a.defenderCity != null;
-
 const LIST: PromotionDef[] = [
   // ───────── Tier 1 ─────────
   {
     id: 'drill_1', name: 'Dust Drill', tier: 1, classes: FOOT, icon: 'sword',
-    description: '+15% combat strength on open regolith.',
+    description: '+15% combat strength on open ground.',
     combat(a) { if (isOpen(battlefield(a))) mod(a, 'Dust Drill', 15); },
   },
   {
-    id: 'woodsman', name: 'Hoodoo Ambush', tier: 1, classes: SKIRMISH, icon: 'tree',
-    description: '+20% combat strength in rough terrain (ridges, Hoodoo Fields, Lava Tubes, Perchlorate Bogs).',
-    combat(a) { if (isRough(battlefield(a))) mod(a, 'Hoodoo Ambush', 20); },
+    id: 'woodsman', name: 'Rock Ambush', tier: 1, classes: SKIRMISH, icon: 'tree',
+    description: '+20% combat strength on rough ground (Hills, Rock Spires, Lava Tubes, Toxic Bogs).',
+    combat(a) { if (isRough(battlefield(a))) mod(a, 'Rock Ambush', 20); },
   },
   {
     id: 'shield_wall', name: 'Blast Shield', tier: 1, classes: LINE, icon: 'shield',
@@ -52,13 +51,8 @@ const LIST: PromotionDef[] = [
   },
   {
     id: 'volley', name: 'Long Rifle', tier: 1, classes: SHOOTERS, icon: 'feather',
-    description: '+15% ranged attack strength.',
+    description: '+15% ranged attack.',
     combat(a) { if (a.side === 'attack' && a.ranged) mod(a, 'Long Rifle', 15); },
-  },
-  {
-    id: 'sappers', name: 'Wall Breach', tier: 1, classes: ['melee', 'siege'], icon: 'castle',
-    description: '+25% when attacking colonies.',
-    combat(a) { if (vsCity(a)) mod(a, 'Wall Breach', 25); },
   },
   {
     id: 'charge', name: 'Rover Charge', tier: 1, classes: RIDERS, icon: 'horse',
@@ -66,66 +60,61 @@ const LIST: PromotionDef[] = [
     combat(a) { if (a.side === 'attack' && a.defender && a.defender.hp < 100) mod(a, 'Rover Charge', 25); },
   },
   {
-    id: 'sentry', name: 'Wideband Sentry', tier: 1, classes: LAND_MILITARY, icon: 'eye', vision: 1,
+    id: 'sentry', name: 'Far Sight', tier: 1, classes: LAND_MILITARY, icon: 'eye', vision: 1,
     description: '+1 vision.',
   },
   {
     id: 'field_medic', name: 'Suit Medic', tier: 1, classes: LAND_MILITARY, icon: 'hand', heal: 10,
-    description: 'Repairs +10 HP per turn.',
+    description: 'Heals +10 HP each turn.',
   },
   {
     id: 'pathfinder', name: 'Dust Navigator', tier: 1, classes: ['recon'], icon: 'compass', moves: 1,
-    description: '+1 movement.',
+    description: '+1 move.',
   },
   {
     id: 'ambusher', name: 'Intercept', tier: 1, classes: ['antiCavalry', 'recon'], icon: 'serpent',
-    description: '+25% vs mounted and armor units.',
+    description: '+25% against mounted and armor units.',
     combat(a) { const c = enemyClass(a); if (c === 'mounted' || c === 'armor') mod(a, 'Intercept', 25); },
   },
   {
-    id: 'berserker', name: 'Last-Ditch Assault', tier: 1, classes: ['melee', 'mounted', 'armor'], icon: 'skull',
-    description: 'Reckless fury: **+25% attack**, but −10% defense.',
-    combat(a) { mod(a, 'Last-Ditch Assault', a.side === 'attack' ? 25 : -10); },
+    id: 'berserker', name: 'Reckless Assault', tier: 1, classes: ['melee', 'mounted', 'armor'], icon: 'skull',
+    description: '**+25% attack**, but −10% defense.',
+    combat(a) { mod(a, 'Reckless Assault', a.side === 'attack' ? 25 : -10); },
   },
   {
-    id: 'iron_hide', name: 'Alloy Plating', tier: 1, classes: STURDY, icon: 'shield',
-    description: '+15% defense everywhere.',
-    combat(a) { if (a.side === 'defense') mod(a, 'Alloy Plating', 15); },
+    id: 'iron_hide', name: 'Metal Plating', tier: 1, classes: STURDY, icon: 'shield',
+    description: '+15% defense.',
+    combat(a) { if (a.side === 'defense') mod(a, 'Metal Plating', 15); },
   },
 
   // ───────── Tier 2 ─────────
   {
     id: 'drill_2', name: 'Dust Drill II', tier: 2, classes: FOOT, requires: ['drill_1'], icon: 'sword',
-    description: 'Another +20% combat strength on open regolith.',
+    description: 'Another +20% combat strength on open ground.',
     combat(a) { if (isOpen(battlefield(a))) mod(a, 'Dust Drill II', 20); },
   },
   {
-    id: 'ranger', name: 'Hoodoo Ranger', tier: 2, classes: SKIRMISH, requires: ['woodsman'], icon: 'tree', vision: 1,
-    description: 'Another +20% in rough terrain, and +1 vision.',
-    combat(a) { if (isRough(battlefield(a))) mod(a, 'Hoodoo Ranger', 20); },
+    id: 'ranger', name: 'Rock Ranger', tier: 2, classes: SKIRMISH, requires: ['woodsman'], icon: 'tree', vision: 1,
+    description: 'Another +20% on rough ground, and +1 vision.',
+    combat(a) { if (isRough(battlefield(a))) mod(a, 'Rock Ranger', 20); },
   },
   {
     id: 'testudo', name: 'Pressure Shell', tier: 2, classes: LINE, requires: ['shield_wall'], icon: 'shield',
-    description: 'Another +25% defense against ranged attacks, and +10% defense in melee.',
+    description: 'Another +25% defense against ranged attacks, and +10% defense against melee.',
     combat(a) { if (a.side === 'defense') mod(a, 'Pressure Shell', a.ranged ? 25 : 10); },
   },
   {
-    id: 'barrage', name: 'Capacitor Barrage', tier: 2, classes: SHOOTERS, requires: ['volley'], icon: 'flame',
-    description: 'Another +20% ranged attack strength.',
-    combat(a) { if (a.side === 'attack' && a.ranged) mod(a, 'Capacitor Barrage', 20); },
+    id: 'barrage', name: 'Power Barrage', tier: 2, classes: SHOOTERS, requires: ['volley'], icon: 'flame',
+    description: 'Another +20% ranged attack.',
+    combat(a) { if (a.side === 'attack' && a.ranged) mod(a, 'Power Barrage', 20); },
   },
   {
     id: 'deadeye', name: 'Target Lock', tier: 2, classes: ['ranged'], requires: ['volley'], icon: 'eye',
-    description: 'All-in marksmanship: **+30% ranged attack**, but −20% defense.',
+    description: '**+30% ranged attack**, but −20% defense.',
     combat(a) {
       if (a.side === 'attack' && a.ranged) mod(a, 'Target Lock', 30);
       else if (a.side === 'defense') mod(a, 'Target Lock', -20);
     },
-  },
-  {
-    id: 'breach', name: 'Pressure Breach', tier: 2, classes: ['melee', 'siege'], requires: ['sappers'], icon: 'castle',
-    description: 'Another +35% when attacking colonies.',
-    combat(a) { if (vsCity(a)) mod(a, 'Pressure Breach', 35); },
   },
   {
     id: 'flanker', name: 'Dust Flanker', tier: 2, classes: RIDERS, requires: ['charge'], icon: 'horse',
@@ -133,55 +122,50 @@ const LIST: PromotionDef[] = [
     combat(a) { if (a.side === 'attack' && a.defender && !a.defenderCity) mod(a, 'Dust Flanker', 15); },
   },
   {
-    id: 'plunderer', name: 'Salvage Raider', tier: 2, classes: ['melee', 'mounted', 'armor'], requires: ['berserker'], icon: 'coin',
+    id: 'plunderer', name: 'Scavenger', tier: 2, classes: ['melee', 'mounted', 'armor'], requires: ['berserker'], icon: 'coin',
     onKill: { gold: 20 },
-    description: '+10% attack. **Each kill salvages +20 {gold}.**',
-    combat(a) { if (a.side === 'attack') mod(a, 'Salvage Raider', 10); },
+    description: '+10% attack. **Each kill gives +20 {gold}.**',
+    combat(a) { if (a.side === 'attack') mod(a, 'Scavenger', 10); },
   },
   {
     id: 'triage', name: 'Field Repairs', tier: 2, classes: LAND_MILITARY, requires: ['field_medic'], icon: 'hand', heal: 15,
-    description: 'Repairs another +15 HP per turn; +15% defense while damaged.',
+    description: 'Heals another +15 HP each turn. +15% defense while hurt.',
     combat(a, unit) { if (a.side === 'defense' && unit.hp < 100) mod(a, 'Field Repairs', 15); },
   },
   {
-    id: 'bulwark', name: 'Regolith Bastion', tier: 2, classes: STURDY, requires: ['iron_hide'], icon: 'tower',
-    description: '+15% defense; another +20% while fortified.',
-    combat(a, unit) { if (a.side === 'defense') mod(a, 'Regolith Bastion', unit.fortifyTurns > 0 ? 35 : 15); },
+    id: 'bulwark', name: 'Ground Bastion', tier: 2, classes: STURDY, requires: ['iron_hide'], icon: 'tower',
+    description: '+15% defense, and another +20% while fortified.',
+    combat(a, unit) { if (a.side === 'defense') mod(a, 'Ground Bastion', unit.fortifyTurns > 0 ? 35 : 15); },
   },
   {
     id: 'trailblazer', name: 'Horizon Runner', tier: 2, classes: ['recon'], requires: ['pathfinder'], icon: 'compass', moves: 1, vision: 1,
-    description: '+1 movement and +1 vision.',
+    description: '+1 move and +1 vision.',
   },
 
   // ───────── Tier 3 ─────────
   {
     id: 'blitz', name: 'Dust Sprint', tier: 3, classes: RIDERS, requires: ['flanker'], icon: 'bolt', moves: 1,
-    description: '+1 movement. Strike deeper, retreat faster.',
+    description: '+1 move. Strike deeper, retreat faster.',
   },
   {
-    id: 'juggernaut', name: 'Siege Frame', tier: 3, classes: ['melee', 'siege'], requires: ['breach'], icon: 'skull',
-    description: '+50% when attacking colonies. Blast doors are merely a suggestion.',
-    combat(a) { if (vsCity(a)) mod(a, 'Siege Frame', 50); },
-  },
-  {
-    id: 'longshot', name: 'Extended Coil', tier: 3, classes: SHOOTERS, requires: ['barrage'], icon: 'star', range: 1,
+    id: 'longshot', name: 'Long Coil', tier: 3, classes: SHOOTERS, requires: ['barrage'], icon: 'star', range: 1,
     description: '+1 range.',
   },
   {
     id: 'warlord', name: 'Command Frame', tier: 3, classes: FOOT, requires: ['drill_2'], icon: 'crown',
     onKill: { heal: 25 },
-    description: '+15% combat strength everywhere. **Each kill restores 25 HP.**',
+    description: '+15% combat strength. **Each kill heals 25 HP.**',
     combat(a) { mod(a, 'Command Frame', 15); },
   },
   {
     id: 'last_stand', name: 'Final Airlock', tier: 3, classes: STURDY, requires: ['bulwark'], icon: 'laurel',
-    description: '+50% defense below 50 HP. Nobody gets through this door.',
+    description: '+50% defense below 50 HP. Nobody gets past this door.',
     combat(a, unit) { if (a.side === 'defense' && unit.hp < 50) mod(a, 'Final Airlock', 50); },
   },
   {
     id: 'phantom', name: 'Storm Ghost', tier: 3, classes: SKIRMISH, requires: ['ranger'], icon: 'moon', moves: 1,
     onKill: { xp: 5 },
-    description: '+1 movement; +15% attack from rough terrain. Kills grant +5 bonus XP.',
+    description: '+1 move. +15% attack from rough ground. Each kill gives +5 XP.',
     combat(a) { if (a.side === 'attack' && isRough(a.fromTile)) mod(a, 'Storm Ghost', 15); },
   },
 ];

@@ -30,7 +30,6 @@ export interface FlagData {
   primary: string;
   secondary: string;
   human: boolean;
-  promo: boolean;
   fortified: boolean;
   level: number;
 }

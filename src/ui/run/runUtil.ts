@@ -4,20 +4,10 @@ import type { SfxName } from '../../audio';
 import { useGame } from '../../game/store';
 import { loadProfile } from '../../meta/profile';
 import { PILLAR_DEFS } from '../../content';
+import { CHAPTER_NAMES, CRISIS_CHAPTER, ERA_NAMES } from '../../sim/roguelite/constants';
 import type { Action, ActionResult, PillarId } from '../../sim/types';
 import { toast } from '../hud/toast';
 import { PILLAR_NAMES } from '../terms';
-
-export const ERA_NAMES = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'] as const;
-export const ERA_TAGLINES = [
-  'One red world. Fifty Arks. No plan survives touchdown.',
-  'The first domes hold. The first arguments start.',
-  'Mars is no longer empty. It has noticed you.',
-  'The machines work. The machines also have opinions.',
-  'We are teaching a dead planet to breathe. It is taking notes.',
-  'Earth is gone. Home is a verb now.',
-];
-export const CHAPTER_NAMES = ['Dawn', 'Dusk', 'Crisis'] as const;
 
 export function roman(n: number): string {
   const table: [number, string][] = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
@@ -33,18 +23,15 @@ export function eraName(era: number): string {
 export function eraTitle(era: number): string {
   return eraName(era);
 }
-export function eraTagline(era: number): string {
-  return ERA_TAGLINES[Math.min(era, ERA_TAGLINES.length - 1)] ?? '';
-}
 export function chapterName(chapter: number): string {
-  return CHAPTER_NAMES[Math.max(0, Math.min(2, chapter))];
+  return CHAPTER_NAMES[Math.max(0, Math.min(CHAPTER_NAMES.length - 1, chapter))];
 }
 export function chapterTitle(chapter: number): string {
-  return `Chapter ${roman(chapter + 1)} · ${chapterName(chapter)}`;
+  return `Chapter ${chapter + 1} · ${chapterName(chapter)}`;
 }
 /** chapter that follows (era, chapter) */
 export function nextChapter(era: number, chapter: number): { era: number; chapter: number } {
-  return chapter >= 2 ? { era: era + 1, chapter: 0 } : { era, chapter: chapter + 1 };
+  return chapter >= CRISIS_CHAPTER ? { era: era + 1, chapter: 0 } : { era, chapter: chapter + 1 };
 }
 
 // ───────────── numbers ─────────────
@@ -75,12 +62,12 @@ export function signed(n: number, f: (n: number) => string = fmt): string {
 // ───────────── pillars ─────────────
 export interface PillarInfo { id: PillarId; name: string; icon: string; color: string; description: string }
 const PILLAR_FALLBACK: Record<PillarId, Omit<PillarInfo, 'id'>> = {
-  arts: { name: PILLAR_NAMES.arts, icon: 'arts', color: 'var(--p-arts)', description: 'Heritage Output from Morale and memory.' },
-  discovery: { name: PILLAR_NAMES.discovery, icon: 'discovery', color: 'var(--p-discovery)', description: 'Research Data and Breakthroughs.' },
-  commerce: { name: PILLAR_NAMES.commerce, icon: 'commerce', color: 'var(--p-commerce)', description: 'Credits earned and trade.' },
-  conquest: { name: PILLAR_NAMES.conquest, icon: 'conquest', color: 'var(--p-conquest)', description: 'Feral dens cleared, rivals challenged.' },
-  prosperity: { name: PILLAR_NAMES.prosperity, icon: 'prosperity', color: 'var(--p-prosperity)', description: 'Colony population, founding, installations.' },
-  glory: { name: PILLAR_NAMES.glory, icon: 'glory', color: 'var(--p-glory)', description: 'Buildings, megaprojects and landmarks.' },
+  arts: { name: PILLAR_NAMES.arts, icon: 'arts', color: 'var(--p-arts)', description: 'Points from Culture and festivals.' },
+  discovery: { name: PILLAR_NAMES.discovery, icon: 'discovery', color: 'var(--p-discovery)', description: 'Points from Science and Research.' },
+  commerce: { name: PILLAR_NAMES.commerce, icon: 'commerce', color: 'var(--p-commerce)', description: 'Points from Credits and trade.' },
+  conquest: { name: PILLAR_NAMES.conquest, icon: 'conquest', color: 'var(--p-conquest)', description: 'Points from defeated enemies and Raider Camps.' },
+  prosperity: { name: PILLAR_NAMES.prosperity, icon: 'prosperity', color: 'var(--p-prosperity)', description: 'Points from new colonists, Colonies and Improvements.' },
+  glory: { name: PILLAR_NAMES.glory, icon: 'glory', color: 'var(--p-glory)', description: 'Points from Buildings, Wonders and Landmarks.' },
 };
 export const PILLAR_MOTIF: Record<PillarId, string> = {
   arts: 'lyre', discovery: 'flask', commerce: 'coin', conquest: 'sword', prosperity: 'wheat', glory: 'laurel',

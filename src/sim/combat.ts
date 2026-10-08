@@ -1,13 +1,13 @@
 import { BUILDINGS, PROMOTIONS, TECHS } from '../content';
 import type { CombatArgs, CombatMod } from './defs';
-import { captureCity } from './cities';
+import { raidCity } from './cities';
 import { addGold } from './economy';
 import { runHook } from './effects';
 import { dirBetween, hexDistance, neighbors, tilesInRadius } from './hex';
 import { random } from './rng';
 import type { City, Emit, GameState, TileIdx, Unit } from './types';
 import { BARBARIAN } from './types';
-import { grantXp, isCivilian, militaryAt, onUnitEnteredTile, removeUnit, unitDef, unitsAt } from './units';
+import { grantXp, isCivilian, isHostile, militaryAt, onUnitEnteredTile, removeUnit, unitDef, unitsAt } from './units';
 
 export interface CombatPreview {
   ranged: boolean;
@@ -19,17 +19,13 @@ export interface CombatPreview {
   dmgToDefender: number;
   defenderKillLikely: boolean;
   attackerDeathLikely: boolean;
-  captures: boolean;
 }
 
-function hostile(state: GameState, a: number, b: number): boolean {
-  return a !== b && (a === BARBARIAN || b === BARBARIAN || state.players.find(p => p.id === a)?.relations[b] === 'war');
-}
 function targetAt(state: GameState, tile: TileIdx, owner: number): { unit: Unit | null; city: City | null } {
   const unit = militaryAt(state, tile) ?? unitsAt(state, tile).find(u => isCivilian(u.type)) ?? null;
   const city = Object.values(state.cities).find(c => c.tile === tile) ?? null;
-  return { unit: unit && hostile(state, owner, unit.owner) ? unit : null,
-    city: city && hostile(state, owner, city.owner) ? city : null };
+  return { unit: unit && isHostile(owner, unit.owner) ? unit : null,
+    city: city && isHostile(owner, city.owner) ? city : null };
 }
 function combatDamage(attacker: number, defender: number): number {
   return Math.max(1, Math.round(30 * Math.pow(attacker / Math.max(1, defender), 1.5)));
@@ -70,22 +66,22 @@ function preview(state: GameState, attacker: Unit | null, attackerCity: City | n
   const defenseMods: CombatMod[] = [];
   if (tile.elevation === 'hills') defenseMods.push({ label: 'Hills', pct: 25 });
   if (tile.feature === 'forest' || tile.feature === 'jungle') defenseMods.push({ label: tile.feature, pct: 25 });
-  if (tile.feature === 'marsh') defenseMods.push({ label: 'Marsh', pct: -15 });
+  if (tile.feature === 'marsh') defenseMods.push({ label: 'Toxic Bog', pct: -15 });
   if (attacker && !ranged && (origin.riverEdges & (1 << dirBetween(state.map, from, target))) !== 0 && !def?.abilities?.includes('amphibious'))
-    attackMods.push({ label: 'River crossing', pct: -20 });
+    attackMods.push({ label: 'Crossing an Ice Channel', pct: -20 });
   if (defender?.fortifyTurns) defenseMods.push({ label: 'Fortified', pct: defender.fortifyTurns >= 2 ? 50 : 25 });
   if (attacker) {
     const flank = neighbors(state.map, target).filter(t => t !== from && militaryAt(state, t)?.owner === owner).length;
     if (flank) attackMods.push({ label: 'Flanking', pct: flank * 10 });
     const bonus = def?.bonusVs?.[defender ? unitDef(defender.type).class : 'city'];
-    if (bonus) attackMods.push({ label: 'Class advantage', pct: bonus });
+    if (bonus) attackMods.push({ label: 'Unit type bonus', pct: bonus });
     for (const id of attacker.promotions) PROMOTIONS[id]?.combat?.({ side: 'attack', attacker, attackerCity: null,
       attackerOwner: owner, defender, defenderCity, defenderOwner: defender?.owner ?? defenderCity!.owner,
       tile, fromTile: origin, ranged, attackMods, defenseMods }, attacker);
   }
   if (defender) {
     const defenderBonus = unitDef(defender.type).bonusVs?.[attacker ? unitDef(attacker.type).class : 'city'];
-    if (defenderBonus) defenseMods.push({ label: 'Class advantage', pct: defenderBonus });
+    if (defenderBonus) defenseMods.push({ label: 'Unit type bonus', pct: defenderBonus });
     for (const id of defender.promotions) PROMOTIONS[id]?.combat?.({ side: 'defense', attacker, attackerCity,
       attackerOwner: owner, defender, defenderCity: null, defenderOwner: defender.owner, tile, fromTile: origin,
       ranged, attackMods, defenseMods }, defender);
@@ -106,8 +102,7 @@ function preview(state: GameState, attacker: Unit | null, attackerCity: City | n
   return { ranged, attackerStrength, defenderStrength, attackMods, defenseMods,
     dmgToDefender: defenderCity && ranged ? Math.min(dmgToDefender, Math.max(0, remaining - 1)) : dmgToDefender,
     dmgToAttacker, defenderKillLikely: remaining <= dmgToDefender && (!defenderCity || !ranged),
-    attackerDeathLikely: !!attacker && attacker.hp <= dmgToAttacker, captures: !!defenderCity && !ranged && owner !== BARBARIAN &&
-      remaining <= dmgToDefender && !!attacker && attacker.hp > dmgToAttacker };
+    attackerDeathLikely: !!attacker && attacker.hp <= dmgToAttacker };
 }
 export function attackTargets(state: GameState, unit: Unit): TileIdx[] {
   if (isCivilian(unit.type)) return [];
@@ -120,9 +115,9 @@ export function previewAttack(state: GameState, unit: Unit, target: TileIdx): Co
   return preview(state, unit, null, target);
 }
 export function resolveAttack(state: GameState, unit: Unit, target: TileIdx, emit: Emit): string | null {
-  if (!state.units[unit.id] || unit.hasAttacked || unit.moves <= 0) return 'Unit cannot attack this turn';
+  if (!state.units[unit.id] || unit.hasAttacked || unit.moves <= 0) return 'The unit cannot attack this turn.';
   const result = previewAttack(state, unit, target);
-  if (!result) return 'Invalid attack target';
+  if (!result) return 'Invalid target.';
   const { unit: defendingUnit, city } = targetAt(state, target, unit.owner);
   const defenderCity = defendingUnit ? null : city;
   const dmgToDefender = Math.max(1, Math.round(result.dmgToDefender * (0.8 + random(state.rng) * 0.4)));
@@ -141,24 +136,20 @@ export function resolveAttack(state: GameState, unit: Unit, target: TileIdx, emi
     defender: { player: defendingUnit?.owner ?? defenderCity!.owner, unitId: defendingUnit?.id, cityId: defenderCity?.id, tile: target },
     ranged: result.ranged, dmgToAttacker, dmgToDefender: actualDefenderDamage, attackerKilled: died,
     defenderKilled: killed || (!!defenderCity && defenderCity.hp === 0) });
-  if (defendingUnit && !killed) grantXp(state, defendingUnit, 3, emit);
-  if (!died) grantXp(state, unit, 5 + (killed || defenderCity?.hp === 0 ? 5 : 0), emit);
+  if (defendingUnit && !killed) grantXp(defendingUnit, 3, emit);
+  if (!died) grantXp(unit, 5 + (killed || defenderCity?.hp === 0 ? 5 : 0), emit);
   if (killed) removeUnit(state, defendingUnit.id, emit, unit.owner);
   if (died) removeUnit(state, unit.id, emit, defendingUnit?.owner ?? defenderCity?.owner);
   if (killed && !died) for (const id of unit.promotions) {
     const reward = PROMOTIONS[id]?.onKill;
     if (reward?.gold) addGold(state, unit.owner, reward.gold, 'Promotion: spoils of battle', emit);
     if (reward?.heal) unit.hp = Math.min(100, unit.hp + reward.heal);
-    if (reward?.xp) grantXp(state, unit, reward.xp, emit);
+    if (reward?.xp) grantXp(unit, reward.xp, emit);
   }
-  if (!died && defenderCity?.hp === 0) {
-    if (unit.owner !== BARBARIAN) captureCity(state, defenderCity, unit.owner, emit);
-    else { defenderCity.hp = Math.max(1, defenderCity.maxHp / 4); for (const tile of state.map.tiles) if (tile.cityId === defenderCity.id && tile.improvement && !tile.pillaged) {
-      tile.pillaged = true; emit({ type: 'improvementPillaged', tile: tile.idx, by: BARBARIAN }); break;
-    } }
-  }
-  if (!died && !result.ranged && (killed || defenderCity?.owner === unit.owner) && !militaryAt(state, target) &&
-    !unitsAt(state, target).some(u => u.owner !== unit.owner)) {
+  // Only Raiders ever break a colony (nations never fight each other): they loot it and leave.
+  if (!died && defenderCity?.hp === 0) raidCity(state, defenderCity, emit);
+  if (!died && !result.ranged && killed && !militaryAt(state, target) &&
+    !unitsAt(state, target).some(u => u.owner !== unit.owner) && !Object.values(state.cities).some(c => c.tile === target)) {
     // Attack is already paid; melee advance should not charge movement again.
     const from = unit.tile;
     unit.tile = target;
@@ -175,10 +166,10 @@ export function previewCityStrike(state: GameState, city: City, target: TileIdx)
   return result && militaryAt(state, target) ? result : null;
 }
 export function resolveCityStrike(state: GameState, city: City, target: TileIdx, emit: Emit): string | null {
-  if (city.hasStruck) return 'Colony already fired this turn';
+  if (city.hasStruck) return 'The colony already fired this turn.';
   const result = previewCityStrike(state, city, target);
   const defender = militaryAt(state, target);
-  if (!result || !defender) return 'Invalid colony strike';
+  if (!result || !defender) return 'Invalid target.';
   const dmg = Math.max(1, Math.round(result.dmgToDefender * (0.8 + random(state.rng) * 0.4)));
   defender.hp = Math.max(0, defender.hp - dmg);
   city.hasStruck = true;
@@ -186,6 +177,6 @@ export function resolveCityStrike(state: GameState, city: City, target: TileIdx,
     defender: { player: defender.owner, unitId: defender.id, tile: target }, ranged: true,
     dmgToAttacker: 0, dmgToDefender: dmg, attackerKilled: false, defenderKilled: defender.hp === 0 });
   if (defender.hp === 0) removeUnit(state, defender.id, emit, city.owner);
-  else grantXp(state, defender, 3, emit);
+  else grantXp(defender, 3, emit);
   return null;
 }

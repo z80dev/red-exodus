@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 // Content reader for the art pipeline, sourced from the live content barrel.
 // `index.ts` evaluates Crew registration before exposing the combined DOCTRINES registry.
-//   bun scripts/art_content.ts <leaders|doctrines|edicts|crises|omens|reforms> → review table on stdout
+//   bun scripts/art_content.ts <leaders|doctrines|edicts|crises> → review table on stdout
 import * as CONTENT from '../src/content/index';
 
-export type ContentKind = 'leaders' | 'doctrines' | 'edicts' | 'crises' | 'omens' | 'reforms';
+export type ContentKind = 'leaders' | 'doctrines' | 'edicts' | 'crises';
 
 export interface ContentEntry {
   id: string;
@@ -20,11 +20,11 @@ export interface ContentEntry {
 }
 
 const REGISTRY: Record<ContentKind, string> = {
-  leaders: 'LEADERS', doctrines: 'DOCTRINES', edicts: 'EDICTS', crises: 'CRISES', omens: 'OMENS', reforms: 'REFORMS',
+  leaders: 'LEADERS', doctrines: 'DOCTRINES', edicts: 'EDICTS', crises: 'CRISES',
 };
 
 interface LooseDef {
-  id: string; name: string; description?: string; flavor?: string; rewardText?: string; rarity?: string; tier?: number;
+  id: string; name: string; description?: string; flavor?: string; rarity?: string;
   eras?: number[]; art?: { hue: number; motif: string }; portrait?: { hue: number; motif: string }; icon?: string;
   nation?: string; flagColors?: string[];
 }
@@ -36,10 +36,10 @@ function fromRegistry(
   return Object.values(rec).map((d) => {
     const art = d.art ?? d.portrait;
     return {
-      id: d.id, name: d.name, description: d.description ?? '', flavor: d.flavor ?? d.rewardText ?? '',
+      id: d.id, name: d.name, description: d.description ?? '', flavor: d.flavor ?? '',
       hue: art?.hue, motif: art?.motif ?? d.icon, nation: d.nation,
       nationColors: d.nation ? leaders?.[d.nation]?.flagColors : d.flagColors,
-      tag: d.rarity ?? (d.tier !== undefined ? `tier ${d.tier}` : d.eras ? `eras ${d.eras.join(',')}` : ''),
+      tag: d.rarity ?? (d.eras ? `eras ${d.eras.join(',')}` : ''),
     };
   });
 }

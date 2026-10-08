@@ -1,4 +1,4 @@
-// Universal 5:7 card: doctrine / edict / scroll / crisis / omen / pack / reform / pillar / leader.
+// Universal 5:7 card: Crew / Boost / crisis / pack / pillar / leader.
 // Ornate rarity frame with gold filigree corners, illustrated or procedural art, edition shaders
 // (gilded sheen, radiant pulse, prismatic foil tracking the pointer, ethereal shimmer), 3D tilt,
 // flip, press lift, long-press → zoom modal. Content scales with card width (container units).

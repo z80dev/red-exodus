@@ -169,8 +169,7 @@ export class Director {
       }
       case 'combat':
         return this.combat(ev, state, speed);
-      case 'unitPromoted':
-      case 'unitLevelUp': {
+      case 'unitPromoted': {
         const v = r.units.views.get(ev.unitId);
         const u = state.units[ev.unitId];
         if (!v || !u || !this.vis(state, u.tile)) return null;
@@ -178,7 +177,7 @@ export class Director {
           const p = v.root.position.clone();
           void fx.ring(p.clone().setY(p.y + 0.04), GOLD, 0.6, 0.7);
           fx.burst(p.clone().setY(p.y + 0.1), { count: 26, color: GOLD, color2: WHITE, speed: 0.35, up: 1.3, life: 1.1, size: 0.08, star: true, radius: 0.25, drag: 1 });
-          if (u.owner === HUMAN) r.overlay.pop({ kind: 'label', text: ev.type === 'unitLevelUp' ? 'Level up' : 'Promoted', icon: 'promote', color: '#ffd36b', x: p.x, y: p.y + v.height + 0.35, z: p.z, life: 1.4 });
+          if (u.owner === HUMAN) r.overlay.pop({ kind: 'label', text: 'Promoted', icon: 'promote', color: '#ffd36b', x: p.x, y: p.y + v.height + 0.35, z: p.z, life: 1.4 });
           await fx.wait(0.55 * speed);
         });
       }
@@ -262,31 +261,6 @@ export class Director {
         const settle = r.storms.settled();
         return ev.unitId !== undefined ? this.chain(ev.unitId, () => settle.then(hit)) : settle.then(hit);
       }
-      case 'cityCaptured': {
-        r.refreshProps(state);
-        r.applyOwners(state, this.cityTiles(state, ev.cityId));
-        r.refreshOverlay(state);
-        if (!this.vis(state, ev.tile)) return null;
-        const p = this.pos(ev.tile);
-        const team = teamColors(playerById(state, ev.to));
-        void fx.ring(p.clone().setY(p.y + 0.05), team.a, 1.8, 1.0);
-        fx.burst(p.clone().setY(p.y + 0.4), { count: 36, color: team.a, color2: WHITE, speed: 1.1, up: 1.2, life: 1.2, size: 0.1, star: true, gravity: 1 });
-        fx.burst(p.clone().setY(p.y + 0.2), { count: 16, color: SMOKE, additive: false, speed: 0.4, up: 0.8, life: 1.6, size: 0.35, grow: 2 });
-        r.rig.shake(0.06);
-        return fx.wait(1.0 * speed);
-      }
-      case 'cityRazed': {
-        const visible = this.vis(state, ev.tile);
-        const p = this.pos(ev.tile);
-        r.refreshProps(state);
-        r.applyOwners(state, null);
-        r.refreshOverlay(state);
-        if (!visible) return null;
-        fx.burst(p.clone().setY(p.y + 0.2), { count: 50, color: EMBER, color2: '#ffd36b', speed: 0.9, up: 1.8, life: 1.3, size: 0.09, star: true, gravity: 0.4, radius: 0.5 });
-        fx.burst(p.clone().setY(p.y + 0.3), { count: 30, color: SMOKE, additive: false, speed: 0.5, up: 1.0, life: 2.2, size: 0.45, grow: 2.5, radius: 0.5 });
-        r.rig.shake(0.08);
-        return fx.wait(1.2 * speed);
-      }
       case 'cityGrew':
       case 'cityStarved': {
         const c = state.cities[ev.cityId];
@@ -335,20 +309,14 @@ export class Director {
           await fx.wait(1.8 * speed);
         })();
       }
-      case 'improvementBuilt':
-      case 'improvementPillaged': {
+      case 'improvementBuilt': {
         r.refreshProps(state);
         if (!this.vis(state, ev.tile)) return null;
         const p = this.pos(ev.tile, 0.05);
-        if (ev.type === 'improvementBuilt') {
-          fx.burst(p, { count: 22, color: DUST, additive: false, speed: 0.9, up: 0.5, life: 0.8, size: 0.2, grow: 1.8, spread: 1.4, drag: 3.5, radius: 0.35 });
-          fx.burst(p.clone().setY(p.y + 0.15), { count: 16, color: LEAF, color2: GOLD, speed: 0.5, up: 1.1, life: 0.9, size: 0.07, star: true, radius: 0.4 });
-          void fx.ring(p, GOLD, 0.9, 0.6);
-          return fx.wait(0.55 * speed);
-        }
-        fx.burst(p, { count: 20, color: SMOKE, additive: false, speed: 0.4, up: 0.9, life: 1.6, size: 0.35, grow: 2, radius: 0.4 });
-        fx.burst(p, { count: 24, color: EMBER, speed: 0.6, up: 1.2, life: 1.0, size: 0.06, star: true, radius: 0.4 });
-        return fx.wait(0.6 * speed);
+        fx.burst(p, { count: 22, color: DUST, additive: false, speed: 0.9, up: 0.5, life: 0.8, size: 0.2, grow: 1.8, spread: 1.4, drag: 3.5, radius: 0.35 });
+        fx.burst(p.clone().setY(p.y + 0.15), { count: 16, color: LEAF, color2: GOLD, speed: 0.5, up: 1.1, life: 0.9, size: 0.07, star: true, radius: 0.4 });
+        void fx.ring(p, GOLD, 0.9, 0.6);
+        return fx.wait(0.55 * speed);
       }
       case 'techResearched': {
         if (ev.player !== HUMAN) return null;
@@ -600,7 +568,6 @@ export class Director {
 function eventPlayer(ev: SimEvent): PlayerId | null {
   if ('player' in ev && typeof ev.player === 'number') return ev.player;
   if (ev.type === 'combat') return ev.attacker.player === HUMAN || ev.defender.player === HUMAN ? HUMAN : ev.attacker.player;
-  if (ev.type === 'cityCaptured') return ev.to;
   return null;
 }
 

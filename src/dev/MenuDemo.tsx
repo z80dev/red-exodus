@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { LEADERS, DOCTRINES, EDICTS, CRISES, TECHS, WONDERS } from '../content';
 import { createGame } from '../sim/engine';
+import { CHAPTER_TARGET_MUL, CHAPTERS_PER_ERA, CRISIS_CHAPTER, ERA_TARGETS, FINAL_ERA } from '../sim/roguelite/constants';
 import { useGame } from '../game/store';
 import type { Screen } from '../game/store';
 import { defaultProfile, loadProfile, saveProfile } from '../meta/profile';
@@ -18,9 +19,9 @@ const SCREENS: Screen[] = ['menu', 'newRun', 'codex', 'settings', 'summary', 'ga
 function showSummary() {
   const leader = Object.values(LEADERS)[0];
   const { state } = createGame({ seed: 'RED-EXODUS-MENU-DEMO', leaderId: leader.id, ascension: 2, mapSize: 'small', rivals: 1, tutorial: false, daily: false });
-  state.turn = 78;
-  state.run.era = 5; state.run.chapter = 2; state.run.phase = 'victory';
-  state.run.history = Array.from({ length: 18 }, (_, i) => { const target = [300, 1200, 4000, 12000, 35000, 100000][Math.floor(i / 3)] * [1, 1.5, 2][i % 3]; return { era: Math.floor(i / 3), chapter: i % 3, score: Math.floor(target * (i === 4 ? .87 : 1.25 + (i % 4) * .3)), target, passed: i !== 4 }; });
+  state.turn = 54;
+  state.run.era = FINAL_ERA; state.run.chapter = CRISIS_CHAPTER; state.run.phase = 'victory';
+  state.run.history = Array.from({ length: (FINAL_ERA + 1) * CHAPTERS_PER_ERA }, (_, i) => { const era = Math.floor(i / CHAPTERS_PER_ERA); const chapter = i % CHAPTERS_PER_ERA; const target = ERA_TARGETS[era] * CHAPTER_TARGET_MUL[chapter]; return { era, chapter, score: Math.floor(target * (i === 4 ? .87 : 1.25 + (i % 4) * .3)), target, passed: i !== 4 }; });
   state.run.bestScore = Math.max(...state.run.history.map((h) => h.score));
   state.run.doctrines = Object.values(DOCTRINES).slice(0, 5).map((d, i) => ({ uid: i + 1, id: d.id, edition: i === 2 ? 'gilded' : 'base', counters: {}, disabled: false, sellValue: 3 }));
   useGame.setState({ state, screen: 'summary', version: useGame.getState().version + 1 });
@@ -29,7 +30,6 @@ export default function MenuDemo() {
   const screen = useGame((g) => g.screen);
   useGame((g) => g.version);
   const state = useGame((g) => g.state);
-  const settler = state && Object.values(state.units).find((u) => u.owner === 0 && u.type === 'settler');
   const city = state && Object.values(state.cities).find((c) => c.owner === 0);
   const research = state && Object.values(TECHS).find((tech) => !state.players[0].techs.includes(tech.id) && tech.prereqs.every((id) => state.players[0].techs.includes(id)));
   const [ready, setReady] = useState(false);
@@ -69,17 +69,15 @@ export default function MenuDemo() {
     {screen === 'summary' && <Summary />}
     {screen === 'game' && <>
       <div className="ae-demo-game">
-        <h2>Landfall begun</h2>
+        <h2>Run started</h2>
         <p>{state?.config.seed}</p>
         <p>Real colony sim. Add &amp;live for the 3D backdrop.</p>
-        {state?.run.phase === 'crisisReveal' && <button className="ae-button" data-tutorial="crisis-reveal" onClick={() => useGame.getState().dispatch({ type: 'ackCrisis' })}>Acknowledge Crisis</button>}
-        {state?.run.phase === 'chapterStart' && <button className="ae-button" data-tutorial="chapter-start" onClick={() => useGame.getState().dispatch({ type: 'chooseChapterStart', focus: 'prosperity', omen: null })}>Choose Prosperity</button>}
+        {state?.run.phase === 'chapterStart' && <button className="ae-button" data-tutorial="chapter-start" onClick={() => useGame.getState().dispatch({ type: 'chooseChapterStart', focus: 'prosperity' })}>Choose Growth</button>}
         {state?.run.phase === 'playing' && <div className="ae-demo-game-controls">
-          {settler && <><button className="ae-button ae-button-small" onClick={() => useGame.getState().select({ kind: 'unit', id: settler.id })}>Select settler</button><button className="ae-button ae-button-small" data-tutorial="found-city" onClick={() => useGame.getState().dispatch({ type: 'foundCity', unitId: settler.id })}>Found city</button></>}
-          {city && <button className="ae-button ae-button-small" data-tutorial="production" onClick={() => useGame.getState().dispatch({ type: 'setProduction', cityId: city.id, item: { kind: 'unit', id: 'warrior' } })}>Train warrior</button>}
+          {city && <button className="ae-button ae-button-small" data-tutorial="production" onClick={() => useGame.getState().dispatch({ type: 'setProduction', cityId: city.id, item: { kind: 'unit', id: 'warrior' } })}>Build warrior</button>}
           {research && <button className="ae-button ae-button-small" data-tutorial="research" onClick={() => useGame.getState().dispatch({ type: 'setResearch', tech: research.id })}>Research {research.name}</button>}
           <button className="ae-button ae-button-small" data-tutorial="end-turn" onClick={() => useGame.getState().dispatch({ type: 'endTurn' })}>End turn</button>
-          <p data-tutorial="legacy">Viability = Output × Hope</p>
+          <p data-tutorial="score">Score = Points × Multiplier</p>
         </div>}
       </div>
       <Tutorial />

@@ -2,6 +2,9 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DoctrineDef, EffectHooks } from '../defs';
 import type { GameState } from '../types';
 import { CRISES, DOCTRINES } from '../../content';
+import {
+  CRISIS_CHAPTER, INCOME_BASE, INCOME_CHAPTER_BONUS, INTEREST_CAP, LIFELINE_INFLUENCE, OVERDRIVE_INFLUENCE_CAP, TRIUMPH_INFLUENCE,
+} from './constants';
 import { chronicleTarget, computeChronicle, previewChronicle } from './chronicle';
 import { initRun } from './run';
 import { testCity, testState } from './testState';
@@ -89,49 +92,50 @@ describe('computeChronicle', () => {
     expect(computeChronicle(state, () => {}).splendor).toBe(2);
   });
 
-  it('crisis hooks run after doctrines; crisis targetMul and failure costs 2 mandate in chapter III', () => {
+  it('crisis hooks run after doctrines; crisis targetMul and failure costs 2 mandate in the Crisis chapter', () => {
     own(['__t_add5']);
     state.run.crisis = '__t_crisis';
     state.run.crisisActive = true;
-    state.run.chapter = 2;
+    state.run.chapter = CRISIS_CHAPTER;
     const r = computeChronicle(state, () => {});
     const srcs = r.steps.map((s) => s.source);
     expect(srcs.indexOf('crisis')).toBeGreaterThan(srcs.indexOf('doctrine'));
     expect(r.splendor).toBeCloseTo((2 + 5) * 0.5);
     expect(r.passed).toBe(false);
     expect(r.mandateLost).toBe(2);
-    expect(r.influenceEarned.find((l) => l.label === 'Test Crisis overcome')).toBeUndefined();
+    expect(r.influenceEarned.find((l) => l.label === 'Test Crisis survived')).toBeUndefined();
   });
 
-  it('influence: stipend, chapter bonus, capped interest, triumph, capped overdrive', () => {
+  it('influence: base pay, chapter bonus, capped interest, Big Win, capped Bonus Coins', () => {
     state.run.influence = 40;
-    state.run.stats.culture = 1000; // 2000 + 22 = 2022 × 2 = 4044 = 8× the 500 target
+    state.run.stats.culture = 1800; // (3600 + 22) × 2 = 7244 = 16× the 450 target
     const r = computeChronicle(state, () => {});
+    expect(r.target).toBe(450);
     expect(r.triumph).toBe(true);
     expect(r.influenceEarned).toEqual([
-      { label: 'Ark stipend', amount: 3 },
-      { label: 'Dawn bonus', amount: 1 },
-      { label: 'Interest', amount: 5 },
-      { label: 'Triumph', amount: 3 },
-      { label: 'Overdrive ×8', amount: 4 },
+      { label: 'Base pay', amount: INCOME_BASE },
+      { label: 'Dawn bonus', amount: INCOME_CHAPTER_BONUS[0] },
+      { label: 'Savings bonus', amount: INTEREST_CAP },
+      { label: 'Big Win', amount: TRIUMPH_INFLUENCE },
+      { label: 'Bonus Coins: 16× target', amount: OVERDRIVE_INFLUENCE_CAP },
     ]);
   });
 
-  it('overdrive pays +1 per full target beyond the triumph ratio', () => {
-    state.run.stats.culture = 300; // (600 + 22) × 2 = 1244 = 2.49× → triumph, no overdrive
-    expect(computeChronicle(structuredClone(state), () => {}).influenceEarned.map((l) => l.label)).not.toContain('Overdrive ×2');
-    state.run.stats.culture = 400; // (800 + 22) × 2 = 1644 = 3.29× → +1
-    expect(computeChronicle(state, () => {}).influenceEarned).toContainEqual({ label: 'Overdrive ×3', amount: 1 });
+  it('Bonus Coins pay +1 per full target beyond the Big Win ratio', () => {
+    state.run.stats.culture = 270; // (540 + 22) × 2 = 1124 = 2.5× → Big Win, no Bonus Coins
+    expect(computeChronicle(structuredClone(state), () => {}).influenceEarned.map((l) => l.label)).not.toContain('Bonus Coins: 2× target');
+    state.run.stats.culture = 350; // (700 + 22) × 2 = 1444 = 3.2× → +1
+    expect(computeChronicle(state, () => {}).influenceEarned).toContainEqual({ label: 'Bonus Coins: 3× target', amount: 1 });
   });
 
-  it('a miss wires Lifeline Scrip instead of the chapter bonus; Hazard 7 cancels it', () => {
-    state.run.stats.culture = 10; // (20 + 22) × 2 = 84 < 500
+  it('a miss pays the Second Chance instead of the chapter bonus; Hazard 7 cancels it', () => {
+    state.run.stats.culture = 10; // (20 + 22) × 2 = 84 < 450
     const r = computeChronicle(structuredClone(state), () => {});
     expect(r.passed).toBe(false);
-    expect(r.influenceEarned).toEqual([{ label: 'Ark stipend', amount: 3 }, { label: 'Lifeline', amount: 3 }]);
+    expect(r.influenceEarned).toEqual([{ label: 'Base pay', amount: INCOME_BASE }, { label: 'Second Chance', amount: LIFELINE_INFLUENCE }]);
     state.run.ascension = 7;
     const hard = computeChronicle(state, () => {});
-    expect(hard.influenceEarned.reduce((s, l) => s + l.amount, 0)).toBe(3);
+    expect(hard.influenceEarned.reduce((s, l) => s + l.amount, 0)).toBe(INCOME_BASE);
   });
 
   it('cities score capital first, then by founding order', () => {
@@ -164,26 +168,26 @@ describe('chronicleTarget', () => {
     expect(chronicleTarget(state, 5, 0)).toBeGreaterThan(chronicleTarget(state, 4, 0));
     expect(chronicleTarget(state, 6, 0) / chronicleTarget(state, 5, 0)).toBe(3);
     expect(chronicleTarget(state, 7, 0) / chronicleTarget(state, 6, 0)).toBe(3);
-    expect(chronicleTarget(state, 5, 2)).toBeGreaterThan(chronicleTarget(state, 5, 1));
+    expect(chronicleTarget(state, 5, CRISIS_CHAPTER)).toBeGreaterThan(chronicleTarget(state, 5, 0));
   });
 
-  it('applies the revealed crisis only to the current era chapter III, before it begins', () => {
-    const regular = chronicleTarget(state, 0, 2);
-    const nextEra = chronicleTarget(state, 1, 2);
-    const trial = chronicleTarget(state, 0, 1);
+  it('applies the revealed crisis only to the current era Crisis chapter, before it begins', () => {
+    const regular = chronicleTarget(state, 0, CRISIS_CHAPTER);
+    const nextEra = chronicleTarget(state, 1, CRISIS_CHAPTER);
+    const trial = chronicleTarget(state, 0, 0);
     state.run.crisis = '__t_crisis';
-    expect(chronicleTarget(state, 0, 2)).toBeCloseTo(regular * 1.5);
-    expect(chronicleTarget(state, 0, 1)).toBe(trial);
-    expect(chronicleTarget(state, 1, 2)).toBe(nextEra);
+    expect(chronicleTarget(state, 0, CRISIS_CHAPTER)).toBe(Math.round(regular * 1.5));
+    expect(chronicleTarget(state, 0, 0)).toBe(trial);
+    expect(chronicleTarget(state, 1, CRISIS_CHAPTER)).toBe(nextEra);
   });
 
   it('the Lifeline cuts the target after a miss unless Hazard 7 is active', () => {
-    const normal = chronicleTarget(state, 1, 1);
+    const normal = chronicleTarget(state, 1, 0);
     state.run.darkAge = true;
-    expect(chronicleTarget(state, 1, 1)).toBe(Math.round(normal * 0.75));
+    expect(chronicleTarget(state, 1, 0)).toBe(Math.round(normal * 0.75));
     state.run.ascension = 7;
-    const hazard7 = chronicleTarget(state, 1, 1);
+    const hazard7 = chronicleTarget(state, 1, 0);
     state.run.darkAge = false;
-    expect(hazard7).toBe(chronicleTarget(state, 1, 1));
+    expect(hazard7).toBe(chronicleTarget(state, 1, 0));
   });
 });

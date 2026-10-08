@@ -1,8 +1,7 @@
-// Human-seat bot's Council, Omen and Chronicle policy. No random draws or state mutation here.
-import { DOCTRINES, EDICTS, OMENS, SCROLLS } from '../../content';
+// Human-seat bot's Shop and Chapter Report policy. No random draws or state mutation here.
+import { DOCTRINES, EDICTS } from '../../content';
 import { councilBuyError, councilRerollError, doctrineSlotsUsed, packPickError } from '../roguelite/council';
 import { useEdictError } from '../roguelite/edicts';
-import { omenGoal } from '../roguelite/omens';
 import type { Action, GameState, PillarId, ShopItem } from '../types';
 import { HUMAN } from '../types';
 
@@ -54,14 +53,7 @@ function itemValue(state: GameState, item: ShopItem): number {
   const { run } = state;
   switch (item.kind) {
     case 'doctrine': return doctrineValue(state, item.id, item.edition) - item.price * 1.1;
-    case 'scroll': {
-      const scroll = SCROLLS[item.id];
-      const relevant = scroll.scope === 'all' || scroll.scope === 'focus' || scroll.pillar === run.focus;
-      return (relevant ? 19 : 8) + (scroll.levels ?? 1) * 5 - item.price;
-    }
-    case 'reform': return 26 - item.price + (run.era < 3 ? 5 : 0);
-    case 'pack': return item.pack === 'doctrine' ? 18 + run.era * 2 - item.price :
-      item.pack === 'archive' ? 16 - item.price : item.pack === 'edict' ? 7 - item.price : -Infinity;
+    case 'pack': return item.pack === 'doctrine' ? 18 + run.era * 2 - item.price : 7 - item.price;
     case 'edict': return (['codex_universalis', 'epiphany', 'patronage', 'hermits_tithe', 'grand_festival', 'heavens_clemency', 'golden_harvest', 'rain_of_plenty'].includes(item.id) ? 18 : 7) - item.price;
   }
 }
@@ -87,7 +79,8 @@ export function councilAction(state: GameState): Action {
     return { type: 'packPick', index: best < 0 ? null : best };
   }
   let best = -1;
-  let value = 10;
+  // spare Coins lower the bar: a Boost or a so-so card beats Coins that only sit in the bank
+  let value = state.run.influence >= 15 ? 4 : 10;
   for (let i = 0; i < council.items.length; i++) {
     const item = council.items[i];
     if (!item || councilBuyError(state, i) !== null || !purchaseAllowed(state, item)) continue;
@@ -95,47 +88,20 @@ export function councilAction(state: GameState): Action {
     if (rating > value) { value = rating; best = i; }
   }
   if (best >= 0) return { type: 'councilBuy', slot: best };
-  // Replace a weak early card if a substantially better one is on offer.
-  if (doctrineSlotsUsed(state.run) >= state.run.doctrineSlots) {
+  const full = doctrineSlotsUsed(state.run) >= state.run.doctrineSlots;
+  // Sell the weakest card when a better one is on offer (its sale pays part of the new price).
+  if (full) {
     let weakest = state.run.doctrines.find((d) => d.edition !== 'ethereal' && !DOCTRINES[d.id]?.noSell);
     for (const d of state.run.doctrines) if (d.edition !== 'ethereal' && !DOCTRINES[d.id]?.noSell &&
       weakest && doctrineValue(state, d.id, d.edition) < doctrineValue(state, weakest.id, weakest.edition)) weakest = d;
-    const upgrade = council.items.find((item) => item?.kind === 'doctrine' && item.price <= state.run.influence &&
-      item.edition !== 'ethereal' && weakest && doctrineValue(state, item.id, item.edition) > doctrineValue(state, weakest.id, weakest.edition) + 12);
+    const upgrade = council.items.find((item) => item?.kind === 'doctrine' && weakest && item.price <= state.run.influence + weakest.sellValue &&
+      item.edition !== 'ethereal' && doctrineValue(state, item.id, item.edition) > doctrineValue(state, weakest.id, weakest.edition) + 5);
     if (weakest && upgrade) return { type: 'sellDoctrine', uid: weakest.uid };
   }
-  if (!council.rerollLocked && council.rerolls === 0 && state.run.influence >= council.rerollCost + 8 && councilRerollError(state) === null &&
-    doctrineSlotsUsed(state.run) < state.run.doctrineSlots) return { type: 'councilReroll' };
+  // Reroll for more choices (when full: to find an upgrade) while Coins are spare.
+  if (!council.rerollLocked && council.rerolls < (full ? 2 : 1) && state.run.influence >= council.rerollCost + 8 &&
+    councilRerollError(state) === null) return { type: 'councilReroll' };
   return { type: 'leaveCouncil' };
-}
-
-/** Rank goals by projected chapter progress, rather than accepting whichever omen was first. */
-export function chooseOmen(state: GameState): string | null {
-  const cities = Object.values(state.cities).filter((c) => c.owner === HUMAN);
-  const { era, chapterLength } = state.run;
-  const player = state.players.find((p) => p.id === HUMAN)!;
-  const gold = cities.reduce((n, c) => n + Math.max(0, c.yields.gold), 0) * chapterLength;
-  const pop = cities.reduce((n, c) => n + Math.max(0, c.yields.food - c.pop * 2), 0) * chapterLength / 12;
-  const estimates: Record<string, number> = {
-    coin_of_the_realm: gold, teeming_masses: pop, shining_city: pop / Math.max(1, cities.length),
-    seeds_of_empire: state.turn < 30 ? 1.2 : 0, hands_to_the_soil: player.gold > 70 ? 2 + cities.length : 0,
-    stone_upon_stone: cities.length * chapterLength / 8, widening_realm: cities.length * chapterLength * 0.7,
-    font_of_knowledge: chapterLength * cities.reduce((n, c) => n + c.yields.sci, 0) / (35 + era * 65),
-    beyond_the_edge: state.turn < 30 ? 35 : 0, relics_of_the_ancients: state.turn < 25 ? 1 : 0,
-    iron_tide: Math.max(0, 2 - cities.length / 3), red_harvest: state.run.stats.kills + (Object.values(player.relations).includes('war') ? 2 : 0),
-    bane_of_barbarians: state.run.stats.kills, hold_the_line: Object.values(player.relations).includes('war') ? 2 : 0,
-    word_of_law: state.run.edicts.length, days_of_revelry: 0,
-  };
-  let best: string | null = null;
-  let score = 0;
-  for (const id of state.run.omenOffer) {
-    const def = OMENS[id];
-    if (!def) continue;
-    const chance = (estimates[id] ?? 0) / omenGoal(state, def);
-    const reward = def.reward.kind === 'doctrine' ? 1.3 : def.reward.kind === 'mandate' && state.run.mandate < state.run.maxMandate ? 1.5 : 1;
-    if (chance * reward > score) { score = chance * reward; best = id; }
-  }
-  return score >= 0.45 ? best : null;
 }
 
 function edictTarget(state: GameState, uid: number, id: string): Action | null {
@@ -148,8 +114,6 @@ function edictTarget(state: GameState, uid: number, id: string): Action | null {
   if (id === 'pioneers_charter' && cities.length >= 5) return null;
   if (id === 'hermits_tithe' && state.run.influence < 5) return null;
   if (id === 'balm_of_ages' && !Object.values(state.units).some((u) => u.owner === HUMAN && u.hp < 70)) return null;
-  if (id === 'olive_branch' && !Object.values(player.relations).includes('war')) return null;
-  if (id === 'augurs_sign' && !state.run.omen) return null;
   if (id === 'golden_harvest' && !cities.length) return null;
   const targets = def.target === 'city' ? cities.sort((a, b) => b.yields.prod - a.yields.prod).map((c) => ({ cityId: c.id })) :
     def.target === 'unit' ? Object.values(state.units).filter((u) => u.owner === HUMAN).sort((a, b) => a.hp - b.hp).map((u) => ({ unitId: u.id })) :

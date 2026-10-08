@@ -1,6 +1,15 @@
 # AEONS — Architecture & Team Contract
 
-Read `docs/DESIGN.md` first. This file is the binding contract between parallel workstreams.
+Read `docs/DESIGN.md` first (§0 "Easy to pick up" is binding). This file is the binding contract between parallel workstreams.
+
+## Streamline contract (phase 3 — supersedes older sections where they conflict)
+- Removed systems, do not reintroduce: Directives (omens), Ark Modules (reforms), Blueprints (scrolls + archive
+  pack), Crisis reveal phase, diplomacy (war/peace/relations), pillage, player-chosen promotions/upgrades.
+- Hostility is `isHostile(a, b)` in `sim/units.ts` (true only when one side is `BARBARIAN`).
+- Player-facing text is CEFR B2 and uses `src/ui/terms.ts` words. `RichText` prints the plain name after yield/score
+  tokens (`{mandate}` → "♥ Life/Lives"), so never write the word right after its token.
+- Attention (`attentionCount`/`nextAttention`) = research not chosen or a colony with nothing to build; idle units
+  never block End Turn.
 
 ## Mars redesign contract (phase 2 — supersedes the fantasy-history theme)
 - **Ids are frozen, looks and names change.** Every content id, model key, icon name and sfx name listed
@@ -16,19 +25,25 @@ Read `docs/DESIGN.md` first. This file is the binding contract between parallel 
   immune to import-cycle order. `content/doctrines.ts` is the shared hook-helper kit and re-exports `DOCTRINES`.
 - New sim module `src/sim/mars.ts` (SimMechanics): storms (`stormAt`, `stormPowerAt`, `advanceStorms`,
   `spawnStorm`), Ark (`changeCryo`, `dropPrice`, `canOrbitalDrop`, `orbitalDrop`, `canThaw`,
-  `thawColonists`), Breakthrough draft (`rollResearchOffer`, `researchRerollCost`, `rerollResearch`),
-  `canDeclareWar`. Constants `START_CRYO ERA_CRYO THAW_POP DROP_RANGE RESEARCH_OFFER_SIZE`.
+  `thawColonists`), Breakthrough draft (`rollResearchOffer`, `researchRerollCost`, `rerollResearch`).
+  Constants `START_CRYO ERA_CRYO THAW_POP DROP_RANGE RESEARCH_OFFER_SIZE`.
 - State: `GameState.storms/nextStormId`, `Player.cryo/researchOffer/researchRerolls`, `StormCell`.
 - Actions: `orbitalDrop {tile}`, `thawColonists {cityId}`, `rerollResearch`. `setResearch` (human) must
   pick from `researchOffer` when it is non-empty.
 - Events: `stormSpawned stormMoved stormEnded stormDamage podLanded colonistsThawed cryoChanged researchOffered`.
-- Hooks (`EffectHooks`): `storm`, `dropPrice`, `researchOffers`, `researchReroll`, `warDeclaration`,
+- Hooks (`EffectHooks`): `storm`, `dropPrice`, `researchOffers`, `researchReroll`,
   `interestCap`, `sellValue`. `CouncilState.rerollLocked` forbids Uplink rerolls for the visit.
 - Storm shelter: `player.counters.stormShelter = state.turn` spares that player's units/colonies this round.
-- `ChapterStats.extra` keys written by the sim: `stormHits stormKills drops thaws rerolls`.
-- Pace: sim-side multipliers `TECH_PACE PRODUCTION_PACE GROWTH_PACE BORDER_PACE` (≈1/1.6); content costs stay
-  as authored. Targets in `roguelite/constants.ts` tuned with `bun scripts/sim.ts --runs 24 --size small`
-  (bot win rate ≈40%).
+- `ChapterStats.extra` keys written by the sim: `stormHits stormKills drops thaws rerolls food buildProd unitProd army`
+  (`army` = Production value of the human's combat units, added every turn).
+- Pace: sim-side multipliers `TECH_PACE` (1/4.2, cost growth `TECH_COST_PER_KNOWN` 0.03) `PRODUCTION_PACE` (1/2.8)
+  `GROWTH_PACE` `BORDER_PACE` (1/2.3); content costs stay as authored (`TechDef.cost` only ranks techs). Capitals start
+  with `CAPITAL_START_POP` (3). Research offers always hold a newest-era tech; tech prereqs are 1–2 techs from the era
+  before. Chapter stats also track `extra.food` (Food for growth), `extra.buildProd` / `extra.unitProd` (Production
+  put into buildings and Wonders / combat units) for the pillar lines. Targets in `roguelite/constants.ts` tuned with
+  `bun scripts/sim.ts --runs 40 --size small` for three policies: bot (win ≈45%), `--policy guided` (the in-game guide;
+  Landfall Dawn ≈2×, falls in eras 3–4) and `--policy passive` (never lands a colony; Landfall Dawn ≈50%). Options
+  `--nation <id>|random` and `--focus <pillar>` check nation spread and Focus balance.
 - Game start = Landfall: capitals pre-founded; start units `warrior` + `scout`. `settler` = Hab Crawler.
 - Renderer draws storms from `state.storms` (eye = `path[step]`, forecast = next 2 path entries) and plays
   `podLanded` (orbital streak → impact) before `cityFounded`. New model key: `drop_pod`.
@@ -42,7 +57,7 @@ Read `docs/DESIGN.md` first. This file is the binding contract between parallel 
 | AI | `sim/ai/**`, `scripts/sim.ts` |
 | Nations | `content/leaders.ts`, `content/uniques.ts`, `content/nationCrew.ts` |
 | Crew | `content/doctrines.ts`, `content/crewMars.ts` |
-| RogueContent | `content/{edicts,scrolls,crises,omens,reforms,ascension,pillars}.ts`, `content/rogue.test.ts` |
+| RogueContent | `content/{edicts,crises,ascension,pillars}.ts`, `content/rogue.test.ts` |
 | CivContent | `content/{terrain,resources,improvements,units,buildings,wonders,techs,promotions,naturalWonders}.ts`, `content/civ.test.ts` |
 | Renderer | `render/**` |
 | Blender-Units / -City / -Nature / -Wonders | `art/blender/{units,city,nature,wonders}_*.py`, their GLBs/manifests/previews |
@@ -88,7 +103,7 @@ at module-evaluation time (only inside functions).
 | **CombatAI** | `sim/units.ts`, `sim/combat.ts`, `sim/ai/**`, `scripts/sim.ts` (headless runs) |
 | **Roguelite** | `sim/roguelite/**`, `meta/**`, `content/pillars.ts` |
 | **ContentCiv** | `content/{terrain,resources,improvements,units,buildings,wonders,techs,promotions,naturalWonders}.ts` |
-| **ContentRogue** | `content/{doctrines,edicts,scrolls,crises,omens,leaders,reforms,ascension}.ts` |
+| **ContentRogue** | `content/{doctrines,edicts,crises,leaders,ascension}.ts` |
 | **Renderer** | `render/**` (incl. `GameCanvas.tsx`) |
 | **Blender×4** | `art/blender/**` (scripts), `public/models/*.glb`, `art/previews/*` |
 | **Art (2D)** | `ui/icons/**`, `ui/art/**` (card art, crests, logo), `public/icons/*` (PWA) |
@@ -99,10 +114,16 @@ at module-evaluation time (only inside functions).
 | **Integrator (lead)** | `App.tsx`, `main.tsx`, `game/*` (except interaction.ts), docs, shared contract files |
 
 ## Simulation rules of the road
+- Map play (streamlined): nations are always at peace; only the Raiders (`BARBARIAN`) are hostile
+  (`isHostile` in `sim/units.ts`). No diplomacy, no city capture, no pillage. Raiders that break a colony loot
+  Credits (`raidCity`). Promotions apply automatically on level-up (`bestPromotion`: highest tier, then authored
+  order); units upgrade for free at their owner's turn start once the tech is known (`autoUpgrade`). Human recon
+  units start on auto-explore (`exploreStep`). End Turn only asks about research and empty build queues
+  (`attentionCount` / `nextAttention` in `sim/selectors.ts`).
 - Deterministic: all randomness via `src/sim/rng.ts` with `state.rng` (mapgen uses `deriveRng(seed,'map')`).
 - State must stay structured-clone serializable (no Map/Set/class/function in GameState).
 - Every observable change emits a `SimEvent` through the `emit` passed down. The engine's emit pipeline:
-  push to result events → `trackEvent` (roguelite stats/omens) → `broadcastEvent` (onEvent hooks).
+  push to result events → `trackEvent` (roguelite chapter stats) → `broadcastEvent` (onEvent hooks).
   Events emitted from inside onEvent hooks are queued (not recursive); pipeline caps at 2000 events/dispatch.
 - Content lookups: `import { UNITS, BUILDINGS, ... } from '../content'`.
 - Hot paths: compute `collectEffects(state,pid)` once per city refresh and pass `fx` down.
@@ -158,9 +179,9 @@ Improvements (model `imp_<id>`): `farm` `mine` `pasture` `plantation` `lumbermil
 ## Icons (2D) — `<Icon name="..."/>`, names are fixed
 yields `food prod gold sci cul` · `happy unhappy influence renown splendor mandate` · pillars `arts discovery commerce
 conquest prosperity glory` · unit classes `civilian recon melee antiCavalry ranged mounted siege naval armor` · stats
-`strength ranged range moves hp vision xp` · actions `move attack fortify sleep found pillage upgrade skip disband explore
+`strength ranged range moves hp vision xp` · actions `move attack fortify sleep found upgrade skip disband explore
 heal promote buy improve` · ui `settings pause close back next endturn reroll lock unlock info codex tech city star crown
-skull seed trophy shield sword book scroll edict doctrine pack reform crisis omen map journal war peace plus minus check
+skull seed trophy shield sword book scroll edict doctrine pack crisis map journal war peace plus minus check
 arrowUp arrowDown chevronRight chevronLeft hourglass calendar` · content icons: every resource id, improvement id,
 building id, wonder id, tech id fall back to a category glyph if missing (`building`, `wonder`, `tech`, `resource`,
 `improvement`). RichText tokens: `{food} {prod} {gold} {sci} {cul} {happy} {influence} {renown} {splendor} {mandate}`
@@ -179,7 +200,7 @@ Generated raster art goes through the Bankr LLM Gateway (`https://llm.bankr.bot/
 `--batch art/gen/<kind>.json ... --jobs 6` (skips existing outputs, retries 429/5xx, aborts on 402). Generation only —
 no reference-image edits. Prompts/job files live in `art/gen/*.json` (committed); raw PNGs in `art/gen/out/`
 (gitignored); optimized WebP ships in `public/art/<kind>/<id>.webp` and is listed in `src/ui/art/artManifest.ts`
-(ArtGen owns). Kinds: `leaders` `doctrines` `edicts` `crises` `omens` `reforms` `eras` `key` (menu/victory/defeat).
+(ArtGen owns). Kinds: `leaders` `doctrines` `edicts` `crises` `eras` `key` (menu/victory/defeat).
 UI shows the illustration when the manifest has the id, otherwise the procedural SVG `CardArt`.
 Everything else visual is code (SVG/CSS/shaders) or Blender.
 
@@ -196,7 +217,7 @@ desaturated, no enemy units.
 `audio.init()` (first gesture), `audio.sfx(name, {pitch?, volume?})`, `audio.setEra(n)`, `audio.setMood(m)`,
 `audio.setVolumes({master,music,sfx})`. Audio subscribes to `bus` for sim events by itself. UI-called sfx names:
 `click tap open close hover error buy sell reroll cardFlip cardDeal packOpen chronicleTick renownAdd splendorAdd
-splendorMul scoreSlam targetPass targetFail triumph mandateLoss eraFanfare crisisReveal victory defeat endTurn
+splendorMul scoreSlam targetPass targetFail triumph mandateLoss eraFanfare crisisAlarm victory defeat endTurn
 levelUp select move attack found build research`.
 
 ## UI conventions
@@ -221,8 +242,8 @@ runs via `bun scripts/sim.ts --runs 20` (CombatAI builds; Roguelite tunes target
   preferences on progress reset, and return to the live game when one exists.
 - Mount `<Tutorial />` from `ui/menu/tutorial/Tutorial.tsx` in GameScreen. It watches simulation
   transitions and `profile.tutorialProgress`; its veil never blocks map input. Spotlight targets use
-  `data-tutorial="found-city|production|research|end-turn|legacy|combat-preview"` (one value per
-  element), plus `crisis-reveal`, `chapter-start`, `chronicle`, and `council` on run overlays.
+  `data-tutorial="production|drop|research|end-turn|score|city-sheet|improve|tech-tree|unit-panel"` (one value per
+  element), plus `chapter-start`, `chronicle`, `council` and `crew-slots` (Shop Crew rack) on run overlays.
 - `?dev=MenuDemo` opens the interactive menu gallery. Optional `&screen=newRun|codex|settings|summary`
   opens that screen; `&fixture=collection` seeds a sample profile **on the current origin**.
   `&live` additionally mounts the real renderer. The default gallery remains renderer-independent.

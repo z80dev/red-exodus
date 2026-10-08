@@ -1,16 +1,16 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import type { LeaderDef } from './defs';
+import { describe, expect, it } from 'vitest';
 import type { Emit, GameState, SimEvent, StormCell, Unit } from './types';
 import { HUMAN } from './types';
-import { LEADERS, TECHS } from '../content';
+import { TECHS } from '../content';
 import { applyAction } from './engine';
 import { canFoundCity, tileYieldsDetailed } from './cities';
 import { hexDistance } from './hex';
 import {
-  DROP_RANGE, STORM_DAMAGE, THAW_POP, advanceStorms, canDeclareWar, canOrbitalDrop, rerollResearch, researchRerollCost,
+  DROP_RANGE, STORM_DAMAGE, THAW_POP, advanceStorms, canOrbitalDrop, rerollResearch, researchRerollCost,
   rollResearchOffer, spawnStorm, stormAt, stormTarget,
 } from './mars';
 import { availableTechs } from './economy';
+import { CRISIS_CHAPTER } from './roguelite/constants';
 import { leaveCouncil } from './roguelite/run';
 import { autoplay, newGame, plainGame, startPlaying } from './testkit';
 
@@ -79,7 +79,7 @@ describe('dust storms', () => {
     state.run.era = 0;
     state.run.chapter = 0;
     expect(stormTarget(state)).toBe(1);
-    state.run.chapter = 2;
+    state.run.chapter = CRISIS_CHAPTER;
     expect(stormTarget(state)).toBe(2);
     state.run.era = 4;
     state.run.chapter = 0;
@@ -98,7 +98,7 @@ describe('dust storms', () => {
     expect(stormy.food).toBe(Math.floor(clear.food / 2));
     expect(stormy.prod).toBe(Math.floor(clear.prod / 2));
     expect(stormy.gold).toBe(clear.gold);
-    expect(lines.find((l) => l.label === 'Dust storm')?.yields.food).toBe(stormy.food - clear.food);
+    expect(lines.find((l) => l.label === 'Dust Storm')?.yields.food).toBe(stormy.food - clear.food);
   });
 
   it('batters units in the open (half when fortified), damages colonies but never below 1 HP', () => {
@@ -156,18 +156,18 @@ describe('the Ark: Orbital Drops and Thaws', () => {
     const far = sites(state, DROP_RANGE + 1, 99)[0];
     expect(near).toBeDefined();
     p.vis[near] = 0;
-    expect(canOrbitalDrop(state, HUMAN, near)).toMatch(/survey/);
+    expect(canOrbitalDrop(state, HUMAN, near)).toMatch(/explored/);
     p.vis[near] = 1;
     if (far != null) {
       p.vis[far] = 1;
       expect(canOrbitalDrop(state, HUMAN, far)).toMatch(new RegExp(`within ${DROP_RANGE}`));
     }
     const storm = parkStorm(state, near, 1);
-    expect(canOrbitalDrop(state, HUMAN, near)).toMatch(/storm/);
+    expect(canOrbitalDrop(state, HUMAN, near)).toMatch(/Storm/);
     state.storms = state.storms.filter((s) => s !== storm);
     const pods = p.cryo;
     p.cryo = 0;
-    expect(applyAction(state, { type: 'orbitalDrop', tile: near }).error).toMatch(/Cryo/);
+    expect(applyAction(state, { type: 'orbitalDrop', tile: near }).error).toMatch(/Pods/);
     p.cryo = pods;
     const r = applyAction(state, { type: 'orbitalDrop', tile: near });
     expect(r.ok).toBe(true);
@@ -194,7 +194,7 @@ describe('the Ark: Orbital Drops and Thaws', () => {
     expect(p.cryo).toBe(pods - 1);
     expect(r.events).toContainEqual({ type: 'colonistsThawed', player: HUMAN, cityId, pop: THAW_POP });
     p.cryo = 0;
-    expect(applyAction(state, { type: 'thawColonists', cityId }).error).toMatch(/Cryo/);
+    expect(applyAction(state, { type: 'thawColonists', cityId }).error).toMatch(/Pods/);
     const rival = state.players[1].capitalId!;
     p.cryo = 2;
     expect(applyAction(state, { type: 'thawColonists', cityId: rival }).ok).toBe(false);
@@ -204,7 +204,7 @@ describe('the Ark: Orbital Drops and Thaws', () => {
     const { state } = plainGame('ARK-ERA');
     const before = state.players.map((p) => p.cryo);
     state.run.phase = 'council';
-    state.run.chapter = 2;
+    state.run.chapter = CRISIS_CHAPTER;
     state.run.council = null;
     expect(leaveCouncil(state, () => {})).toBeNull();
     expect(state.run.era).toBe(1);
@@ -239,7 +239,7 @@ describe('Breakthrough draft', () => {
     // with only the offered techs available there is nothing else to draw
     p.gold = 100;
     if (availableTechs(state, HUMAN).length === p.researchOffer.length) {
-      expect(applyAction(state, { type: 'rerollResearch' }).error).toMatch(/No other research/);
+      expect(applyAction(state, { type: 'rerollResearch' }).error).toMatch(/no other Research/);
     }
     // open up the era-1 tree so rerolls have a pool to draw from
     p.techs = Object.values(TECHS).filter((t) => t.era === 0).map((t) => t.id);
@@ -260,32 +260,31 @@ describe('Breakthrough draft', () => {
     expect(state.run.stats.extra.rerolls).toBe(2);
   });
 
+  it('every offer and reroll holds a tech from the newest era you can research', () => {
+    const { state } = plainGame('DRAFT-NEWEST');
+    const p = state.players[HUMAN];
+    p.gold = 1000;
+    const topEra = () => Math.max(...availableTechs(state, HUMAN).map((t) => TECHS[t].era));
+    // a broad, shallow tree: all of eras 0–1 plus electricity's two era-3 prereqs → era 2 wide open, one era-4 tech
+    p.techs = [...Object.values(TECHS).filter((t) => t.era <= 1).map((t) => t.id), 'cartography', 'theology', 'engineering', 'astronomy', 'education'];
+    for (let i = 0; i < 12; i++) {
+      rollResearchOffer(state, HUMAN, () => {});
+      expect(p.researchOffer).toHaveLength(3);
+      expect(p.researchOffer.some((t) => TECHS[t].era === topEra()), p.researchOffer.join()).toBe(true);
+    }
+    // electricity is the only era-4 choice: a reroll keeps it even though it was just offered
+    expect(availableTechs(state, HUMAN).filter((t) => TECHS[t].era === 4)).toEqual(['electricity']);
+    expect(p.researchOffer).toContain('electricity');
+    expect(applyAction(state, { type: 'rerollResearch' }).ok).toBe(true);
+    expect(p.researchOffer).toContain('electricity');
+    expect(p.researchOffer).toHaveLength(3);
+  });
+
   it('AIs research freely and cannot reroll', () => {
     const s = newGame('DRAFT-AI');
     startPlaying(s);
     expect(s.players[1].researchOffer).toEqual([]);
-    expect(rerollResearch(s, 1, () => {})).toMatch(/Breakthrough/);
-  });
-});
-
-describe('war declaration vetoes', () => {
-  afterEach(() => { delete LEADERS.__veto; });
-
-  it('runs warDeclaration hooks for both the declarer and the target', () => {
-    const { state } = plainGame('WAR-VETO');
-    LEADERS.__veto = {
-      ...Object.values(LEADERS)[0], id: '__veto', startDoctrine: undefined,
-      effects: { warDeclaration: (_ctx, a) => { a.allowed = false; a.reason = 'Armed neutrality'; } },
-    } as LeaderDef;
-    state.players[1].leaderId = '__plain__';
-    expect(canDeclareWar(state, HUMAN, 1)).toBeNull();
-    state.players[1].leaderId = '__veto';
-    expect(canDeclareWar(state, HUMAN, 1)).toBe('Armed neutrality');
-    expect(applyAction(state, { type: 'declareWar', target: 1 }).error).toBe('Armed neutrality');
-    expect(state.players[HUMAN].relations[1]).toBe('peace');
-    state.players[1].leaderId = '__plain__';
-    state.players[HUMAN].leaderId = '__veto';
-    expect(canDeclareWar(state, HUMAN, 1)).toBe('Armed neutrality');
+    expect(rerollResearch(s, 1, () => {})).toMatch(/Research/);
   });
 });
 

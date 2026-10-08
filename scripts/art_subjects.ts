@@ -6,7 +6,7 @@ import { readContent, type ContentKind, type ContentEntry } from './art_content'
 
 const ROOT = resolve(import.meta.dir, '..');
 const SUBJECTS = join(ROOT, 'art', 'gen', 'subjects');
-const KINDS: readonly ContentKind[] = ['doctrines', 'edicts', 'crises', 'omens', 'reforms'];
+const KINDS: readonly ContentKind[] = ['doctrines', 'edicts', 'crises'];
 
 function colorName(hex: string): string {
   const value = Number.parseInt(hex.replace(/^#/, ''), 16);
@@ -106,20 +106,8 @@ function sceneText(kind: ContentKind, entry: ContentEntry): { subject: string; h
       hue: entry.hue,
     };
   }
-  if (kind === 'crises') {
-    return {
-      subject: `A cinematic Martian colony hazard named ${entry.name}: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: ${context}. ${motif} Ominous, fair and readable at small card size; include one small practical human response.`,
-      hue: entry.hue,
-    };
-  }
-  if (kind === 'omens') {
-    return {
-      subject: `A vivid Mars Directive scene called ${entry.name}: one small suited colonist or crew team visibly carries out the directive's task on a hostile red planet. Use this objective and its reward only as visual inspiration, never as text or a diagram: ${context}. ${motif} One clear action, a wry survival-game twist, compact centered composition.`,
-      hue: entry.hue,
-    };
-  }
   return {
-    subject: `A distinctive Ark Module for the Mars colony called ${entry.name}: an instantly recognizable piece of practical habitat or life-support infrastructure, with a tiny suited crew member showing its scale. Its function is suggested by this catalog entry, not written anywhere: ${context}. ${motif} Monumental but plausible engineering, clear centered silhouette, hopeful Mars light.`,
+    subject: `A cinematic Martian colony hazard named ${entry.name}: show one specific visible disaster pressing against a tiny vulnerable habitat and its crew, using this crisis description and flavor as visual cues only, not words: ${context}. ${motif} Ominous, fair and readable at small card size; include one small practical human response.`,
     hue: entry.hue,
   };
 }

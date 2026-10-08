@@ -1,28 +1,28 @@
-// Bottom unit card: portrait, stats, action buttons, promotion choice.
-import { useEffect, useRef, useState } from 'react';
+// Bottom unit card: portrait, plain stats, a few actions (Found Colony, Fortify, Explore, Skip) and Remove behind "⋯".
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { audio } from '../../audio';
 import { PROMOTIONS, UNITS } from '../../content';
-import { act, cityOnTile, deselect, focusNext, selectCity } from '../../game/interaction';
+import { act, cityOnTile, deselect, focusNextUnit, selectCity } from '../../game/interaction';
 import { useGame, useSim } from '../../game/store';
 import { canFoundCity } from '../../sim/cities';
-import { XP_LEVELS, isCivilian, maxMoves, upgradeInfo } from '../../sim/units';
-import { BARBARIAN, HUMAN } from '../../sim/types';
-import type { Action, GameState, Unit, UnitOrder } from '../../sim/types';
-import { Icon } from '../icons/Icon';
-import { Bar, ConfirmDialog, IconButton, Modal, Ornament } from '../kit';
-import { toast } from './toast';
-import { playerColor, unitName } from './format';
-import { stormPowerAt } from '../../sim/mars';
 import { hexDistance } from '../../sim/hex';
+import { stormPowerAt } from '../../sim/mars';
+import { isCivilian, maxMoves } from '../../sim/units';
+import { HUMAN } from '../../sim/types';
+import type { GameState, Unit, UnitOrder } from '../../sim/types';
+import { Icon } from '../icons/Icon';
+import { Bar, ConfirmDialog, IconButton } from '../kit';
 import { T } from '../terms';
+import { playerColor } from './format';
+import { toast } from './toast';
 
 const CLASS_LABEL: Record<string, string> = {
-  civilian: 'Civilian', recon: 'Recon', melee: 'Melee', antiCavalry: 'Anti-Cavalry', ranged: 'Ranged', mounted: 'Mounted',
-  siege: 'Siege', naval: 'Naval', armor: 'Armor',
+  civilian: 'Civilian', recon: 'Scout', melee: 'Melee', antiCavalry: 'Spear', ranged: 'Ranged', mounted: 'Fast',
+  siege: 'Siege', naval: 'Boat', armor: 'Armor',
 };
 
-const ORDER_LABEL: Record<UnitOrder['kind'], string> = { goto: 'Travelling', explore: 'Exploring', fortify: 'Fortified', sleep: 'Sleeping', heal: 'Healing' };
+const ORDER_LABEL: Record<UnitOrder['kind'], string> = { goto: 'Moving', explore: 'Exploring', fortify: 'Fortified', heal: 'Healing' };
 
 interface UnitActionDef {
   id: string;
@@ -32,63 +32,44 @@ interface UnitActionDef {
   blocked: string | null;
   run: () => void;
   active?: boolean;
-  tone?: 'gold' | 'danger';
+  gold?: boolean;
   tutorial?: string;
 }
 
-function buildActions(s: GameState, u: Unit, confirmDisband: () => void, openPromo: () => void): UnitActionDef[] {
+function buildActions(s: GameState, u: Unit): UnitActionDef[] {
   const def = UNITS[u.type];
-  const civ = isCivilian(u.type);
-  const tile = s.map.tiles[u.tile];
   const out: UnitActionDef[] = [];
-  const order = (o: UnitOrder | null, sfx: string) => () => {
-    const res = act({ type: 'unitOrder', unitId: u.id, order: o }, sfx);
-    if (res.ok && o) focusNext();
+  const noMoves = u.moves <= 0 ? 'This unit cannot move again this turn.' : null;
+  // toggle an order: tap once to start it (and jump to the next idle unit), tap again to stop it
+  const toggle = (kind: 'fortify' | 'explore') => () => {
+    const on = u.order?.kind === kind;
+    const res = act({ type: 'unitOrder', unitId: u.id, order: on ? null : { kind } }, 'click');
+    if (res.ok && !on) focusNextUnit();
   };
-  const noMoves = u.moves <= 0 ? 'No movement left this turn.' : null;
 
-  if (u.promotionChoices?.length) out.push({ id: 'promote', icon: 'promote', label: 'Promote', blocked: null, run: openPromo, tone: 'gold' });
   if (def?.abilities?.includes('foundCity')) {
-    const err = canFoundCity(s, HUMAN, u.tile);
     out.push({
-      id: 'found', icon: 'found', label: 'Found City', tone: 'gold', tutorial: 'found-city',
-      blocked: err ?? noMoves,
+      id: 'found', icon: 'found', label: `Found ${T.city}`, gold: true, tutorial: 'found-city',
+      blocked: canFoundCity(s, HUMAN, u.tile) ?? noMoves,
       run: () => {
         const tile = u.tile;
         if (!act({ type: 'foundCity', unitId: u.id }, 'found').ok) return;
-        // straight into the new city's sheet: the first build order is the next decision
+        // straight into the new colony's sheet: the first build order is the next decision
         const city = cityOnTile(s, tile);
         if (city) selectCity(city.id);
       },
     });
   }
-  if (u.order && u.order.kind !== 'goto') {
-    out.push({ id: 'wake', icon: 'arrowUp', label: 'Wake', blocked: null, run: order(null, 'click'), active: true });
+  if (!isCivilian(u.type)) {
+    out.push({ id: 'fortify', icon: 'fortify', label: 'Fortify', blocked: null, run: toggle('fortify'), active: u.order?.kind === 'fortify' });
   }
-  if (u.order?.kind === 'goto') out.push({ id: 'cancel', icon: 'close', label: 'Cancel Move', blocked: null, run: order(null, 'click') });
-  if (!civ && u.order?.kind !== 'fortify') out.push({ id: 'fortify', icon: 'fortify', label: 'Fortify', blocked: null, run: order({ kind: 'fortify' }, 'click') });
-  if (u.hp < 100 && u.order?.kind !== 'heal') out.push({ id: 'heal', icon: 'heal', label: 'Heal', blocked: null, run: order({ kind: 'heal' }, 'click') });
-  if (u.order?.kind !== 'explore' && def?.class !== 'civilian') out.push({ id: 'explore', icon: 'explore', label: 'Explore', blocked: null, run: order({ kind: 'explore' }, 'click') });
-  if (u.order?.kind !== 'sleep') out.push({ id: 'sleep', icon: 'sleep', label: 'Sleep', blocked: null, run: order({ kind: 'sleep' }, 'click') });
+  if (def?.class === 'recon') {
+    out.push({ id: 'explore', icon: 'explore', label: 'Explore', blocked: null, run: toggle('explore'), active: u.order?.kind === 'explore' });
+  }
   out.push({
-    id: 'skip', icon: 'skip', label: 'Skip Turn', blocked: noMoves,
-    run: () => { const r = act({ type: 'skipUnit', unitId: u.id }, 'click'); if (r.ok && !focusNext()) deselect(); },
+    id: 'skip', icon: 'skip', label: 'Skip', blocked: noMoves,
+    run: () => { if (act({ type: 'skipUnit', unitId: u.id }, 'click').ok && !focusNextUnit()) deselect(); },
   });
-  if (!civ && tile.improvement && !tile.pillaged && tile.owner !== HUMAN && tile.owner != null) {
-    const atWar = tile.owner === BARBARIAN || s.players[HUMAN]?.relations[tile.owner] === 'war';
-    out.push({
-      id: 'pillage', icon: 'pillage', label: 'Pillage', blocked: atWar ? noMoves : 'You are not at war with this tile\'s owner.',
-      run: () => { act({ type: 'pillage', unitId: u.id }, 'attack'); },
-    });
-  }
-  const up = upgradeInfo(s, u);
-  if (up) {
-    out.push({
-      id: 'upgrade', icon: 'upgrade', label: `Upgrade · ${up.cost}g`, blocked: up.error,
-      run: () => { const r = act({ type: 'upgradeUnit', unitId: u.id }, 'levelUp'); if (r.ok) toast(`Upgraded to ${unitName(up.to)}.`, 'good', 'upgrade'); },
-    });
-  }
-  out.push({ id: 'disband', icon: 'disband', label: 'Disband', blocked: null, run: confirmDisband, tone: 'danger' });
   return out;
 }
 
@@ -97,16 +78,6 @@ export function UnitPanel() {
   const unit = useSim((s) => (sel?.kind === 'unit' ? s.units[sel.id] ?? null : null));
   const s = useGame((g) => g.state);
   const [confirm, setConfirm] = useState(false);
-  const [promo, setPromo] = useState<number | null>(null);
-  const autoOpened = useRef<number | null>(null);
-
-  // pop the promotion chooser once when a unit with a pending promotion is selected
-  useEffect(() => {
-    if (unit?.owner === HUMAN && unit.promotionChoices?.length && autoOpened.current !== unit.id) {
-      autoOpened.current = unit.id;
-      setPromo(unit.id);
-    }
-  }, [unit]);
 
   const stormReadout = useSim((state) => {
     if (!unit) return null;
@@ -118,10 +89,9 @@ export function UnitPanel() {
   });
   if (!s || !unit || unit.owner !== HUMAN) return null;
   const def = UNITS[unit.type];
+  const name = def?.name ?? unit.type;
   const mm = maxMoves(s, unit);
-  const nextXp = XP_LEVELS[unit.level] as number | undefined;
-  const prevXp = unit.level > 0 ? XP_LEVELS[unit.level - 1] : 0;
-  const actions = buildActions(s, unit, () => setConfirm(true), () => setPromo(unit.id));
+  const actions = buildActions(s, unit);
   const hpColor = unit.hp > 60 ? 'var(--good)' : unit.hp > 30 ? 'var(--gold-400)' : 'var(--bad)';
   const color = playerColor(s, HUMAN);
 
@@ -130,55 +100,50 @@ export function UnitPanel() {
       <div className="up__head">
         <div className="up__portrait" style={{ '--team': color } as CSSProperties}>
           <Icon name={def?.icon ?? def?.class ?? 'melee'} size={34} />
-          {unit.level > 0 && <span className="up__level num">{unit.level}</span>}
         </div>
         <div className="up__info">
-          <div className="up__name display">{def?.name ?? unit.type}</div>
+          <div className="up__name display">{name}</div>
           <div className="up__class">
             <Icon name={def?.class ?? 'melee'} size={13} />
             {CLASS_LABEL[def?.class ?? ''] ?? def?.class}
+            {unit.level > 0 && <span className="up__level">Level {unit.level}</span>}
             {unit.order && <span className="up__order">· {ORDER_LABEL[unit.order.kind]}</span>}
             {unit.promotions.length > 0 && (
               <span className="up__promos">
-                {unit.promotions.map((p) => <Icon key={p} name={PROMOTIONS[p]?.icon ?? 'promote'} size={14} title={PROMOTIONS[p]?.name} />)}
+                {unit.promotions.map((p) => <Icon key={p} name={PROMOTIONS[p]?.icon ?? 'star'} size={14} title={PROMOTIONS[p]?.name} />)}
               </span>
             )}
           </div>
-          {stormReadout && <div className={`up__storm ${stormReadout.forecast ? 'is-forecast' : 'is-active'}`} role="status">
-            <Icon name="storm" size={14} /> {stormReadout.forecast
-              ? `${T.storm} forecast: this unit is in the path.`
-              : `${T.storm} · power ${stormReadout.power}`}
-          </div>}
-          <div className="up__stats">
-            {def && def.strength > 0 && <Stat icon="strength" value={def.strength} label="Strength" />}
-            {def?.rangedStrength ? <Stat icon="ranged" value={`${def.rangedStrength}`} sub={def.range ? `r${def.range}` : undefined} label="Ranged strength" /> : null}
-            <Stat icon="moves" value={`${fmtMoves(unit.moves)}/${mm}`} label="Moves" dim={unit.moves <= 0} />
-          </div>
         </div>
-        <IconButton icon="close" label="Deselect" size="sm" onClick={() => { audio.sfx('close'); deselect(); }} className="up__close" />
+        <div className="up__tools">
+          <IconButton icon="more" label="Remove unit" size="sm" onClick={() => { audio.sfx('open'); setConfirm(true); }} />
+          <IconButton icon="close" label="Close" size="sm" onClick={() => { audio.sfx('close'); deselect(); }} />
+        </div>
       </div>
-      <div className="up__bars">
-        <div className="up__bar">
-          <Icon name="hp" size={13} />
-          <Bar value={unit.hp} max={100} color={hpColor} height={6} />
-          <span className="num">{unit.hp}</span>
-        </div>
-        {!isCivilian(unit.type) && (
-          <div className="up__bar">
-            <Icon name="xp" size={13} />
-            <Bar value={nextXp != null ? unit.xp - prevXp : 1} max={nextXp != null ? nextXp - prevXp : 1} color="var(--influence)" height={6} glow={!!unit.promotionChoices?.length} />
-            <span className="num">{nextXp != null ? `${unit.xp}/${nextXp}` : 'MAX'}</span>
-          </div>
-        )}
+      {stormReadout && <div className={`up__storm ${stormReadout.forecast ? 'is-forecast' : 'is-active'}`} role="status">
+        <Icon name="storm" size={14} /> {stormReadout.forecast
+          ? `${T.storm} coming. This unit is in its path.`
+          : `${T.storm} here. Power ${stormReadout.power}.`}
+      </div>}
+      <div className="up__stats">
+        {def && def.strength > 0 && <Stat icon="strength" label="Strength" value={def.strength} />}
+        {def?.rangedStrength ? <Stat icon="ranged" label="Ranged" value={def.rangedStrength} sub={def.range ? `range ${def.range}` : undefined} /> : null}
+        <Stat icon="moves" label="Moves" value={`${fmtMoves(unit.moves)}/${mm}`} dim={unit.moves <= 0} />
+      </div>
+      <div className="up__hp">
+        <span className="up__hp-label"><Icon name="hp" size={13} /> Health</span>
+        <Bar value={unit.hp} max={100} color={hpColor} height={7} />
+        <span className="num">{unit.hp}/100</span>
       </div>
       <div className="up__actions">
         {actions.map((a) => (
           <button
             key={a.id}
             type="button"
-            className={`up-act ${a.tone ? `up-act--${a.tone}` : ''} ${a.blocked ? 'is-blocked' : ''} ${a.active ? 'is-active' : ''}`}
+            className={`up-act ${a.gold ? 'up-act--gold' : ''} ${a.blocked ? 'is-blocked' : ''} ${a.active ? 'is-active' : ''}`}
             data-tutorial={a.tutorial}
             aria-disabled={!!a.blocked}
+            aria-pressed={a.active}
             onClick={() => {
               if (a.blocked) { toast(a.blocked, 'bad'); audio.sfx('error'); return; }
               a.run();
@@ -191,20 +156,18 @@ export function UnitPanel() {
       </div>
       {confirm && (
         <ConfirmDialog
-          title={`Disband ${def?.name ?? 'unit'}?`}
-          body="The unit will be permanently removed. This cannot be undone."
+          title="Remove this unit?"
+          body={`Your ${name} will be gone for good.`}
           icon="disband"
           danger
-          confirmLabel="Disband"
+          confirmLabel="Remove"
           onCancel={() => setConfirm(false)}
           onConfirm={() => {
             setConfirm(false);
-            const r = act({ type: 'disband', unitId: unit.id } satisfies Action, 'sell');
-            if (r.ok) deselect();
+            if (act({ type: 'disband', unitId: unit.id }, 'sell').ok) deselect();
           }}
         />
       )}
-      {promo === unit.id && unit.promotionChoices?.length ? <PromotionModal unit={unit} onClose={() => setPromo(null)} /> : null}
     </div>
   );
 }
@@ -213,49 +176,11 @@ function fmtMoves(m: number): string {
   return Number.isInteger(m) ? String(m) : m.toFixed(1);
 }
 
-function Stat({ icon, value, sub, label, dim }: { icon: string; value: string | number; sub?: string; label: string; dim?: boolean }) {
+function Stat({ icon, label, value, sub, dim }: { icon: string; label: string; value: string | number; sub?: string; dim?: boolean }) {
   return (
-    <span className={`up-stat ${dim ? 'is-dim' : ''}`} aria-label={`${label} ${value}`}>
-      <Icon name={icon} size={15} />
-      <b className="num">{value}</b>
-      {sub && <small>{sub}</small>}
+    <span className={`up-stat ${dim ? 'is-dim' : ''}`}>
+      <span className="up-stat__label">{label}</span>
+      <span className="up-stat__value"><Icon name={icon} size={15} /><b className="num">{value}</b>{sub && <small>{sub}</small>}</span>
     </span>
-  );
-}
-
-export function PromotionModal({ unit, onClose }: { unit: Unit; onClose: () => void }) {
-  const [picked, setPicked] = useState<string | null>(null);
-  const choices = unit.promotionChoices ?? [];
-  const pick = (id: string) => {
-    if (picked) return;
-    setPicked(id);
-    audio.sfx('cardFlip');
-    setTimeout(() => {
-      const res = act({ type: 'promote', unitId: unit.id, promotion: id }, 'levelUp');
-      if (res.ok) toast(`${unitName(unit.type)} learned ${PROMOTIONS[id]?.name ?? id}.`, 'gold', 'promote');
-      onClose();
-    }, 420);
-  };
-  return (
-    <Modal onClose={onClose} className="promo">
-      <div className="promo__eyebrow">Level {unit.level}</div>
-      <h2 className="k-title promo__title">{unitName(unit.type)} earns a promotion</h2>
-      <Ornament />
-      <div className="promo__cards">
-        {choices.map((id, i) => {
-          const p = PROMOTIONS[id];
-          return (
-            <button key={id} type="button" className={`promo-card ${picked === id ? 'is-picked' : picked ? 'is-dropped' : ''}`}
-              style={{ animationDelay: `${i * 90}ms` }} onClick={() => pick(id)}>
-              <span className="promo-card__tier">{'◆'.repeat(p?.tier ?? 1)}</span>
-              <span className="promo-card__icon"><Icon name={p?.icon ?? 'promote'} size={46} /></span>
-              <span className="promo-card__name display">{p?.name ?? id}</span>
-              <span className="promo-card__desc">{p?.description}</span>
-            </button>
-          );
-        })}
-      </div>
-      <button type="button" className="promo__later" onClick={onClose}>Decide later</button>
-    </Modal>
   );
 }

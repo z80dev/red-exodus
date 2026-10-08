@@ -3,7 +3,7 @@ import type { ActiveEffect } from './effects';
 import type { Emit, GameState, Player, PlayerId, ResourceId, TechId } from './types';
 import { BARBARIAN } from './types';
 import {
-  ASCENSIONS, BUILDINGS, CRISES, DOCTRINES, LEADERS, NATURAL_WONDERS, REFORMS, RESOURCES, TECHS, UNITS, WONDERS,
+  ASCENSIONS, BUILDINGS, CRISES, DOCTRINES, LEADERS, NATURAL_WONDERS, RESOURCES, TECHS, UNITS, WONDERS,
 } from '../content';
 import { collectEffects, makeCtx, runHook } from './effects';
 import { citiesOf } from './cities';
@@ -23,9 +23,10 @@ export const FREE_UNITS_PER_CITY = 1;
 export const UNIT_UPKEEP = 1;
 /** base research cost per tech era; scaled by (1 + TECH_COST_PER_KNOWN × techs known) */
 export const ERA_TECH_COST = [30, 75, 150, 280, 460, 700] as const;
-export const TECH_COST_PER_KNOWN = 0.06;
-/** RED EXODUS pacing: research lands ≈1.6× faster per turn than the authored era costs imply */
-export const TECH_PACE = 1 / 1.6;
+/** gentle cost growth per known tech, so late techs stay reachable (bot: Modern techs by the Terraform era) */
+export const TECH_COST_PER_KNOWN = 0.03;
+/** RED EXODUS pacing: research lands ≈4.2× faster per turn than the authored era costs imply (bot: ~30 of 36 techs in 54 turns) */
+export const TECH_PACE = 1 / 4.2;
 
 const NOOP: Emit = () => {};
 
@@ -45,11 +46,10 @@ export function effectLabel(fx: ActiveEffect): string {
     case 'leader': return LEADERS[fx.id]?.civName ?? 'Nation';
     case 'doctrine': return DOCTRINES[fx.id]?.name ?? 'Crew';
     case 'crisis': return CRISES[fx.id]?.name ?? 'Crisis';
-    case 'reform': return REFORMS[fx.id]?.name ?? 'Ark Module';
-    case 'wonder': return WONDERS[fx.id]?.name ?? 'Megaproject';
+    case 'wonder': return WONDERS[fx.id]?.name ?? 'Wonder';
     case 'building': return BUILDINGS[fx.id]?.name ?? 'Building';
     case 'naturalWonder': return NATURAL_WONDERS[fx.id]?.name ?? 'Landmark';
-    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Hazard ${fx.id}`;
+    case 'ascension': return ASCENSIONS.find((a) => String(a.level) === fx.id)?.name ?? `Difficulty ${fx.id}`;
     case 'darkAge': return DARK_AGE_LABEL;
     default: return fx.id;
   }
@@ -57,7 +57,7 @@ export function effectLabel(fx: ActiveEffect): string {
 
 // ───────────────────────────── resources ─────────────────────────────
 
-/** resources the player has connected: improved (unpillaged) source or on a city center, inside own territory */
+/** resources the player has connected: improved source or on a city center, inside own territory */
 export function connectedResources(state: GameState, pid: PlayerId): Set<ResourceId> {
   const out = new Set<ResourceId>();
   for (const t of state.map.tiles) {
@@ -65,7 +65,7 @@ export function connectedResources(state: GameState, pid: PlayerId): Set<Resourc
     const def = RESOURCES[t.resource];
     if (!def) continue;
     const onCenter = t.cityId != null && state.cities[t.cityId]?.tile === t.idx;
-    if (onCenter || (t.improvement === def.improvement && !t.pillaged)) out.add(t.resource);
+    if (onCenter || t.improvement === def.improvement) out.add(t.resource);
   }
   return out;
 }
@@ -75,7 +75,7 @@ export function hasResource(state: GameState, pid: PlayerId, res: ResourceId): b
   if (!def) return false;
   for (const t of state.map.tiles) {
     if (t.owner !== pid || t.resource !== res) continue;
-    if (t.improvement === def.improvement && !t.pillaged) return true;
+    if (t.improvement === def.improvement) return true;
     if (t.cityId != null && state.cities[t.cityId]?.tile === t.idx) return true;
   }
   return false;
@@ -87,7 +87,7 @@ export function computeHappiness(state: GameState, pid: PlayerId, fx?: ActiveEff
   const lines: { label: string; amount: number }[] = [];
   if (pid === BARBARIAN) return { value: 0, lines };
   const cities = citiesOf(state, pid);
-  lines.push({ label: 'Base morale of the landing', amount: HAPPINESS_BASE });
+  lines.push({ label: 'Starting Happiness', amount: HAPPINESS_BASE });
   if (cities.length) lines.push({ label: `Colonies (${cities.length})`, amount: HAPPINESS_PER_CITY * cities.length });
   const pop = cities.reduce((s, c) => s + c.pop, 0);
   const popUnhappy = Math.floor(pop / POP_PER_UNHAPPY);

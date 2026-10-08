@@ -2,10 +2,10 @@
 // Painted illustrations (Bankr LLM Gateway, GPT Image 2.5 Flare; see art/gen/STYLE.md). UI shows the illustration
 // when the manifest has the id, otherwise falls back to the procedural SVG CardArt.
 
-export type ArtKind = 'leaders' | 'doctrines' | 'edicts' | 'crises' | 'omens' | 'reforms' | 'eras' | 'key';
+export type ArtKind = 'leaders' | 'doctrines' | 'edicts' | 'crises' | 'eras' | 'key';
 export type BackdropKind = 'eras' | 'key';
 
-export const ART_KINDS: readonly ArtKind[] = ['leaders', 'doctrines', 'edicts', 'crises', 'omens', 'reforms', 'eras', 'key'];
+export const ART_KINDS: readonly ArtKind[] = ['leaders', 'doctrines', 'edicts', 'crises', 'eras', 'key'];
 
 /** Pixel size of every shipped file per kind (portrait variants of backdrops are the transpose). */
 export const ART_SIZE: Readonly<Record<ArtKind, { w: number; h: number }>> = {
@@ -13,8 +13,6 @@ export const ART_SIZE: Readonly<Record<ArtKind, { w: number; h: number }>> = {
   doctrines: { w: 512, h: 512 },
   edicts: { w: 512, h: 512 },
   crises: { w: 512, h: 512 },
-  omens: { w: 512, h: 512 },
-  reforms: { w: 512, h: 512 },
   eras: { w: 1600, h: 900 },
   key: { w: 1600, h: 900 },
 };
@@ -346,7 +344,6 @@ const FILES: Readonly<Record<ArtKind, Readonly<Record<string, 1 | 2>>>> = {
     'cryo_batch': 1,
     'emergency_shelter': 1,
     'epiphany': 1,
-    'forge_of_heroes': 1,
     'fortunes_wheel': 1,
     'gilded_charter': 1,
     'golden_harvest': 1,
@@ -359,7 +356,6 @@ const FILES: Readonly<Record<ArtKind, Readonly<Record<string, 1 | 2>>>> = {
     'master_builders': 1,
     'miracle_of_masons': 1,
     'mirror_of_ages': 1,
-    'olive_branch': 1,
     'patronage': 1,
     'pioneers_charter': 1,
     'rain_of_plenty': 1,
@@ -401,54 +397,6 @@ const FILES: Readonly<Record<ArtKind, Readonly<Record<string, 1 | 2>>>> = {
     'steppe_horde': 1,
     'trade_collapse': 1,
     'world_war': 1,
-  },
-  omens: {
-    'ashes_of_the_horde': 1,
-    'bane_of_barbarians': 1,
-    'beyond_the_edge': 1,
-    'blood_and_thunder': 1,
-    'coin_of_the_realm': 1,
-    'days_of_revelry': 1,
-    'doom_of_kings': 1,
-    'doves_return': 1,
-    'drop_two_colonies': 1,
-    'fallen_crown': 1,
-    'font_of_knowledge': 1,
-    'hands_to_the_soil': 1,
-    'heavenly_accord': 1,
-    'hold_the_line': 1,
-    'iron_tide': 1,
-    'red_harvest': 1,
-    'relics_of_the_ancients': 1,
-    'reroll_research_twice': 1,
-    'scorched_earth': 1,
-    'seeds_of_empire': 1,
-    'shining_city': 1,
-    'steel_for_old_swords': 1,
-    'stone_upon_stone': 1,
-    'teeming_masses': 1,
-    'thaw_four_colonists': 1,
-    'veterans_of_the_line': 1,
-    'weather_three_hits': 1,
-    'widening_realm': 1,
-    'wonder_for_the_ages': 1,
-    'word_of_law': 1,
-  },
-  reforms: {
-    'codified_canon': 1,
-    'eternal_mandate': 1,
-    'expanded_council': 1,
-    'grand_bazaar': 1,
-    'grand_council': 1,
-    'heavenly_mandate': 1,
-    'imperial_archives': 1,
-    'imperial_post': 1,
-    'open_markets': 1,
-    'royal_archives': 1,
-    'royal_treasury': 1,
-    'scholarly_canon': 1,
-    'sovereign_wealth': 1,
-    'swift_couriers': 1,
   },
   eras: {
     '0': 2,

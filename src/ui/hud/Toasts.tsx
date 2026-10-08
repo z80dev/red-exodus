@@ -1,4 +1,6 @@
-// Toast stack (z 80). Tap to dismiss.
+// Toast stack (z 80). Tap to dismiss. Hidden while a run ceremony (report, shop, chapter start) is open: turn news
+// would cover the report and spoil its result; it is still in the Log.
+import { useSim } from '../../game/store';
 import { Icon } from '../icons/Icon';
 import { useToasts } from './toast';
 import type { ToastTone } from './toast';
@@ -8,6 +10,8 @@ const DEFAULT_ICON: Record<ToastTone, string> = { good: 'check', bad: 'crisis', 
 export function Toasts() {
   const items = useToasts((s) => s.items);
   const dismiss = useToasts((s) => s.dismiss);
+  const playing = useSim((s) => s.run.phase === 'playing');
+  if (!playing) return null;
   return (
     <div className="ts" aria-live="polite">
       {items.map((t) => (

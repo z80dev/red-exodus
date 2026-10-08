@@ -1,5 +1,5 @@
-// Salvage tray: consumable Salvage cards + empty sockets. Tap → Use / Choose target / Discard.
-// Targeted Salvage enters the HUD's edictTarget map mode before dispatching useEdict.
+// Boost tray (internal: edicts): one-use Boost cards + empty sockets. Tap → Use / Choose target / Remove.
+// Targeted Boosts enter the HUD's edictTarget map mode before dispatching useEdict.
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { EDICTS } from '../../content';
@@ -108,9 +108,9 @@ export function EdictTray({ compact = true, cardWidth, className = '', style }: 
                   }
                 }}
               >
-                Discard
+                Remove
               </Button>
-              {!playing && <div className="ret-note">{T.edicts} can be used on the map during your turn.</div>}
+              {!playing && <div className="ret-note">You can use {T.edicts} on the map during your turn.</div>}
             </>
           }
         />

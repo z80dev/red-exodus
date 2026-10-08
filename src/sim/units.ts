@@ -2,12 +2,13 @@ import { PROMOTIONS, TECHS, UNITS } from '../content';
 import type { UnitDef } from './defs';
 import { runHook } from './effects';
 import { changePop } from './cities';
-import { addGold, grantTech, hasResource } from './economy';
+import { addGold, grantTech } from './economy';
 import { neighbors, hexDistance, tilesInRadius } from './hex';
 import { findPath, moveCost } from './pathfinding';
 import { randInt, randRange, weightedIndex } from './rng';
+import { ownUnitVariant } from './cities';
 import { addInfluence } from './roguelite';
-import type { Emit, GameState, PlayerId, TileIdx, Unit, UnitId, UnitTypeId } from './types';
+import type { Emit, GameState, PlayerId, PromotionId, TileIdx, Unit, UnitId, UnitTypeId } from './types';
 import { BARBARIAN } from './types';
 import { recomputeVisibility, revealArea } from './visibility';
 import { STORM_VISION_PENALTY, stormAt } from './mars';
@@ -17,6 +18,8 @@ export function unitDef(type: UnitTypeId): UnitDef {
   if (!def) throw new Error(`Unknown unit: ${type}`);
   return def;
 }
+/** Nations are always at peace with each other; only the Raiders (BARBARIAN) fight, and they fight everyone. */
+export function isHostile(a: PlayerId, b: PlayerId): boolean { return a !== b && (a === BARBARIAN || b === BARBARIAN); }
 export function isCivilian(type: UnitTypeId): boolean { return unitDef(type).class === 'civilian'; }
 export function unitsAt(state: GameState, tile: TileIdx): Unit[] {
   return Object.values(state.units).filter(u => u.tile === tile);
@@ -52,7 +55,9 @@ export function createUnit(state: GameState, owner: PlayerId, type: UnitTypeId, 
   }
   if (where < 0) return null;
   const unit: Unit = { id: state.nextId++, owner, type, tile: where, hp: 100, moves: 0, hasAttacked: false,
-    xp: 0, level: 0, promotions: [], promotionChoices: null, order: null, fortifyTurns: 0, age: 0 };
+    xp: 0, level: 0, promotions: [], order: null, fortifyTurns: 0, age: 0 };
+  // Recon units of human players explore on their own until they run out of map.
+  if (unitDef(type).class === 'recon' && state.players.find(p => p.id === owner)?.isHuman) unit.order = { kind: 'explore' };
   state.units[unit.id] = unit;
   emit({ type: 'unitCreated', unitId: unit.id, player: owner, tile: where });
   if (owner !== BARBARIAN) recomputeVisibility(state, owner, emit);
@@ -81,7 +86,7 @@ function clearCamp(state: GameState, unit: Unit, emit: Emit): void {
   if (!tile.camp || unit.owner === BARBARIAN || isCivilian(unit.type) || militaryAt(state, unit.tile)?.id !== unit.id) return;
   tile.camp = false;
   const gold = 25 + 15 * Math.min(5, state.run.era);
-  addGold(state, unit.owner, gold, 'Feral Den', emit);
+  addGold(state, unit.owner, gold, 'Raider Camp', emit);
   emit({ type: 'campCleared', player: unit.owner, tile: unit.tile, gold });
 }
 function exploreRuin(state: GameState, unit: Unit, emit: Emit, entered = unit.tile): void {
@@ -98,15 +103,15 @@ function exploreRuin(state: GameState, unit: Unit, emit: Emit, entered = unit.ti
   const reward = kinds[weightedIndex(state.rng, weights)];
   let text: string;
   switch (reward) {
-    case 'gold': { const n = randRange(state.rng, 30, 60); addGold(state, unit.owner, n, 'Crash Site', emit); text = `${n} Credits in the wreckage`; break; }
-    case 'tech': { const tech = eraTechs[randInt(state.rng, eraTechs.length)]; grantTech(state, unit.owner, tech.id, emit); text = `Recovered research: ${tech.name}`; break; }
+    case 'gold': { const n = randRange(state.rng, 30, 60); addGold(state, unit.owner, n, 'Crash Site', emit); text = `${n} Credits`; break; }
+    case 'tech': { const tech = eraTechs[randInt(state.rng, eraTechs.length)]; grantTech(state, unit.owner, tech.id, emit); text = `New Research: ${tech.name}`; break; }
     case 'population': { const nearest = cities.reduce((a, b) => hexDistance(state.map, b.tile, entered) < hexDistance(state.map, a.tile, entered) ? b : a);
       changePop(state, nearest, 1, emit); text = `Survivors join ${nearest.name}`; break; }
-    case 'reveal': revealArea(state, unit.owner, entered, 4, emit); text = 'Nav logs: the surrounding terrain'; break;
+    case 'reveal': revealArea(state, unit.owner, entered, 4, emit); text = 'Map of the area'; break;
     case 'unit': { const type = randInt(state.rng, 2) ? 'scout' : 'warrior';
-      const recruit = createUnit(state, unit.owner, type, entered, emit); text = recruit ? `A ${UNITS[type]?.name ?? type} crawls out of the wreck` : 'Nav logs: the surrounding terrain';
+      const recruit = createUnit(state, unit.owner, type, entered, emit); text = recruit ? `A ${UNITS[type]?.name ?? type} joins you` : 'Map of the area';
       if (!recruit) revealArea(state, unit.owner, entered, 4, emit); break; }
-    case 'influence': addInfluence(state, 3, emit); text = '3 Scrip'; break;
+    case 'influence': addInfluence(state, 3, emit); text = '3 Coins'; break;
   }
   emit({ type: 'ruinExplored', player: unit.owner, tile: entered, reward: text });
 }
@@ -117,10 +122,10 @@ export function onUnitEnteredTile(state: GameState, unit: Unit, emit: Emit): voi
   if (unit.owner !== BARBARIAN) recomputeVisibility(state, unit.owner, emit);
 }
 export function moveUnitTo(state: GameState, unit: Unit, target: TileIdx, emit: Emit): string | null {
-  if (!state.units[unit.id] || !state.map.tiles[target]) return 'Invalid destination';
+  if (!state.units[unit.id] || !state.map.tiles[target]) return 'Invalid destination.';
   if (target === unit.tile) { unit.order = null; return null; }
   const path = findPath(state, unit, target);
-  if (!path?.length) return 'No path to destination';
+  if (!path?.length) return 'No path to that tile.';
   if (unit.moves <= 0) { unit.order = { kind: 'goto', target }; return null; }
   const traveled = [unit.tile];
   for (let i = 0; i < path.length; i++) {
@@ -138,8 +143,7 @@ export function moveUnitTo(state: GameState, unit: Unit, target: TileIdx, emit: 
       if (enemyMilitary && enemyMilitary.owner !== unit.owner ||
         tile.camp && isCivilian(unit.type) ||
         Object.values(state.cities).some(c => c.tile === next && c.owner !== unit.owner) ||
-        enemyCivilian && (isCivilian(unit.type) || enemyCivilian.owner !== BARBARIAN &&
-          state.players.find(p => p.id === unit.owner)?.relations[enemyCivilian.owner] !== 'war')) {
+        enemyCivilian && (isCivilian(unit.type) || !isHostile(unit.owner, enemyCivilian.owner))) {
         blocked = true; break;
       }
       const originalMoves = unit.moves;
@@ -159,10 +163,8 @@ export function moveUnitTo(state: GameState, unit: Unit, target: TileIdx, emit: 
     if (blocked || landing === path.length) break;
     const next = path[landing];
     const enemyCivilian = unitsAt(state, next).find(u => isCivilian(u.type) && u.owner !== unit.owner);
-    if (enemyCivilian) {
-      removeUnit(state, enemyCivilian.id, emit, unit.owner);
-      if (enemyCivilian.type === 'settler') createUnit(state, unit.owner, 'settler', next, emit);
-    }
+    // only Raiders reach this: they destroy the civilian (nations never capture each other's units)
+    if (enemyCivilian) removeUnit(state, enemyCivilian.id, emit, unit.owner);
     unit.tile = next;
     unit.moves = remaining;
     unit.order = null;
@@ -179,12 +181,13 @@ export function moveUnitTo(state: GameState, unit: Unit, target: TileIdx, emit: 
   }
   if (traveled.length > 1) emit({ type: 'unitMoved', unitId: unit.id, player: unit.owner, path: traveled });
   if (unit.tile !== target && traveled.length > 1 && unit.moves <= 0) unit.order = { kind: 'goto', target };
-  return traveled.length > 1 ? null : 'Destination blocked or insufficient movement';
+  return traveled.length > 1 ? null : 'The tile is blocked, or the unit has too few moves.';
 }
 export function unitsTurnStart(state: GameState, pid: PlayerId, emit: Emit): void {
   for (const unit of Object.values(state.units)) {
     if (unit.owner !== pid) continue;
     const rested = unit.moves === maxMoves(state, unit) && !unit.hasAttacked;
+    if (pid !== BARBARIAN) autoUpgrade(state, unit, emit);
     const oldOrder = unit.order;
     if (rested) {
       const city = Object.values(state.cities).find(c => c.tile === unit.tile && c.owner === pid);
@@ -198,69 +201,91 @@ export function unitsTurnStart(state: GameState, pid: PlayerId, emit: Emit): voi
     unit.age++;
     unit.fortifyTurns = oldOrder?.kind === 'fortify' && rested ? Math.min(2, unit.fortifyTurns + 1) : 0;
     if (oldOrder?.kind === 'goto' && moveUnitTo(state, unit, oldOrder.target, emit)) unit.order = null;
-    if (oldOrder?.kind === 'explore') {
-      const unseen = tilesInRadius(state.map, unit.tile, 3).filter(t => state.players.find(p => p.id === pid)?.vis[t] === 0);
-      if (!unseen.length || moveUnitTo(state, unit, unseen[0], emit)) unit.order = null;
-    }
+    // units hold still during run ceremonies; continueExploring resumes them once play starts
+    if (oldOrder?.kind === 'explore' && state.run.phase === 'playing') exploreStep(state, unit, emit);
   }
 }
+/** Move every exploring unit of `pid` that still has moves (used when a chapter ceremony hands control back). */
+export function continueExploring(state: GameState, pid: PlayerId, emit: Emit): void {
+  for (const unit of Object.values(state.units)) {
+    if (unit.owner === pid && unit.order?.kind === 'explore' && unit.moves > 0 && state.units[unit.id]) exploreStep(state, unit, emit);
+  }
+}
+const EXPLORE_RADIUS = 8;
+/** Best frontier tile for an exploring unit: unseen tiles nearby, Crash Sites first, close beats far. */
+function exploreTargets(state: GameState, unit: Unit): TileIdx[] {
+  const vis = state.players.find(p => p.id === unit.owner)?.vis;
+  if (!vis) return [];
+  const scored: { tile: TileIdx; score: number }[] = [];
+  for (const idx of tilesInRadius(state.map, unit.tile, EXPLORE_RADIUS)) {
+    const tile = state.map.tiles[idx];
+    if (idx === unit.tile || vis[idx] === 0 || tile.elevation === 'mountain' || tile.camp || unitsAt(state, idx).length ||
+      ['ocean', 'coast', 'lake'].includes(tile.terrain)) continue;
+    let hidden = 0;
+    for (const n of tilesInRadius(state.map, idx, 2)) if (vis[n] === 0) hidden++;
+    if (!hidden && !tile.ruin) continue;
+    scored.push({ tile: idx, score: (tile.ruin ? 40 : 0) + hidden * 2 - hexDistance(state.map, unit.tile, idx) * 3 });
+  }
+  return scored.sort((a, b) => b.score - a.score || a.tile - b.tile).map(s => s.tile);
+}
+/** One turn of auto-explore. Keeps the explore order while there is map left to see; clears it when done. */
+export function exploreStep(state: GameState, unit: Unit, emit: Emit): void {
+  unit.order = { kind: 'explore' };
+  if (unit.moves <= 0) return;
+  const targets = exploreTargets(state, unit);
+  for (const target of targets.slice(0, 4)) {
+    const error = moveUnitTo(state, unit, target, emit);
+    if (!state.units[unit.id]) return;
+    if (!error) { unit.order = { kind: 'explore' }; return; }
+  }
+  if (!targets.length) unit.order = null;
+}
 export const XP_LEVELS: readonly number[] = [10, 30, 60, 100, 150];
-export function grantXp(state: GameState, unit: Unit, xp: number, emit: Emit): void {
+/** XP still missing for the unit's next level (0 at max level) */
+export function xpToNextLevel(unit: Unit): number {
+  return unit.level < XP_LEVELS.length ? Math.max(0, XP_LEVELS[unit.level] - unit.xp) : 0;
+}
+/** Promotions this unit qualifies for right now (class, prerequisites, tier unlocked by its level). */
+function eligiblePromotions(unit: Unit): PromotionId[] {
+  const cls = unitDef(unit.type).class;
+  const maxTier = Math.min(3, Math.ceil(unit.level / 2));
+  return Object.values(PROMOTIONS).filter(p => p.classes.includes(cls) && !unit.promotions.includes(p.id) &&
+    (!p.requires || p.requires.every(req => unit.promotions.includes(req))) && p.tier <= maxTier).map(p => p.id);
+}
+/** The promotion every unit takes automatically: highest tier first, then the authored order (class lines first). */
+export function bestPromotion(unit: Unit): PromotionId | null {
+  let best: PromotionId | null = null;
+  for (const id of eligiblePromotions(unit)) if (best === null || PROMOTIONS[id].tier > PROMOTIONS[best].tier) best = id;
+  return best;
+}
+/** Add XP; each level reached applies the best promotion at once (+50 HP), with a `unitPromoted` event. */
+export function grantXp(unit: Unit, xp: number, emit: Emit): void {
   unit.xp += xp;
-  if (unit.promotionChoices || unit.level >= XP_LEVELS.length || unit.xp < XP_LEVELS[unit.level]) return;
-  unit.level++;
-  const eligible = Object.values(PROMOTIONS).filter(p => p.classes.includes(unitDef(unit.type).class) && !unit.promotions.includes(p.id) &&
-    (!p.requires || p.requires.every(req => unit.promotions.includes(req))) && p.tier <= Math.min(3, Math.ceil(unit.level / 2)));
-  const choices: string[] = [];
-  while (eligible.length && choices.length < 2) choices.push(eligible.splice(randInt(state.rng, eligible.length), 1)[0].id);
-  unit.promotionChoices = choices.length ? choices : null;
-  if (choices.length) emit({ type: 'unitLevelUp', unitId: unit.id, player: unit.owner });
+  while (unit.level < XP_LEVELS.length && unit.xp >= XP_LEVELS[unit.level]) {
+    unit.level++;
+    const promotion = bestPromotion(unit);
+    if (!promotion) continue;
+    unit.promotions.push(promotion);
+    unit.hp = Math.min(100, unit.hp + 50);
+    emit({ type: 'unitPromoted', unitId: unit.id, promotion });
+  }
 }
-export function applyPromotion(state: GameState, unit: Unit, promotion: string, emit: Emit): string | null {
-  if (!state.units[unit.id] || !unit.promotionChoices?.includes(promotion)) return 'Promotion unavailable';
-  unit.promotions.push(promotion);
-  unit.promotionChoices = null;
-  unit.hp = Math.min(100, unit.hp + 50);
-  emit({ type: 'unitPromoted', unitId: unit.id, promotion });
-  grantXp(state, unit, 0, emit);
-  return null;
-}
-export function upgradeInfo(state: GameState, unit: Unit): { to: UnitTypeId; cost: number; error: string | null } | null {
-  const from = unitDef(unit.type);
-  if (!from.upgradesTo) return null;
-  const to = unitDef(from.upgradesTo);
-  const cost = Math.max(10, 2 * (to.cost - from.cost) + 10);
+/** Next unit type in this unit's upgrade line that its owner can field (tech known; nation uniques respected). */
+export function upgradeTarget(state: GameState, unit: Unit): UnitTypeId | null {
+  const next = unitDef(unit.type).upgradesTo;
   const player = state.players.find(p => p.id === unit.owner);
-  let error: string | null = null;
-  if (!player || state.map.tiles[unit.tile].owner !== unit.owner) error = 'Upgrade in your territory';
-  else if (to.tech && !player.techs.includes(to.tech)) error = 'Technology required';
-  else if (to.resource && !hasResource(state, unit.owner, to.resource)) error = `Requires ${to.resource}`;
-  else if (player.gold < cost) error = 'Not enough gold';
-  return { to: to.id, cost, error };
+  if (!next || !player) return null;
+  const to = ownUnitVariant(player.leaderId, next);
+  const def = UNITS[to];
+  return def && (!def.tech || player.techs.includes(def.tech)) ? to : null;
 }
-export function upgradeUnit(state: GameState, unit: Unit, emit: Emit): string | null {
-  const info = upgradeInfo(state, unit);
-  if (!info) return 'No upgrade available';
-  if (info.error) return info.error;
+/** Free automatic upgrade at turn start: climb the line as far as known techs allow. Keeps XP, promotions, HP. */
+export function autoUpgrade(state: GameState, unit: Unit, emit: Emit): void {
   const from = unit.type;
-  addGold(state, unit.owner, -info.cost, 'Unit upgrade', emit);
-  unit.type = info.to;
-  unit.moves = 0;
-  emit({ type: 'unitUpgraded', unitId: unit.id, from, to: info.to });
-  return null;
+  for (let step = 0, to = upgradeTarget(state, unit); to && step < 8; step++, to = upgradeTarget(state, unit)) unit.type = to;
+  if (unit.type !== from) emit({ type: 'unitUpgraded', unitId: unit.id, from, to: unit.type });
 }
-export function pillage(state: GameState, unit: Unit, emit: Emit): string | null {
-  const tile = state.map.tiles[unit.tile];
-  if (isCivilian(unit.type) || !tile.improvement || tile.pillaged || tile.owner === unit.owner) return 'No enemy improvement to pillage';
-  if (tile.owner != null && tile.owner !== BARBARIAN && state.players.find(p => p.id === unit.owner)?.relations[tile.owner] !== 'war') return 'Not at war';
-  if (unit.moves < 1) return 'No movement left';
-  tile.pillaged = true;
-  unit.moves -= 1;
-  unit.hp = Math.min(100, unit.hp + 25);
-  if (unit.owner !== BARBARIAN) addGold(state, unit.owner, 15, 'Pillage', emit);
-  emit({ type: 'improvementPillaged', tile: unit.tile, by: unit.owner });
-  return null;
-}
+/** units with moves left and no standing order (informational only: idle units never block the turn) */
 export function idleUnits(state: GameState, pid: PlayerId): Unit[] {
-  return Object.values(state.units).filter(u => u.owner === pid && (u.promotionChoices?.length || (u.moves > 0 && !u.hasAttacked && !u.order)));
+  return Object.values(state.units).filter(u => u.owner === pid && u.moves > 0 && !u.hasAttacked && !u.order);
 }

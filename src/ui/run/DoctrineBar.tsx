@@ -1,5 +1,5 @@
-// Doctrine bar: owned doctrines left→right (Chronicle order) + empty sockets. Tap → detail, drag → reorder
-// (FLIP), drag onto the sell zone → sell (Council). Pulses + floating text on `doctrineTriggered`.
+// Crew bar (internal: doctrines): owned Crew left→right (report order) + empty Slots. Tap → detail, drag → reorder
+// (FLIP), drag onto the sell zone → sell (Shop). Pulses + floating text on `doctrineTriggered`.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as RPointerEvent } from 'react';
 import { T } from '../terms';
@@ -17,11 +17,11 @@ import { act, haptic, sfx } from './runUtil';
 import './bars.css';
 
 export interface DoctrineBarProps {
-  /** HUD strip (art-only mini cards) vs roomy council/chronicle bar */
+  /** HUD strip (art-only mini cards) vs roomy Shop/report bar */
   compact?: boolean;
   /** card width (px or CSS length); defaults per mode */
   cardWidth?: number | string;
-  /** show a sell zone while dragging + Sell in the detail view (Council) */
+  /** show a sell zone while dragging + Sell in the detail view (Shop) */
   sellable?: boolean;
   /** "used/slots" badge next to the roomy bar (default true when not compact) */
   slotsBadge?: boolean;
@@ -215,7 +215,7 @@ export function DoctrineBar({ compact = true, cardWidth, sellable = false, slots
                 <span
                   className="rdb-nation"
                   title={nation.country}
-                  aria-label={`${nation.country} Crew`}
+                  aria-label={`${nation.country} ${T.doctrine}`}
                   style={{ '--flag': `linear-gradient(90deg, ${nation.flagColors.join(', ')})` } as CSSProperties}
                 >{nation.code}</span>
               ) : null;
@@ -231,14 +231,14 @@ export function DoctrineBar({ compact = true, cardWidth, sellable = false, slots
         ))}
       </div>
       {slotsBadge && (
-        <div className="rdb-meta num" aria-label={`${T.doctrine} bunks`}>
+        <div className="rdb-meta num" aria-label={`${T.doctrine} ${T.doctrineSlot}s`}>
           <Icon name="doctrine" size={13} /> {used}/{slots}
         </div>
       )}
       {sellable && (
         <div ref={sellRef} className={`rdb-sell ${dragging != null ? 'is-visible' : ''} ${overSell ? 'is-over' : ''}`}>
           <Icon name="influence" size={18} />
-          <span className="display">Sell for Scrip</span>
+          <span className="display">Sell for {T.influence}</span>
           {dragging != null && <span className="num">+{doctrines.find((d) => d.uid === dragging)?.sellValue ?? 0}</span>}
         </div>
       )}

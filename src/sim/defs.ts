@@ -1,17 +1,17 @@
 // AEONS content definition types + the unified Effect Hook system.
-// Every source of rule-bending behavior (leaders, doctrines, crises, reforms, wonders, buildings,
+// Every source of rule-bending behavior (leaders, doctrines, crises, wonders, buildings,
 // ascension, dark age) implements EffectHooks. The sim calls hooks through src/sim/effects.ts.
 // Additive edits only. Re-read before editing: shared by many agents.
 
 import type {
   ChapterStats, City, CityId, CouncilState, CrisisId, DoctrineId, EdictId, ElevationId, FeatureId,
-  GameState, ImprovementId, LeaderId, NaturalWonderId, OmenId, PillarId, Player, PlayerId, ProductionItem,
-  PromotionId, Rarity, ReformId, ResourceId, ScrollId, SimEvent, TechId, TerrainId, Tile, TileIdx, Uid, Unit,
+  GameState, ImprovementId, LeaderId, NaturalWonderId, PillarId, Player, PlayerId, ProductionItem,
+  PromotionId, Rarity, ResourceId, SimEvent, TechId, TerrainId, Tile, TileIdx, Uid, Unit,
   UnitId, UnitTypeId, BuildingId, WonderId, Yields, AiPersonality,
 } from './types';
 
 // ───────────────────────────── hook plumbing ─────────────────────────────
-export type EffectKind = 'leader' | 'doctrine' | 'crisis' | 'reform' | 'wonder' | 'building' | 'ascension' | 'darkAge' | 'naturalWonder' | 'edict';
+export type EffectKind = 'leader' | 'doctrine' | 'crisis' | 'wonder' | 'building' | 'ascension' | 'darkAge' | 'naturalWonder' | 'edict';
 
 export interface HookCtx {
   state: GameState;
@@ -55,7 +55,7 @@ export interface CombatArgs {
   defenseMods: CombatMod[];
 }
 
-export type CostItem = ProductionItem | { kind: 'improvement'; id: ImprovementId } | { kind: 'tech'; id: TechId } | { kind: 'upgrade'; id: UnitTypeId };
+export type CostItem = ProductionItem | { kind: 'improvement'; id: ImprovementId } | { kind: 'tech'; id: TechId };
 export interface CostArgs { city: City | null; item: CostItem; currency: 'prod' | 'gold' | 'sci' | 'influence'; cost: number }
 
 export interface ChronicleCtx {
@@ -119,8 +119,6 @@ export interface EffectHooks {
   researchOffers?(ctx: HookCtx, a: Scalar): void;
   /** Credits price of the owner's next research reroll */
   researchReroll?(ctx: HookCtx, a: Scalar): void;
-  /** runs for BOTH the declarer's and the target's effects; set allowed=false to forbid */
-  warDeclaration?(ctx: HookCtx, a: { by: PlayerId; target: PlayerId; allowed: boolean; reason?: string }): void;
   /** Scrip interest cap at chapter end (default INTEREST_CAP) */
   interestCap?(ctx: HookCtx, a: Scalar): void;
   /** Scrip a Crew card sells for, set when it is acquired (default half its price) */
@@ -277,16 +275,6 @@ export interface EdictDef {
   unlock?: { text: string; rule?: string };
 }
 
-export interface ScrollDef {
-  id: ScrollId; name: string; pillar: PillarId; cost: number; description: string; icon: string;
-  /** pillar levels granted to each targeted pillar (default 1) */
-  levels?: number;
-  /** which pillars are raised: `pillar` (default) = `pillar`; `focus` = run.focus at use time; `all` = every pillar */
-  scope?: 'pillar' | 'focus' | 'all';
-  /** relative roll weight in shops/Archive packs (default 1; rare variants < 1) */
-  weight?: number;
-}
-
 export interface CrisisDef {
   id: CrisisId; name: string; eras: number[]; description: string; flavor: string; icon: string;
   art: { hue: number; motif: string };
@@ -299,15 +287,6 @@ export interface CrisisDef {
   /** active only during the crisis chapter, applied to the HUMAN player (and to AIs if affectsAll) */
   affectsAll?: boolean;
   effects: EffectHooks;
-}
-
-export interface OmenDef {
-  id: OmenId; name: string; description: string; icon: string; eras?: number[];
-  goal: number | ((state: GameState) => number);
-  /** return progress increment for this event (0 = none) */
-  progress(ev: SimEvent, state: GameState, player: PlayerId): number;
-  reward: { kind: 'influence'; amount: number } | { kind: 'doctrine'; rarity: Rarity } | { kind: 'scroll' } | { kind: 'edict' } | { kind: 'gold'; amount: number } | { kind: 'mandate' };
-  rewardText: string;
 }
 
 export type CommanderGender = 'f' | 'm';
@@ -335,11 +314,6 @@ export interface LeaderDef {
   /** the opposite-gender commander the player may lead instead: same Ark, same rules, own portrait (`<id>_alt` art) */
   alt: { name: string; title: string; gender: CommanderGender; description: string };
   unlock?: { text: string; rule?: string };
-  effects: EffectHooks;
-}
-
-export interface ReformDef {
-  id: ReformId; name: string; description: string; cost: number; tier: 1 | 2; requires?: ReformId; icon: string;
   effects: EffectHooks;
 }
 

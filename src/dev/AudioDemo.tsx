@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { audio, EVENT_SFX_NAMES, SFX_NAMES } from '../audio';
 import type { Mood } from '../audio';
+import { ERA_NAMES } from '../sim/roguelite/constants';
 
-const ERAS = ['Landfall', 'Foothold', 'Frontier', 'Industry', 'Terraform', 'New Earth'];
 const MOODS: Mood[] = ['menu', 'calm', 'tension', 'war', 'crisis', 'chronicle', 'victory', 'defeat'];
 const PALETTES = ['Cold analog drone / distant wind', 'Two-note piano beacon / thin wind', 'Piano pulse / warmer synth haze', 'Layered piano / soft counterline', 'Full pluck motif / bright harmonics', 'Hopeful piano / richest synth horizon'];
 const label = (name: string) => name.replace(/([A-Z])/g, ' $1').replace(/^./, letter => letter.toUpperCase());
@@ -67,7 +67,7 @@ export default function AudioDemo() {
         <button className="audio-start" onClick={() => { audio.init(); audio.setVolumes(volumes); setLast('Sound engine awakened'); }}>{running ? 'Resume sound' : 'Awaken sound'}</button>
       </header>
       <div className="audio-layout"><div>
-        <section className="audio-panel"><h2>Adaptive score</h2><div className="audio-eras">{ERAS.map((name, i) => <button key={name} aria-pressed={era === i} onClick={() => { audio.init(); audio.setEra(i); setEra(i); }}>{String(i + 1).padStart(2, '0')} · {name}</button>)}</div>
+        <section className="audio-panel"><h2>Adaptive score</h2><div className="audio-eras">{ERA_NAMES.map((name, i) => <button key={name} aria-pressed={era === i} onClick={() => { audio.init(); audio.setEra(i); setEra(i); }}>{String(i + 1).padStart(2, '0')} · {name}</button>)}</div>
           <p className="audio-caption">{PALETTES[era]}</p><div className="audio-row">{MOODS.map(value => <button key={value} aria-pressed={mood === value} onClick={() => { audio.init(); audio.setMood(value); setMood(value); }}>{label(value)}</button>)}</div>
           <label className="audio-control"><span>Chronicle intensity <strong>{Math.round(progress * 100)}%</strong></span><input aria-label="Chronicle intensity" type="range" min="0" max="1" step="0.01" value={progress} onChange={event => { const value = Number(event.target.value); setProgress(value); audio.setChronicleProgress(value); }} /></label>
           <p className="audio-note">Score slam drops the Chronicle music on impact. Change mood to begin a fresh phrase.</p>

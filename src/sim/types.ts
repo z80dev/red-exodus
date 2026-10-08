@@ -26,11 +26,8 @@ export type PromotionId = string;
 export type NaturalWonderId = string;
 export type DoctrineId = string;
 export type EdictId = string;
-export type ScrollId = string;
 export type CrisisId = string;
-export type OmenId = string;
 export type LeaderId = string;
-export type ReformId = string;
 
 export type YieldKey = 'food' | 'prod' | 'gold' | 'sci' | 'cul';
 export const YIELD_KEYS: readonly YieldKey[] = ['food', 'prod', 'gold', 'sci', 'cul'];
@@ -59,7 +56,6 @@ export interface Tile {
   riverEdges: number;
   resource: ResourceId | null;
   improvement: ImprovementId | null;
-  pillaged: boolean;
   road: boolean;
   naturalWonder: NaturalWonderId | null;
   owner: PlayerId | null;
@@ -101,7 +97,6 @@ export type UnitOrder =
   | { kind: 'goto'; target: TileIdx }
   | { kind: 'explore' }
   | { kind: 'fortify' }
-  | { kind: 'sleep' }
   | { kind: 'heal' };
 
 export interface Unit {
@@ -116,8 +111,6 @@ export interface Unit {
   xp: number;
   level: number;
   promotions: PromotionId[];
-  /** pending promotion choice (2 random options); unit cannot level again until chosen */
-  promotionChoices: PromotionId[] | null;
   order: UnitOrder | null;
   fortifyTurns: number;
   /** turns since creation; used by AI/UX */
@@ -134,7 +127,6 @@ export type ProductionItem =
 export interface City {
   id: CityId;
   owner: PlayerId;
-  originalOwner: PlayerId;
   name: string;
   tile: TileIdx;
   pop: number;
@@ -161,7 +153,6 @@ export interface City {
 }
 
 // ───────────────────────────── players ─────────────────────────────
-export type Relation = 'war' | 'peace';
 export type AiPersonality = 'expansionist' | 'warmonger' | 'builder' | 'scientist';
 
 export interface Player {
@@ -178,12 +169,11 @@ export interface Player {
   researchProgress: Record<TechId, number>;
   /** fog: 0 = unexplored, 1 = explored (remembered), 2 = currently visible */
   vis: number[];
-  relations: Record<number, Relation>; // keyed by other PlayerId
   happiness: number; // cached, recomputed each turn
   ai: { personality: AiPersonality; memory: Record<string, number> } | null;
   capitalId: CityId | null;
   citiesFounded: number;
-  /** turns since last war declared by / on this player, etc. free-form counters */
+  /** free-form per-player counters */
   counters: Record<string, number>;
   /** persistent counters for non-doctrine effects, keyed `${kind}:${id}` (doctrines use their instance counters) */
   effectCounters: Record<string, Record<string, number>>;
@@ -217,7 +207,6 @@ export interface ChapterStats {
   techs: number;
   kills: number;
   unitsLost: number;
-  citiesCaptured: number;
   campsCleared: number;
   popGrown: number;
   citiesFounded: number;
@@ -226,11 +215,11 @@ export interface ChapterStats {
   wonders: number;
   naturalWonders: number;
   tilesExplored: number;
-  /** free-form counters doctrines/omens can use */
+  /** free-form counters doctrines can use */
   extra: Record<string, number>;
 }
 
-export type ChronicleStepSource = 'pillar' | 'focus' | 'city' | 'doctrine' | 'edition' | 'crisis' | 'darkAge' | 'omen' | 'reform' | 'leader' | 'final' | 'bonus' | 'ascension';
+export type ChronicleStepSource = 'pillar' | 'focus' | 'city' | 'doctrine' | 'edition' | 'crisis' | 'darkAge' | 'leader' | 'final' | 'bonus' | 'ascension';
 
 /** One animated beat of the Chronicle ceremony. UI plays these in order. */
 export interface ChronicleStep {
@@ -258,14 +247,14 @@ export interface ChronicleResult {
   triumph: boolean;
   mandateLost: number;
   influenceEarned: { label: string; amount: number }[];
+  /** passed: the Focus pillar gained a level (applied after scoring) */
+  focusLevelUp: { pillar: PillarId; level: number } | null;
 }
 
 export type ShopItem =
   | { kind: 'doctrine'; id: DoctrineId; edition: Edition; price: number }
   | { kind: 'edict'; id: EdictId; price: number }
-  | { kind: 'scroll'; id: ScrollId; price: number }
-  | { kind: 'pack'; pack: 'doctrine' | 'archive' | 'edict'; size: 'normal' | 'jumbo'; price: number }
-  | { kind: 'reform'; id: ReformId; price: number };
+  | { kind: 'pack'; pack: 'doctrine' | 'edict'; size: 'normal' | 'jumbo'; price: number };
 
 export interface CouncilState {
   items: (ShopItem | null)[]; // null = sold slot
@@ -278,8 +267,7 @@ export interface CouncilState {
 }
 
 export type RunPhase =
-  | 'crisisReveal' // era start: show upcoming crisis
-  | 'chapterStart' // choose focus pillar + omen
+  | 'chapterStart' // choose focus pillar (Dawn also previews the era's crisis)
   | 'playing'
   | 'chronicle' // lastChronicle ready to be animated
   | 'council'
@@ -290,7 +278,7 @@ export type RunPhase =
 export interface RunState {
   phase: RunPhase;
   era: number; // 0..5 (6+ endless)
-  chapter: number; // 0..2
+  chapter: number; // 0 = Dawn, 1 = Crisis
   chapterTurn: number; // turns elapsed in chapter
   chapterLength: number;
   mandate: number;
@@ -302,13 +290,9 @@ export interface RunState {
   doctrineSlots: number;
   edicts: EdictInstance[];
   edictSlots: number;
-  reforms: ReformId[];
-  crisis: CrisisId | null; // crisis for this era's chapter III
+  crisis: CrisisId | null; // crisis for this era's Crisis chapter
   crisisActive: boolean;
   darkAge: boolean; // failed last chapter
-  omenOffer: OmenId[];
-  /** goal is fixed when the omen is accepted */
-  omen: { id: OmenId; progress: number; done: boolean; goal?: number } | null;
   stats: ChapterStats; // current chapter
   totals: ChapterStats; // whole run
   council: CouncilState | null;
@@ -370,12 +354,9 @@ export type Action =
   | { type: 'moveUnit'; unitId: UnitId; to: TileIdx } // sets goto order & moves as far as possible now
   | { type: 'attack'; unitId: UnitId; target: TileIdx } // melee or ranged, auto by unit type
   | { type: 'foundCity'; unitId: UnitId }
-  | { type: 'unitOrder'; unitId: UnitId; order: UnitOrder | null } // fortify/sleep/explore/heal/clear
+  | { type: 'unitOrder'; unitId: UnitId; order: UnitOrder | null } // fortify/explore/heal/clear
   | { type: 'skipUnit'; unitId: UnitId } // done for this turn
   | { type: 'disband'; unitId: UnitId }
-  | { type: 'pillage'; unitId: UnitId }
-  | { type: 'upgradeUnit'; unitId: UnitId }
-  | { type: 'promote'; unitId: UnitId; promotion: PromotionId }
   // cities
   | { type: 'setProduction'; cityId: CityId; item: ProductionItem } // replaces queue[0]
   | { type: 'enqueue'; cityId: CityId; item: ProductionItem }
@@ -386,16 +367,13 @@ export type Action =
   | { type: 'cityStrike'; cityId: CityId; target: TileIdx }
   // empire
   | { type: 'setResearch'; tech: TechId }
-  | { type: 'declareWar'; target: PlayerId }
-  | { type: 'offerPeace'; target: PlayerId }
   | { type: 'endTurn' }
   // ark / research draft
   | { type: 'orbitalDrop'; tile: TileIdx } // spend Cryo (see dropPrice) → found a colony on an explored tile
   | { type: 'thawColonists'; cityId: CityId } // spend 1 Cryo → +THAW_POP pop
   | { type: 'rerollResearch' } // pay Credits to redraw the Breakthrough offer
   // roguelite
-  | { type: 'ackCrisis' }
-  | { type: 'chooseChapterStart'; focus: PillarId; omen: OmenId | null }
+  | { type: 'chooseChapterStart'; focus: PillarId }
   | { type: 'ackChronicle' } // chronicle animation finished → council (or defeat/victory)
   | { type: 'councilBuy'; slot: number }
   | { type: 'councilReroll' }
@@ -416,7 +394,6 @@ export type SimEvent =
   | { type: 'unitCreated'; unitId: UnitId; player: PlayerId; tile: TileIdx; cityId?: CityId }
   | { type: 'unitDied'; unitId: UnitId; player: PlayerId; tile: TileIdx; unitType: UnitTypeId; killer?: PlayerId }
   | { type: 'unitPromoted'; unitId: UnitId; promotion: PromotionId }
-  | { type: 'unitLevelUp'; unitId: UnitId; player: PlayerId }
   | { type: 'unitUpgraded'; unitId: UnitId; from: UnitTypeId; to: UnitTypeId }
   | {
       type: 'combat';
@@ -429,8 +406,6 @@ export type SimEvent =
       defenderKilled: boolean;
     }
   | { type: 'cityFounded'; cityId: CityId; player: PlayerId; tile: TileIdx }
-  | { type: 'cityCaptured'; cityId: CityId; from: PlayerId; to: PlayerId; tile: TileIdx }
-  | { type: 'cityRazed'; cityId: CityId; tile: TileIdx }
   | { type: 'cityGrew'; cityId: CityId; player: PlayerId; pop: number }
   | { type: 'cityStarved'; cityId: CityId; player: PlayerId; pop: number }
   | { type: 'borderGrew'; cityId: CityId; player: PlayerId; tiles: TileIdx[] }
@@ -438,7 +413,6 @@ export type SimEvent =
   | { type: 'wonderBuilt'; cityId: CityId; player: PlayerId; wonder: WonderId }
   | { type: 'wonderLost'; cityId: CityId; wonder: WonderId; by: PlayerId } // someone else finished it first
   | { type: 'improvementBuilt'; tile: TileIdx; player: PlayerId; improvement: ImprovementId }
-  | { type: 'improvementPillaged'; tile: TileIdx; by: PlayerId }
   | { type: 'techResearched'; player: PlayerId; tech: TechId }
   | { type: 'goldChanged'; player: PlayerId; delta: number; reason: string }
   | { type: 'tilesRevealed'; player: PlayerId; tiles: TileIdx[] }
@@ -446,9 +420,6 @@ export type SimEvent =
   | { type: 'ruinExplored'; player: PlayerId; tile: TileIdx; reward: string }
   | { type: 'campCleared'; player: PlayerId; tile: TileIdx; gold: number }
   | { type: 'campSpawned'; tile: TileIdx }
-  | { type: 'warDeclared'; by: PlayerId; target: PlayerId }
-  | { type: 'peaceMade'; a: PlayerId; b: PlayerId }
-  | { type: 'playerEliminated'; player: PlayerId; by?: PlayerId }
   | { type: 'happinessChanged'; player: PlayerId; value: number }
   // mars
   | { type: 'stormSpawned'; storm: StormCell }
@@ -460,7 +431,7 @@ export type SimEvent =
   | { type: 'cryoChanged'; player: PlayerId; value: number; delta: number }
   | { type: 'researchOffered'; player: PlayerId; techs: TechId[]; /** true when the player paid to reroll the draft */ reroll?: boolean }
   // roguelite
-  | { type: 'crisisRevealed'; era: number; crisis: CrisisId }
+  | { type: 'crisisRolled'; era: number; crisis: CrisisId }
   | { type: 'crisisBegan'; crisis: CrisisId }
   | { type: 'crisisEnded'; crisis: CrisisId }
   | { type: 'chapterStarted'; era: number; chapter: number; target: number }
@@ -470,8 +441,7 @@ export type SimEvent =
   | { type: 'doctrineGained'; uid: Uid; id: DoctrineId }
   | { type: 'doctrineLost'; uid: Uid; id: DoctrineId }
   | { type: 'edictUsed'; uid: Uid; id: EdictId }
-  | { type: 'omenProgress'; id: OmenId; progress: number; goal: number }
-  | { type: 'omenCompleted'; id: OmenId }
+  | { type: 'pillarLevelUp'; pillar: PillarId; level: number }
   | { type: 'mandateChanged'; value: number; delta: number }
   | { type: 'influenceChanged'; value: number; delta: number }
   | { type: 'renownGained'; amount: number; label: string; tile?: TileIdx } // live renown pops on the map (e.g. festival)

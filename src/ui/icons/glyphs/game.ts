@@ -1,4 +1,4 @@
-// Game-object glyphs (colored): star crown skull seed trophy shield sword book scroll edict doctrine pack reform crisis omen war peace hourglass tech city codex journal map.
+// Game-object glyphs (colored): star crown skull seed trophy shield sword book scroll edict doctrine pack crisis war peace hourglass tech city codex journal map.
 import { circle, ellipse, f, g, poly, rect, s, spokes, star, tf, type Glyph } from '../glyph';
 
 const GOLD = 'var(--gold-400)';
@@ -7,7 +7,6 @@ const IVORY = '#e8dfc9';
 const RED = '#bf493b';
 const WOOD = '#8b5a2b';
 const PARCHMENT = '#ead9ad';
-const VIOLET = '#8663bc';
 
 export const GAME_GLYPHS = {
   star: g(GOLD, '#fff0a8',
@@ -46,9 +45,7 @@ export const GAME_GLYPHS = {
     tf('rotate(-7 12 12)',f(star(12,11.5,3.4,1.5),GOLD)),
     tf('rotate(-7 12 12)',s('M5.5 3.5 6.5 5M8.5 3.5 9.5 5M11.5 3.5 12.5 5M14.5 3.5 15.5 5M5.5 19 6.5 20.5M8.5 19 9.5 20.5M14.5 19 15.5 20.5M17.5 19 18.5 20.5','#e6edf0',1)),
   ),
-  reform: g(PARCHMENT, GOLD, f(rect(4,3.5,16,17)), f(poly([[12,3.5],[20,3.5],[20,20.5],[12,20.5]]),'#c8b17d'), f(rect(7,8,2.3,7,.6),GOLD), f(rect(14.7,8,2.3,7,.6),GOLD), f(rect(6,7,12,1.7,.5),'#a97824'), f(rect(6,15,12,1.7,.5),'#a97824'), f(poly([[12,8.8],[14.3,11],[12,13.4],[9.7,11]]),'#5b8c3a'), s('M5.6 5.2h7','h',1)),
   crisis: g('#555761', RED, f('M2.5 15.2c-1-3.1 1-5.2 4.1-5.4.5-3.4 3.2-5.6 6.6-5.2 2.3.2 3.7 1.5 4.3 3.5 3.3-.2 5.5 1.8 5.2 4.6-.2 2.6-2.1 4-5.2 4H6.2c-1.9 0-3.2-.5-3.7-1.5Z'), f('M13.2 4.7c2.3.2 3.7 1.5 4.3 3.5 3.3-.2 5.5 1.8 5.2 4.6-.2 2.6-2.1 4-5.2 4H12c2-1.2 3.1-3.3 3.2-5.9 0-2.4-.7-4.5-2-6.2Z','k'), f(poly([[12.7,8],[9.8,13.1],[12.3,13.1],[10.8,18.5],[15,12.5],[12.7,12.5]]),RED), s('M5.2 12c.8-1 1.7-1.4 2.8-1.4','#aeb2bc',1.1)),
-  omen: g(VIOLET, '#d5b5ff', f('M3 14.7C6.2 7.3 12 4.3 21 5.2c-3.1 2.5-4.6 5.6-4 9.3-2.3 5.1-9.7 6.2-14 .2Z'), f('M3 14.7C6.2 7.3 12 4.3 21 5.2c-3.1 2.5-4.6 5.6-4 9.3-4-3.5-9.6-3.1-14 .2Z','k'), f(ellipse(11.2,12.3,4.2,2.6),'#d5b5ff'), f(circle(11.5,12.3,1.8),'#261638'), f(circle(12,11.7,.7),'#fff0a8'), s('M4 13C7.4 7.7 13 5.8 18.6 6.3','h',1), f(star(19,17.5,2.1,.9,4),'#d5b5ff')),
   war: g(STEEL, RED,
     tf('rotate(-42 12 12)', f(poly([[12, 2], [14.2, 11.5], [12, 14], [9.8, 11.5]]), 'm')),
     tf('rotate(-42 12 12)', f(poly([[12, 2], [14.2, 11.5], [12, 14]]), 'k', 0.28)),

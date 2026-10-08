@@ -1,15 +1,15 @@
-import { BUILDINGS, ELEVATIONS, FEATURES, IMPROVEMENTS, RESOURCES, TECHS, TERRAINS, UNITS, WONDERS } from '../../content';
-import { availableProduction, buyCost, canFoundCity, improvementOptions } from '../cities';
+import { BUILDINGS, ELEVATIONS, FEATURES, IMPROVEMENTS, PILLAR_DEFS, RESOURCES, TECHS, TERRAINS, UNITS, WONDERS } from '../../content';
+import { PRODUCTION_PACE, availableProduction, buyCost, canFoundCity, improvementOptions } from '../cities';
 import { attackTargets, cityStrikeTargets, previewAttack, previewCityStrike } from '../combat';
 import { availableTechs } from '../economy';
 import { hexDistance, neighbors, tilesInRadius } from '../hex';
 import { findPath, reachableTiles } from '../pathfinding';
 import { randInt } from '../rng';
-import { chooseOmen, councilAction, orderDoctrine, playEdict } from './rogueAutoplay';
+import { councilAction, orderDoctrine, playEdict } from './rogueAutoplay';
 import type { Action, AiPersonality, City, Emit, GameState, PlayerId, ProductionItem, TileIdx, Unit } from '../types';
 import { BARBARIAN, HUMAN, PILLARS } from '../types';
-import { isCivilian, militaryAt, createUnit, unitDef } from '../units';
-import { canDeclareWar, canOrbitalDrop, canThaw, dropPrice, researchRerollCost } from '../mars';
+import { isCivilian, isHostile, militaryAt, createUnit, unitDef } from '../units';
+import { canOrbitalDrop, canThaw, dropPrice, researchRerollCost } from '../mars';
 import { applyPlayerAction } from '../engine';
 // Planning is a read operation for the human: cache only outside serialized GameState.
 const humanSitePlans = new WeakMap<GameState, Record<string, number>>();
@@ -17,7 +17,7 @@ const humanSitePlans = new WeakMap<GameState, Record<string, number>>();
 function ownCities(state: GameState, pid: PlayerId): City[] { return Object.values(state.cities).filter(c => c.owner === pid); }
 function ownUnits(state: GameState, pid: PlayerId): Unit[] { return Object.values(state.units).filter(u => u.owner === pid); }
 function enemies(state: GameState, pid: PlayerId): Unit[] {
-  return Object.values(state.units).filter(u => u.owner !== pid && (u.owner === BARBARIAN || state.players.find(p => p.id === pid)?.relations[u.owner] === 'war'));
+  return Object.values(state.units).filter(u => isHostile(pid, u.owner));
 }
 function targetCount(state: GameState, persona: AiPersonality): number {
   const base = { small: 4, standard: 6, large: 8 }[state.config.mapSize];
@@ -98,7 +98,9 @@ function researchChoice(state: GameState, pid: PlayerId, persona: AiPersonality)
   for (const id of techs) {
     const tech = TECHS[id];
     if (!tech) continue;
-    let value = 12 - tech.cost * 0.035 + Math.max(0, state.run.era - tech.era) * 6;
+    // the human seat climbs (offers always hold a newest-era card); rivals research broadly, cheapest first
+    let value = player?.isHuman ? 12 + tech.era * 4 - tech.cost * 0.01
+      : 12 - tech.cost * 0.035 + Math.max(0, state.run.era - tech.era) * 6;
     for (const u of Object.values(UNITS)) if (u.tech === id) value += persona === 'warmonger' ? 6 : 2;
     for (const b of Object.values(BUILDINGS)) if (b.tech === id) value += persona === 'builder' ? 4 : 1.5;
     for (const w of Object.values(WONDERS)) if (w.tech === id) value += persona === 'builder' ? 5 : 1;
@@ -124,7 +126,9 @@ function productionChoice(state: GameState, pid: PlayerId, city: City, persona: 
     const combat = options.filter(o => o.kind === 'unit' && !isCivilian(o.id) && !['scout'].includes(o.id));
     return combat.sort((a, b) => UNITS[b.id].strength - UNITS[a.id].strength)[0] ?? available('unit', 'warrior')!;
   }
-  if (military.length < Math.max(2, Math.ceil(cities.length * (persona === 'warmonger' ? 2.1 : 1.2)))) {
+  // a Military Focus scores Production spent on units, so the human seat keeps a bigger army then
+  const armyPerCity = pid === HUMAN && state.run.focus === 'conquest' ? 3 : persona === 'warmonger' ? 2.1 : 1.2;
+  if (military.length < Math.max(2, Math.ceil(cities.length * armyPerCity))) {
     const types = options.filter(o => o.kind === 'unit' && !isCivilian(o.id) && o.id !== 'scout');
     types.sort((a, b) => (UNITS[b.id].strength + (UNITS[b.id].rangedStrength ?? 0) - UNITS[b.id].cost / 15) -
       (UNITS[a.id].strength + (UNITS[a.id].rangedStrength ?? 0) - UNITS[a.id].cost / 15));
@@ -150,7 +154,7 @@ function bestAttack(state: GameState, unit: Unit): TileIdx | null {
     if (!p) continue;
     const enemy = militaryAt(state, tile);
     const value = p.dmgToDefender - p.dmgToAttacker * (unit.hp < 50 ? 2.5 : 1.1) +
-      (p.defenderKillLikely ? 50 : 0) + (p.captures ? 120 : 0) + (enemy?.type === 'settler' ? 40 : 0) +
+      (p.defenderKillLikely ? 50 : 0) + (enemy?.type === 'settler' ? 40 : 0) +
       (unitDef(unit.type).rangedStrength ? 6 : 0);
     if (value > score) { score = value; best = tile; }
   }
@@ -189,7 +193,6 @@ function arkAction(state: GameState, pid: PlayerId): Action | null {
   return cities.length ? { type: 'thawColonists', cityId: cities[0].id } : null;
 }
 function unitAction(state: GameState, pid: PlayerId, unit: Unit, persona: AiPersonality): Action | null {
-  if (unit.promotionChoices?.length) return { type: 'promote', unitId: unit.id, promotion: unit.promotionChoices[0] };
   if (unit.moves <= 0 || unit.hasAttacked && !unitDef(unit.type).abilities?.includes('moveAfterAttack')) return null;
   if (forecastStorm(state, unit.tile)) {
     const escape = reachableTiles(state, unit).filter(t => !forecastStorm(state, t.tile))
@@ -234,12 +237,8 @@ function unitAction(state: GameState, pid: PlayerId, unit: Unit, persona: AiPers
     const settler = ownUnits(state, pid).find(u => u.type === 'settler' && !militaryAt(state, u.tile));
     if (settler && hexDistance(state.map, unit.tile, settler.tile) < 9) target = settler.tile;
     else {
-      const targetEnemy = active.filter(u => u.owner !== BARBARIAN || u.hp < 90).sort((a, b) => hexDistance(state.map, unit.tile, a.tile) - hexDistance(state.map, unit.tile, b.tile))[0];
-      const rivalCity = Object.values(state.cities).filter(c => c.owner !== pid &&
-        state.players.find(p => p.id === pid)?.relations[c.owner] === 'war')
-        .sort((a, b) => hexDistance(state.map, unit.tile, a.tile) - hexDistance(state.map, unit.tile, b.tile))[0];
+      const targetEnemy = active.filter(u => u.hp < 90).sort((a, b) => hexDistance(state.map, unit.tile, a.tile) - hexDistance(state.map, unit.tile, b.tile))[0];
       if (targetEnemy && hexDistance(state.map, unit.tile, targetEnemy.tile) <= (persona === 'warmonger' ? 12 : 7)) target = targetEnemy.tile;
-      else if (rivalCity && hexDistance(state.map, unit.tile, rivalCity.tile) <= (persona === 'warmonger' ? 16 : 9)) target = rivalCity.tile;
       else {
         const camp = state.map.tiles.filter(t => t.camp).sort((a, b) => hexDistance(state.map, unit.tile, a.idx) - hexDistance(state.map, unit.tile, b.idx))[0];
         if (camp && hexDistance(state.map, unit.tile, camp.idx) < 12) target = camp.idx;
@@ -276,7 +275,7 @@ function improveAction(state: GameState, pid: PlayerId): Action | null {
   const player = state.players.find(p => p.id === pid)!;
   let best: { tile: TileIdx; improvement: string; score: number } | null = null;
   for (const tile of state.map.tiles) {
-    if (tile.owner !== pid || tile.improvement && !tile.pillaged) continue;
+    if (tile.owner !== pid || tile.improvement) continue;
     const city = tile.cityId != null && state.cities[tile.cityId];
     if (!city || hexDistance(state.map, city.tile, tile.idx) > 2) continue;
     for (const option of improvementOptions(state, pid, tile.idx)) {
@@ -303,7 +302,7 @@ function decision(state: GameState, pid: PlayerId, persona: AiPersonality): Acti
     if (action) return action;
   }
   for (const unit of ownUnits(state, pid).sort((a, b) => (unitDef(b.type).rangedStrength ? 1 : 0) - (unitDef(a.type).rangedStrength ? 1 : 0))) {
-    if (unit.order?.kind === 'goto' || unit.order?.kind === 'explore' || unit.order?.kind === 'sleep' ||
+    if (unit.order?.kind === 'goto' || unit.order?.kind === 'explore' ||
       unit.order?.kind === 'fortify' && !enemies(state, pid).some(e => hexDistance(state.map, e.tile, unit.tile) <= 3)) continue;
     const action = unitAction(state, pid, unit, persona);
     if (action) return action;
@@ -318,40 +317,8 @@ function decision(state: GameState, pid: PlayerId, persona: AiPersonality): Acti
   }
   return null;
 }
-function power(state: GameState, pid: PlayerId): number {
-  return ownUnits(state, pid).reduce((n, u) => n + (isCivilian(u.type) ? 0 : unitDef(u.type).strength * u.hp / 100), 0) + ownCities(state, pid).length * 8;
-}
-export function aiAcceptsPeace(state: GameState, aiPid: PlayerId, fromPid: PlayerId): boolean {
-  const ai = state.players.find(p => p.id === aiPid);
-  if (!ai?.alive || ai.relations[fromPid] !== 'war') return false;
-  return power(state, aiPid) < power(state, fromPid) * 0.8 ||
-    state.turn - (ai.counters[`war:${fromPid}`] ?? state.turn) >= 15 ||
-    (fromPid === HUMAN && power(state, HUMAN) >= power(state, aiPid) * 1.3);
-}
-function diplomacy(state: GameState, pid: PlayerId, emit: Emit): void {
-  const player = state.players.find(p => p.id === pid)!;
-  const myCities = ownCities(state, pid);
-  for (const rival of state.players) {
-    if (rival.id === pid || rival.id === BARBARIAN || !rival.alive) continue;
-    if (player.relations[rival.id] === 'war') {
-      if (aiAcceptsPeace(state, pid, rival.id)) applyPlayerAction(state, pid, { type: 'offerPeace', target: rival.id }, emit);
-      continue;
-    }
-    const rivalCities = ownCities(state, rival.id);
-    const border = myCities.some(a => rivalCities.some(b => hexDistance(state.map, a.tile, b.tile) < 7));
-    const pressure = myCities.some(a => rivalCities.some(b => hexDistance(state.map, a.tile, b.tile) < 5));
-    const relativePower = power(state, pid) / Math.max(1, power(state, rival.id));
-    if (border && (player.ai?.personality === 'warmonger' && relativePower > 1.2 ||
-      pressure && relativePower > 1.4 ||
-      (player.counters[`provoked:${rival.id}`] ?? 0) > 0 && relativePower > 0.85) &&
-      canDeclareWar(state, pid, rival.id) === null) {
-      applyPlayerAction(state, pid, { type: 'declareWar', target: rival.id }, emit);
-    }
-  }
-}
 export function runAiTurn(state: GameState, pid: PlayerId, emit: Emit): void {
   if (!state.players.find(p => p.id === pid)?.alive) return;
-  diplomacy(state, pid, emit);
   const persona = state.players.find(p => p.id === pid)?.ai?.personality ?? 'builder';
   // Each unit can move once or twice, each city once; invalid commands never stall a whole turn.
   const attempts = new Set<string>();
@@ -413,10 +380,7 @@ export function runBarbarians(state: GameState, emit: Emit): void {
     const city = Object.values(state.cities).filter(c => hexDistance(state.map, c.tile, unit.tile) <=
       (unitDef(unit.type).range ?? 1)).sort((a, b) => a.hp - b.hp)[0];
     if (city && applyPlayerAction(state, BARBARIAN, { type: 'attack', unitId: unit.id, target: city.tile }, emit) === null) continue;
-    const tile = state.map.tiles[unit.tile];
-    if (tile.improvement && !tile.pillaged) { applyPlayerAction(state, BARBARIAN, { type: 'pillage', unitId: unit.id }, emit); continue; }
-    const nearest = [...foes.map(u => u.tile), ...Object.values(state.cities).map(c => c.tile),
-      ...state.map.tiles.filter(t => t.improvement && !t.pillaged).map(t => t.idx)]
+    const nearest = [...foes.map(u => u.tile), ...Object.values(state.cities).map(c => c.tile)]
       .sort((a, b) => hexDistance(state.map, a, unit.tile) - hexDistance(state.map, b, unit.tile))[0];
     if (nearest !== undefined && nearest !== unit.tile) {
       const moves = reachableTiles(state, unit).filter(t => hexDistance(state.map, t.tile, nearest) < hexDistance(state.map, unit.tile, nearest));
@@ -428,28 +392,28 @@ export function runBarbarians(state: GameState, emit: Emit): void {
 }
 export function autoplayNextAction(state: GameState): Action | null {
   const phase = state.run.phase;
-  if (phase === 'crisisReveal') return { type: 'ackCrisis' };
   if (phase === 'chapterStart') {
-    const stats = state.run.stats;
     const cities = ownCities(state, HUMAN);
     const turns = state.run.chapterLength || 6;
-    const flow = cities.reduce((total, c) => ({
-      culture: total.culture + c.yields.cul, science: total.science + c.yields.sci,
-      gold: total.gold + c.yields.gold, food: total.food + Math.max(0, c.yields.food - c.pop * 2),
-      production: total.production + c.yields.prod,
-    }), { culture: 0, science: 0, gold: 0, food: 0, production: 0 });
-    const scores = [
-      stats.culture + flow.culture * turns,
-      (stats.science + flow.science * turns) * 0.6 + (stats.techs + (flow.science * turns > 20 ? 1 : 0)) * 30,
-      (stats.gold + Math.max(0, flow.gold + 2) * turns) * 0.6,
-      stats.kills * 25 + stats.citiesCaptured * 150 + stats.campsCleared * 60 +
-        (state.map.tiles.some(t => t.camp && ownUnits(state, HUMAN).some(u => !isCivilian(u.type) && hexDistance(state.map, t.idx, u.tile) < 5)) ? 60 : 0),
-      stats.popGrown * 15 + stats.citiesFounded * 80 + stats.improvements * 10 +
-        Math.floor(flow.food * turns / 12) * 15 + ownUnits(state, HUMAN).filter(u => u.type === 'settler').length * 75,
-      stats.buildings * 20 + stats.wonders * 200 + Math.floor(flow.production * turns / 45) * 20,
-    ];
+    // project this chapter's stats from current flows, then price them with the real pillar rates
+    const projected = structuredClone(state.run.stats);
+    for (const c of cities) {
+      projected.culture += c.yields.cul * turns;
+      projected.science += c.yields.sci * turns;
+      projected.gold += Math.max(0, c.yields.gold) * turns;
+      projected.extra.food = (projected.extra.food ?? 0) + Math.max(0, c.yields.food) * turns;
+      projected.extra.buildProd = (projected.extra.buildProd ?? 0) + Math.max(0, c.yields.prod) * turns;
+    }
+    if (cities.reduce((sum, c) => sum + c.yields.sci, 0) * turns > 20) projected.techs++;
+    projected.citiesFounded += ownUnits(state, HUMAN).filter(u => u.type === 'settler').length;
+    const army = ownUnits(state, HUMAN).filter(u => !isCivilian(u.type) && unitDef(u.type).class !== 'recon')
+      .reduce((sum, u) => sum + unitDef(u.type).cost * PRODUCTION_PACE, 0);
+    projected.extra.army = (projected.extra.army ?? 0) + army * turns;
+    const campNearby = state.map.tiles.some(t => t.camp && ownUnits(state, HUMAN).some(u => !isCivilian(u.type) && hexDistance(state.map, t.idx, u.tile) < 5));
+    if (campNearby) projected.campsCleared++;
+    const scores = PILLARS.map(p => PILLAR_DEFS[p].renown(projected, 1).reduce((sum, line) => sum + line.amount, 0));
     const focus = PILLARS.reduce((best, p, i) => scores[i] * state.run.pillarLevels[p] > scores[PILLARS.indexOf(best)] * state.run.pillarLevels[best] ? p : best, PILLARS[0]);
-    return { type: 'chooseChapterStart', focus, omen: chooseOmen(state) };
+    return { type: 'chooseChapterStart', focus };
   }
   if (phase === 'chronicle') return { type: 'ackChronicle' };
   if (phase === 'council') return councilAction(state);

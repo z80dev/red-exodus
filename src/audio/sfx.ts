@@ -4,12 +4,12 @@ import type { Timbre } from './synth';
 export const SFX_NAMES = [
   'click', 'tap', 'open', 'close', 'hover', 'error', 'buy', 'sell', 'reroll', 'cardFlip', 'cardDeal',
   'packOpen', 'chronicleTick', 'renownAdd', 'splendorAdd', 'splendorMul', 'scoreSlam', 'targetPass',
-  'targetFail', 'triumph', 'mandateLoss', 'eraFanfare', 'crisisReveal', 'victory', 'defeat', 'endTurn',
+  'targetFail', 'triumph', 'mandateLoss', 'eraFanfare', 'crisisAlarm', 'victory', 'defeat', 'endTurn',
   'levelUp', 'select', 'move', 'attack', 'found', 'build', 'research',
   'stormHowl', 'stormHit', 'podStreak', 'podImpact', 'thaw', 'breakthrough', 'cryo',
 ] as const;
 export type KnownSfxName = typeof SFX_NAMES[number];
-export const EVENT_SFX_NAMES = ['hooves', 'wheels', 'sail', 'arrows', 'cannon', 'unitDied', 'cityGrew', 'wonderBuilt', 'warDeclared', 'cityCaptured', 'borderGrew', 'campCleared', 'ruinExplored', 'doctrineTriggered'] as const;
+export const EVENT_SFX_NAMES = ['hooves', 'wheels', 'sail', 'arrows', 'cannon', 'unitDied', 'cityGrew', 'wonderBuilt', 'borderGrew', 'campCleared', 'ruinExplored', 'doctrineTriggered'] as const;
 
 /** Gain values are pre-mix: layers sum into the compressor and a hard-bounded soft limiter. */
 export function playSfx(synth: Synth, target: AudioNode, name: string, pitch: number, volume: number): void {
@@ -60,7 +60,7 @@ export function playSfx(synth: Synth, target: AudioNode, name: string, pitch: nu
     case 'defeat': fanfare([55, 53, 50, 43], 0.33, 'synth'); noise(380, 1.6, 0.06); break;
     case 'mandateLoss': noise(4400, 0.13, 0.2); noise(1700, 0.23, 0.13, 0.05); impact(0.18, 0.03); [79, 78, 67].forEach((n, i) => chime(n, i * 0.09, 0.06)); break;
     case 'eraFanfare': fanfare([55, 60, 64, 67, 72], 0.18); break;
-    case 'crisisReveal': [36, 43, 49].forEach(n => tone(n, 2.3, 0.1, 0, 'synth')); noise(200, 1.5, 0.13, 0, 1900); impact(0.2, 0.25); break;
+    case 'crisisAlarm': [36, 43, 49].forEach(n => tone(n, 2.3, 0.1, 0, 'synth')); noise(200, 1.5, 0.13, 0, 1900); impact(0.2, 0.25); break;
     case 'endTurn': tone(60, 0.2, 0.055, 0, 'synth'); synth.fm(target, { at: at + 0.085, duration: 0.08, frequency: midi(72) * ratio, gain: 0.035 * volume }, 3.4, 0.1); noise(850, 0.08, 0.025); break;
     case 'levelUp': fanfare([72, 76, 79, 84], 0.08, 'piano'); break;
     case 'found': impact(0.17); fanfare([48, 55, 60, 64, 67], 0.1, 'piano'); break;
@@ -77,8 +77,6 @@ export function playSfx(synth: Synth, target: AudioNode, name: string, pitch: nu
     case 'cityGrew': chime(72, 0, 0.035, 0.5); chime(79, 0.12, 0.025, 0.6); break;
     case 'borderGrew': tone(79, 0.28, 0.025, 0, 'flute'); break;
     case 'wonderBuilt': [48, 55, 60, 64, 67, 72].forEach((n, i) => synth.tone(target, 'organ', { at: at + i * 0.06, duration: 3.8, attack: 0.9, frequency: midi(n), gain: 0.07 * volume, pan: (i / 5 - 0.5) * 1.2 })); fanfare([60, 67, 72], 0.28); break;
-    case 'warDeclared': [0, 0.22, 0.44, 0.75].forEach(delay => impact(0.23, delay)); tone(36, 1.5, 0.08, 0, 'brass'); break;
-    case 'cityCaptured': impact(0.25); fanfare([48, 55, 60], 0.16); break;
     case 'campCleared': impact(0.15); [79, 84, 88].forEach((n, i) => chime(n, 0.1 + i * 0.08, 0.06)); break;
     case 'ruinExplored': [67, 74, 79, 86].forEach((n, i) => chime(n, i * 0.15, 0.065, 1.2)); noise(2400, 0.65, 0.025); break;
     case 'doctrineTriggered': chime(88, 0, 0.025, 0.19); break;

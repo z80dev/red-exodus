@@ -3,8 +3,9 @@
 .rre-bg {
   position: absolute; inset: -3%; background-size: cover; background-position: center;
   background-image: radial-gradient(80% 60% at 50% 35%, #6b4c14, #1a1206 70%, #07090f);
-  animation: rcr-kenburns 18s ease-out both;
+  animation: rre-kenburns 18s ease-out both;
 }
+@keyframes rre-kenburns { from { transform: scale(1.14); filter: brightness(0.3) } 25% { filter: brightness(1) } to { transform: scale(1) } }
 .rre--defeat .rre-bg { filter: grayscale(0.85) brightness(0.55) contrast(1.1); background-image: radial-gradient(80% 60% at 50% 35%, #3a3438, #0d0b0e 70%, #050608); animation-name: rre-sink; }
 @keyframes rre-sink { from { transform: scale(1.02); filter: grayscale(0) brightness(0.9) } to { transform: scale(1.1); filter: grayscale(0.85) brightness(0.55) contrast(1.1) } }
 .rre-vignette { position: absolute; inset: 0; background: radial-gradient(100% 75% at 50% 35%, transparent 25%, rgba(3,4,8,0.9) 100%), linear-gradient(180deg, rgba(3,4,8,0.2), rgba(3,4,8,0.85) 75%); }

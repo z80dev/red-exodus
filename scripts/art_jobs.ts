@@ -11,13 +11,9 @@ import { readContent, type ContentKind } from './art_content';
 const ROOT = resolve(import.meta.dir, '..');
 const GEN = join(ROOT, 'art', 'gen');
 
-type Kind = 'leaders' | 'doctrines' | 'edicts' | 'crises' | 'omens' | 'reforms' | 'eras' | 'key';
+type Kind = 'leaders' | 'doctrines' | 'edicts' | 'crises' | 'eras' | 'key';
 type Aspect = 'square' | 'portrait' | 'landscape';
-interface Job {
-  out: string; prompt: string; aspect: Aspect; model: string;
-  /** sheet jobs: ids of the cells in reading order, split by scripts/art_post.py */
-  cells?: string[]; layout?: '2x2' | '1x2';
-}
+interface Job { out: string; prompt: string; aspect: Aspect; model: string }
 
 // Every kind renders through the Bankr LLM Gateway on GPT Image 2.5 Flare (generation only; no reference edits).
 const IMAGE_MODEL = 'gpt-image-2.5-flare';
@@ -46,10 +42,6 @@ const FRAMING: Record<Kind, string> = {
     'Square Salvage card: one memorable physical tool, cache, module, or colonist using it; a readable action with clever visual wit.',
   crises:
     'Square Crisis card: one dramatic Mars hazard pressing against a tiny vulnerable habitat and crew; ominous scale, one hazard accent.',
-  omens:
-    'Square Directive card: a suited colonist or crew team visibly carrying out one concrete mission objective in the Martian landscape.',
-  reforms:
-    'Square Ark Module card: one distinctive practical habitat or life-support installation with a tiny suited crew member for scale.',
   eras:
     'Epic panoramic establishing matte painting of Mars colonization, clear focal habitat or landmark, calm upper-middle sky for title.',
   key:
@@ -69,13 +61,11 @@ const PALETTE: [number, string][] = [
 const paletteFor = (hue: number) => PALETTE.find(([max]) => (((hue % 360) + 360) % 360) < max)![1];
 
 const CONTENT_KINDS: Record<Kind, ContentKind | null> = {
-  leaders: null, doctrines: 'doctrines', edicts: 'edicts', crises: 'crises', omens: 'omens', reforms: 'reforms',
+  leaders: null, doctrines: 'doctrines', edicts: 'edicts', crises: 'crises',
   eras: null, key: null,
 };
-/** Simpler vignette kinds painted four to a sheet (a 1×2 pair for a leftover of one or two). */
-const SHEET_KINDS: Kind[] = ['omens', 'reforms'];
 
-const ALL: Kind[] = ['leaders', 'doctrines', 'edicts', 'crises', 'omens', 'reforms', 'eras', 'key'];
+const ALL: Kind[] = ['leaders', 'doctrines', 'edicts', 'crises', 'eras', 'key'];
 const kinds = (process.argv.slice(2) as Kind[]).filter((k) => ALL.includes(k));
 if (process.argv.length > 2 && kinds.length !== process.argv.length - 2) {
   console.error(`unknown kind; expected any of ${ALL.join(' ')}`);
@@ -106,31 +96,7 @@ for (const kind of kinds.length ? kinds : ALL) {
     const hue = subjectHue ?? hues[id];
     return [{ id, subject, hue }];
   });
-  if (SHEET_KINDS.includes(kind)) {
-    // Generate shared-style sheets, then split them into individual art files in art_post.py.
-    for (let i = 0; i < scenes.length; i += 4) {
-      const group = scenes.slice(i, i + 4);
-      const layout = group.length > 2 ? '2x2' : '1x2';
-      const positions = layout === '2x2' ? ['Top-left', 'Top-right', 'Bottom-left', 'Bottom-right'] : ['Left', 'Right'];
-      const cells = group.map(
-        (s, n) => `${positions[n]}: ${s.subject}${s.hue === undefined ? '' : ` Palette: ${paletteFor(s.hue)}.`}`,
-      );
-      jobs.push({
-        out: `art/gen/out/${kind}/_sheet_${String(i / 4).padStart(2, '0')}.png`,
-        prompt:
-          `${layout === '2x2' ? 'Four' : 'Two'} separate square card vignette paintings arranged in a precise ` +
-          `${layout === '2x2' ? '2×2 grid' : 'side-by-side pair'} that exactly fills the canvas; each painting fills ` +
-          'exactly its own equal cell edge to edge, the cells divided only by a thin straight dark gap, all in one ' +
-          `identical style. ${cells.join(' ')} ` +
-          `Each cell: ${FRAMING[kind]} ${style}`,
-        aspect: layout === '2x2' ? 'square' : 'landscape',
-        model: IMAGE_MODEL,
-        layout,
-        cells: group.map((s) => s.id),
-      });
-    }
-  }
-  for (const { id, subject, hue } of SHEET_KINDS.includes(kind) ? [] : scenes) {
+  for (const { id, subject, hue } of scenes) {
     const palette = hue === undefined ? '' : ` Mars rust and basalt dominate; use ${paletteFor(hue)} only as a small light or equipment accent.`;
     const variants: [string, Aspect, string][] = backdrop
       ? [[id, 'landscape', 'Wide 16:9 landscape composition.'], [`${id}-portrait`, 'portrait', PORTRAIT_FRAMING]]

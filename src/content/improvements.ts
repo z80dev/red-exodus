@@ -18,46 +18,46 @@ const LIST: ImprovementDef[] = [
   imp({
     id: 'farm', name: 'Greenhouse Dome', tech: 'agriculture', goldCost: 25, yields: y(1),
     terrains: ['grassland', 'plains', 'desert', 'tundra'], elevations: ['flat', 'hills'], features: ['floodplains', 'marsh'],
-    description: '+1 {food}. Pressurized crop trays coax food from open regolith. Connects Nitrate Salts and Brine Algae.',
+    description: '+1 {food}. Crop trays in sealed domes grow food on bare ground. Connects Nitrate Salts and Salt Algae.',
   }),
   imp({
-    id: 'mine', name: 'Regolith Mine', tech: 'mining', goldCost: 30, yields: y(0, 1),
+    id: 'mine', name: 'Ground Mine', tech: 'mining', goldCost: 30, yields: y(0, 1),
     terrains: ['grassland', 'plains', 'desert', 'tundra', 'snow'], elevations: ['hills'],
-    description: '+1 {prod}. Shafts bite into ridges and bedrock. Connects nickel-iron, platinum, opal, perchlorates and thorium.',
+    description: '+1 {prod}. Shafts dig into hills and rock. Connects Nickel-Iron, Platinum, Opal, Toxic Salts and Thorium.',
   }),
   imp({
-    id: 'pasture', name: 'Bioreactor', tech: 'animal_husbandry', goldCost: 25, yields: y(0, 1), requiresResource: true,
-    description: '+1 {prod}. Sealed vats cultivate lichen and harvest methane seep or fuel.',
+    id: 'pasture', name: 'Bio Tank', tech: 'animal_husbandry', goldCost: 25, yields: y(0, 1), requiresResource: true,
+    description: '+1 {prod}. Sealed tanks grow lichen and collect methane. Connects Lichen Beds, Methane Seep and Methane.',
   }),
   imp({
-    id: 'plantation', name: 'Hydroponics Bay', tech: 'calendar', goldCost: 30, yields: y(0, 0, 1), requiresResource: true,
-    description: '+1 {gold}. Controlled growth for fungus, seedstock, silk, wine, soil, pigment, cotton and coffee.',
+    id: 'plantation', name: 'Crop Bay', tech: 'calendar', goldCost: 30, yields: y(0, 0, 1), requiresResource: true,
+    description: '+1 {gold}. Controlled growing for fungus, seeds, silk, wine, soil, pigment, cotton and coffee.',
   }),
   imp({
-    id: 'camp', name: 'Extraction Rig', tech: 'archery', goldCost: 25, yields: y(0, 0, 1), requiresResource: true,
-    description: '+1 {gold}. A sealed harvest rig for crater ice, aerogel and meteorite iron. Nothing gets hunted.',
+    id: 'camp', name: 'Harvest Rig', tech: 'archery', goldCost: 25, yields: y(0, 0, 1), requiresResource: true,
+    description: '+1 {gold}. A sealed rig that collects Crater Ice, Aerogel and Meteorite Iron.',
   }),
   imp({
-    id: 'quarry', name: 'Basalt Quarry', tech: 'mining', goldCost: 30, yields: y(0, 1), requiresResource: true,
-    description: '+1 {prod}. Cuts basalt and Martian jade for habs and megaprojects.',
+    id: 'quarry', name: 'Rock Quarry', tech: 'mining', goldCost: 30, yields: y(0, 1), requiresResource: true,
+    description: '+1 {prod}. Cuts Black Rock and Martian Jade for colonies and Wonders.',
   }),
   imp({
     id: 'fishing_boats', name: 'Dust Skimmer', tech: 'sailing', goldCost: 30, yields: y(1), requiresResource: true, water: true,
-    description: '+1 {food}. A fan-driven skimmer gathers silt, brine resources and satellite wreckage.',
+    description: '+1 {food}. A fan-driven boat collects silt, wreckage and other water resources.',
   }),
   imp({
-    id: 'lumbermill', name: 'Sinter Works', tech: 'engineering', goldCost: 40, yields: y(0, 1, 0, 0, 0), features: ['forest'],
+    id: 'lumbermill', name: 'Block Works', tech: 'engineering', goldCost: 40, yields: y(0, 1, 0, 0, 0), features: ['forest'],
     terrains: ['grassland', 'plains', 'tundra', 'snow'], elevations: ['flat', 'hills'],
-    description: '+1 {prod} on a Hoodoo Field, which remains standing. Dust, heat and pressure fuse local regolith into blocks.',
+    description: '+1 {prod} on Rock Spires, which stay in place. Heat and pressure turn local dust into blocks.',
   }),
   imp({
     id: 'trading_post', name: 'Relay Station', tech: 'currency', goldCost: 40, yields: y(0, 0, 2),
     terrains: ['grassland', 'plains', 'desert', 'tundra'], elevations: ['flat', 'hills'], features: ['forest', 'jungle', 'floodplains', 'oasis'],
-    description: '+2 {gold}. A comms relay links remote installations to the colony exchange.',
+    description: '+2 {gold}. A radio relay links far-away tiles to the colony market.',
   }),
   imp({
     id: 'oil_well', name: 'Deep Drill', tech: 'combustion', goldCost: 70, yields: y(0, 2), requiresResource: true,
-    description: '+2 {prod}. Extracts deuterium-rich heavy ice for power and propulsion systems.',
+    description: '+2 {prod}. Pulls Heavy Ice out of the ground for power and fuel.',
   }),
 ];
 

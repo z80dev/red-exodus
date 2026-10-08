@@ -10,7 +10,8 @@ import type { Profile } from '../../meta/profile';
 import { HUMAN } from '../../sim/types';
 import { Icon } from '../icons/Icon';
 import { Button, Chip, ConfirmDialog, Modal, Ornament } from '../kit';
-import { CHAPTER_NAMES, ROMAN, eraName } from './format';
+import { chapterLabel } from './format';
+import { T } from '../terms';
 
 type Settings = Profile['settings'];
 
@@ -46,9 +47,9 @@ export function PauseMenu() {
       <div className="pm__eyebrow">{info.civ} · {info.leader}</div>
       <h2 className="k-title pm__title">Paused</h2>
       <div className="pm__meta">
-        <span>{eraName(info.era)} · {ROMAN[info.chapter]} {CHAPTER_NAMES[info.chapter]}</span>
+        <span>{chapterLabel(info.era, info.chapter)}</span>
         <span>Turn {info.turn}</span>
-        {info.asc > 0 && <span>Ascension {info.asc}</span>}
+        {info.asc > 0 && <span>{T.ascension} {info.asc}</span>}
         <span className="pm__seed"><Icon name="seed" size={13} /> {info.seed}</span>
       </div>
       <Ornament />
@@ -82,19 +83,19 @@ export function PauseMenu() {
       </div>
 
       <div className="pm__list">
-        <Button onClick={() => { audio.sfx('open'); const g = useGame.getState(); g.setPanel('none'); g.setScreen('settings'); }}><Icon name="settings" size={18} /> All Settings</Button>
-        <Button onClick={() => void saveExit()} disabled={saving}><Icon name="back" size={18} /> {saving ? 'Saving…' : 'Save & Exit'}</Button>
-        <Button variant="danger" onClick={() => { audio.sfx('open'); setConfirm(true); }}><Icon name="skull" size={18} /> Abandon Run</Button>
+        <Button onClick={() => { audio.sfx('open'); const g = useGame.getState(); g.setPanel('none'); g.setScreen('settings'); }}><Icon name="settings" size={18} /> All settings</Button>
+        <Button onClick={() => void saveExit()} disabled={saving}><Icon name="back" size={18} /> {saving ? 'Saving…' : 'Save and quit'}</Button>
+        <Button variant="danger" onClick={() => { audio.sfx('open'); setConfirm(true); }}><Icon name="skull" size={18} /> Abandon run</Button>
       </div>
-      <p className="pm__note">Your empire is saved after every action.</p>
+      <p className="pm__note">The game saves after every move.</p>
 
       {confirm && (
         <ConfirmDialog
           title="Abandon this run?"
-          body={<>The chronicle of <b>{info.civ}</b> ends here. Progress in this run is lost forever.</>}
+          body={<>This run with <b>{info.civ}</b> ends now. You cannot get it back.</>}
           icon="skull"
           danger
-          confirmLabel="Abandon"
+          confirmLabel="Abandon run"
           onCancel={() => setConfirm(false)}
           onConfirm={() => { setConfirm(false); audio.sfx('defeat'); void useGame.getState().abandonRun(); }}
         />

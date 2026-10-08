@@ -1,11 +1,11 @@
 // Pack opening: the sealed pack shivers, tears open with a flash, cards fan out face-down and flip;
-// pick N (Take) or Skip. The relevant owned row (doctrines / edicts / pillars) is shown so the pick can
-// fly home and doctrines can be sold to make room.
+// pick N (Take) or Skip. The relevant owned row (Crew / Boosts) is shown so the pick can
+// fly home and Crew can be sold to make room.
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useGame, useSim } from '../../game/store';
 import { packPickError } from '../../sim/roguelite';
-import type { ShopItem } from '../../sim/types';
+import type { PackKind } from '../../sim/roguelite';
 import { Button } from '../kit';
 import { Icon } from '../icons/Icon';
 import { RichText } from '../icons/RichText';
@@ -15,12 +15,10 @@ import { DoctrineBar } from './DoctrineBar';
 import { EdictTray } from './EdictTray';
 import { shake, snapshotEl, useParticles } from './fx';
 import { landPurchase, runBefore } from './landing';
-import { PillarStrip } from './parts';
 import { act, haptic, sfx, uiSettings } from './runUtil';
 import './council.css';
 
 type Stage = 'sealed' | 'torn' | 'fanned';
-const PACK_OF: Record<ShopItem['kind'], 'doctrine' | 'archive' | 'edict'> = { doctrine: 'doctrine', scroll: 'archive', edict: 'edict', pack: 'doctrine', reform: 'doctrine' };
 
 export function PackOpen() {
   const run = useSim((s) => s.run);
@@ -32,7 +30,7 @@ export function PackOpen() {
   const rootRef = useRef<HTMLDivElement>(null);
   const packRef = useRef<HTMLDivElement>(null);
   const fast = uiSettings().fastAnimations;
-  const [kind] = useState(() => PACK_OF[pack?.options[0]?.kind ?? 'doctrine']);
+  const [kind] = useState<PackKind>(() => (pack?.options[0]?.kind === 'edict' ? 'edict' : 'doctrine'));
   const [size] = useState<'normal' | 'jumbo'>(() => ((pack?.options.length ?? 3) > 3 ? 'jumbo' : 'normal'));
   const count = pack?.options.length ?? 0;
 
@@ -80,7 +78,7 @@ export function PackOpen() {
     try { return packPickError(state, i); } catch { return null; }
   };
   const sel = selected != null ? opts[selected] ?? null : null;
-  const selCard = sel ? shopItemCard(sel, state) : null;
+  const selCard = sel ? shopItemCard(sel) : null;
   const selErr = selected != null ? errorOf(selected) : null;
 
   const take = () => {
@@ -119,7 +117,7 @@ export function PackOpen() {
       <header className="rpk-head">
         <div className="rpk-title display">{model.title}</div>
         <div className="rpk-sub">
-          {fanned ? <>Choose <b>{pack.picks}</b> · {opts.length} revealed</> : 'Breaking the seal…'}
+          {fanned ? <>Keep <b>{pack.picks}</b> of {opts.length}</> : 'Opening…'}
         </div>
       </header>
 
@@ -144,7 +142,7 @@ export function PackOpen() {
                   style={{ '--i': i, '--off': i - mid } as CSSProperties}
                 >
                   <Card
-                    card={{ ...shopItemCard(o, state), price: undefined }}
+                    card={{ ...shopItemCard(o), price: undefined }}
                     width="var(--rpk-card-w)"
                     faceDown={i >= revealed}
                     selected={isSel}
@@ -170,17 +168,15 @@ export function PackOpen() {
             {selCard.edition && selCard.edition !== 'base' && (
               <div className="rpk-info-ed"><b>{EDITION_LABEL[selCard.edition]}</b> <RichText text={EDITION_TEXT[selCard.edition]} /></div>
             )}
-            {selCard.kind === 'scroll' && selCard.footer && <RichText className="rpk-info-ed" text={selCard.footer} />}
           </>
         ) : (
-          <div className="rpk-info-hint">{fanned ? 'Tap a card to inspect it' : ''}</div>
+          <div className="rpk-info-hint">{fanned ? 'Tap a card to see what it does' : ''}</div>
         )}
       </div>
 
       <div className="rpk-owned">
         {kind === 'doctrine' && <DoctrineBar compact={false} sellable cardWidth="var(--rpk-owned-w)" />}
         {kind === 'edict' && <EdictTray compact={false} cardWidth="var(--rpk-owned-w)" />}
-        {kind === 'archive' && <PillarStrip levels={run.pillarLevels} focus={run.focus} />}
       </div>
 
       <footer className="rpk-foot">

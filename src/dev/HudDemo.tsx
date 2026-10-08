@@ -204,7 +204,7 @@ function DebugMap() {
               {t.elevation === 'mountain' && <path d={`M${-SCALE * 0.6} ${SCALE * 0.45} L0 ${-SCALE * 0.6} L${SCALE * 0.6} ${SCALE * 0.45} Z`} fill="#6e665e" stroke="#f2f4f7" strokeWidth={1.5} />}
               {t.owner != null && <polygon points={HEX} fill="none" stroke={colorOf(t.owner)} strokeWidth={3} opacity={0.75} transform="scale(0.9)" />}
               {t.resource && <circle cx={SCALE * 0.42} cy={-SCALE * 0.4} r={4} fill="#ffe28a" stroke="#000" strokeWidth={0.8} />}
-              {t.improvement && <rect x={-SCALE * 0.55} y={SCALE * 0.25} width={9} height={9} fill={t.pillaged ? '#a33' : '#e0b84a'} stroke="#000" strokeWidth={0.8} />}
+              {t.improvement && <rect x={-SCALE * 0.55} y={SCALE * 0.25} width={9} height={9} fill="#e0b84a" stroke="#000" strokeWidth={0.8} />}
               {t.camp && <text y={6} textAnchor="middle" fontSize={18}>☠</text>}
               {tileSets.city.has(t.idx) && <polygon points={HEX} fill="rgba(234,199,102,0.14)" />}
               {tileSets.move.has(t.idx) && <polygon points={HEX} fill="rgba(255,255,255,0.28)" stroke="rgba(255,255,255,0.8)" strokeWidth={1.5} transform="scale(0.86)" />}

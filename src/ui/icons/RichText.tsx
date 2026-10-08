@@ -2,9 +2,12 @@
 // Syntax: `{food}` (any icon name) · `{icon:name}` (any name or content id) · `**bold**` · `\n` line breaks.
 // Signed numbers render bold; a number directly followed by a yield/currency icon takes that icon's color,
 // ×N multipliers take the Splendor color. Number+icon pairs never wrap apart.
+// Yield and score tokens also print their plain name after the icon ("+1 {mandate}" → "+1 ♥ Life"), so new
+// players never have to learn an icon to read a rule.
 import { Fragment, useMemo, type ReactNode } from 'react';
 import { Icon } from './Icon';
 import { isIconName } from './registry';
+import { T, YIELD_NAMES } from '../terms';
 import './icons.css';
 
 type Seg =
@@ -19,6 +22,27 @@ const TINTED: Record<string, true> = {
   food: true, prod: true, gold: true, sci: true, cul: true, happy: true, unhappy: true,
   influence: true, renown: true, splendor: true, mandate: true,
 };
+
+/** plain names printed after a token icon: [singular, plural] (singular after exactly "1") */
+const TOKEN_WORDS: Record<string, readonly [string, string]> = {
+  food: [YIELD_NAMES.food, YIELD_NAMES.food],
+  prod: [YIELD_NAMES.prod, YIELD_NAMES.prod],
+  gold: [YIELD_NAMES.gold, YIELD_NAMES.gold],
+  sci: [YIELD_NAMES.sci, YIELD_NAMES.sci],
+  cul: [YIELD_NAMES.cul, YIELD_NAMES.cul],
+  happy: [T.happiness, T.happiness],
+  unhappy: ['Unhappiness', 'Unhappiness'],
+  influence: ['Coin', T.influence],
+  renown: ['Point', T.renown],
+  splendor: [T.splendor, T.splendor],
+  mandate: ['Life', T.mandate],
+};
+
+function tokenWord(name: string, count?: string): string | null {
+  const words = TOKEN_WORDS[name];
+  if (!words) return null;
+  return count && /^[+\-−]?1$/.test(count) ? words[0] : words[1];
+}
 
 const TOKEN = /\*\*(.+?)\*\*|\{icon:([^}\s]+)\}|\{([A-Za-z][\w-]*)\}|\n|(?<![\w.])([+\-−]|[×x](?=\d))?(\d+(?:[.,]\d+)?%?)(?![\w])/g;
 
@@ -60,9 +84,13 @@ function render(segs: Seg[], iconSize: number | undefined, keyBase: string): Rea
       case 'bold':
         nodes.push(<b key={key}>{render(seg.c, iconSize, `${key}.`)}</b>);
         break;
-      case 'icon':
-        nodes.push(<Icon key={key} name={seg.name} size={iconSize} />);
+      case 'icon': {
+        const word = tokenWord(seg.name);
+        nodes.push(word
+          ? <span key={key} className="rt-glue"><Icon name={seg.name} size={iconSize} />{'\u202f'}{word}</span>
+          : <Icon key={key} name={seg.name} size={iconSize} />);
         break;
+      }
       case 'num': {
         // look ahead: "<num> {icon}" or "<num>{icon}" → glue + tint
         const gap = segs[i + 1];
@@ -72,11 +100,13 @@ function render(segs: Seg[], iconSize: number | undefined, keyBase: string): Rea
         const cls = ['rt-num', tint ? `rt-y-${tint}` : seg.mul ? 'rt-mul' : ''].filter(Boolean).join(' ');
         const num = seg.signed || tint ? <span className={cls}>{seg.v}</span> : seg.v;
         if (next?.t === 'icon') {
+          const word = tokenWord(next.name, seg.v);
           nodes.push(
             <span key={key} className="rt-glue">
               {num}
               {hasGap ? '\u202f' : null}
               <Icon name={next.name} size={iconSize} />
+              {word ? <span className={tint ? `rt-word rt-y-${tint}` : 'rt-word'}>{'\u202f'}{word}</span> : null}
             </span>,
           );
           i += hasGap ? 2 : 1;

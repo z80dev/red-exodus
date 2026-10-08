@@ -1,12 +1,14 @@
 // CardModel builders: turn content defs / run instances into the universal Card's view model.
 // Missing defs (content still loading, removed ids) degrade to a readable title from the id.
-import { CRISES, DOCTRINES, EDICTS, LEADERS, OMENS, REFORMS, SCROLLS } from '../../content';
+import { CRISES, DOCTRINES, EDICTS, LEADERS } from '../../content';
 import type { ArtKind } from '../art/artManifest';
 import type { DoctrineInstance, Edition, GameState, PillarId, Rarity, ShopItem } from '../../sim/types';
 import { PILLAR_HUE, PILLAR_MOTIF, pillarInfo } from './runUtil';
 import { EDITION_NAMES, PACK_NAMES, T } from '../terms';
+import { PACKS } from '../../sim/roguelite/constants';
+import type { PackKind } from '../../sim/roguelite/constants';
 
-export type CardKind = 'doctrine' | 'edict' | 'scroll' | 'crisis' | 'omen' | 'pack' | 'reform' | 'pillar' | 'leader' | 'wonder' | 'unit' | 'tech';
+export type CardKind = 'doctrine' | 'edict' | 'crisis' | 'pack' | 'pillar' | 'leader' | 'wonder' | 'unit' | 'tech';
 
 export interface CardModel {
   kind: CardKind;
@@ -17,13 +19,13 @@ export interface CardModel {
   flavor?: string;
   rarity?: Rarity;
   edition?: Edition;
-  /** small caps line at the card foot, e.g. "Doctrine · Rare" */
+  /** small caps line at the card foot, e.g. "Crew · Rare" */
   typeLabel: string;
   /** procedural art params; illustrated art is looked up by artKind+id */
   art?: { hue: number; motif: string };
   artKind?: ArtKind;
   icon?: string;
-  /** live line for scaling doctrines, e.g. "Currently ×2.5 {splendor}" */
+  /** live line for scaling Crew, e.g. "Currently ×2.5 {splendor}" */
   status?: string | null;
   price?: number;
   /** extra line under the description (reward, level change, sell value) */
@@ -44,7 +46,7 @@ export const EDITION_TEXT: Record<Edition, string> = {
   gilded: '+50 {renown}',
   radiant: '+4 {splendor}',
   prismatic: '×1.5 {splendor}',
-  ethereal: '+1 Crew bunk',
+  ethereal: 'Uses no Slot',
 };
 
 function titleFromId(id: string): string {
@@ -89,7 +91,7 @@ export function edictCard(id: string): CardModel {
   const def = EDICTS[id];
   const rarity = def?.rarity ?? 'common';
   const targetText: Record<string, string> = {
-    none: 'Instant', city: 'Target: a city', ownedTile: 'Target: your tile', tile: 'Target: any tile', unit: 'Target: a unit',
+    none: 'Use at once', city: 'Target: a Colony', ownedTile: 'Target: your tile', tile: 'Target: any tile', unit: 'Target: a unit',
   };
   return {
     kind: 'edict',
@@ -102,23 +104,6 @@ export function edictCard(id: string): CardModel {
     artKind: 'edicts',
     icon: def?.icon ?? 'edict',
     footer: def ? targetText[def.target] : undefined,
-  };
-}
-
-export function scrollCard(id: string, level?: number): CardModel {
-  const def = SCROLLS[id];
-  const pillar = (def?.pillar ?? 'arts') as PillarId;
-  const p = pillarInfo(pillar);
-  return {
-    kind: 'scroll',
-    id,
-    title: def?.name ?? titleFromId(id),
-    description: def?.description ?? `Raise **${p.name}** by one level: more {renown} per unit and +1 {splendor} when focused.`,
-    typeLabel: `${T.scroll} · ${p.name}`,
-    art: { hue: PILLAR_HUE[pillar], motif: PILLAR_MOTIF[pillar] },
-    icon: def?.icon ?? p.icon,
-    accent: p.color,
-    footer: level != null ? `${p.name} Lv ${level} → ${level + 1}` : undefined,
   };
 }
 
@@ -141,52 +126,18 @@ export function crisisCard(id: string): CardModel {
   };
 }
 
-export function omenCard(id: string, progress?: { progress: number; goal: number }): CardModel {
-  const def = OMENS[id];
-  return {
-    kind: 'omen',
-    id,
-    title: def?.name ?? titleFromId(id),
-    description: def?.description ?? '',
-    typeLabel: T.omen,
-    art: { hue: hashHue(id, 250, 60), motif: motifOr(def?.icon, 'eye') },
-    artKind: 'omens',
-    icon: def?.icon ?? 'omen',
-    accent: 'var(--influence)',
-    footer: def ? `Reward: ${def.rewardText}` : undefined,
-    status: progress ? `${Math.min(progress.progress, progress.goal)} / ${progress.goal}` : null,
-  };
-}
-
-export function reformCard(id: string): CardModel {
-  const def = REFORMS[id];
-  return {
-    kind: 'reform',
-    id,
-    title: def?.name ?? titleFromId(id),
-    description: def?.description ?? '',
-    typeLabel: `${T.reform} · Tier ${def?.tier === 2 ? 'II' : 'I'}`,
-    art: { hue: hashHue(id, 160, 50), motif: motifOr(def?.icon, 'temple') },
-    artKind: 'reforms',
-    icon: def?.icon ?? 'reform',
-    accent: 'var(--r-uncommon)',
-    footer: 'Permanent for this run',
-  };
-}
-
-const PACK_META: Record<'doctrine' | 'archive' | 'edict', { title: string; noun: string; motif: string; hue: number; icon: string }> = {
-  doctrine: { title: PACK_NAMES.doctrine, noun: T.doctrines, motif: 'crown', hue: 40, icon: 'doctrine' },
-  archive: { title: PACK_NAMES.archive, noun: T.scrolls, motif: 'book', hue: 205, icon: 'scroll' },
+const PACK_META: Record<PackKind, { title: string; noun: string; motif: string; hue: number; icon: string }> = {
+  doctrine: { title: PACK_NAMES.doctrine, noun: 'Crew cards', motif: 'crown', hue: 40, icon: 'doctrine' },
   edict: { title: PACK_NAMES.edict, noun: T.edicts, motif: 'key', hue: 290, icon: 'edict' },
 };
-export function packCard(pack: 'doctrine' | 'archive' | 'edict', size: 'normal' | 'jumbo'): CardModel {
+export function packCard(pack: PackKind, size: 'normal' | 'jumbo'): CardModel {
   const m = PACK_META[pack];
-  const n = size === 'jumbo' ? 5 : 3;
+  const n = PACKS[pack][size].options;
   return {
     kind: 'pack',
     id: `${pack}-${size}`,
-    title: `${size === 'jumbo' ? 'Jumbo ' : ''}${m.title}`,
-    description: `Reveal **${n} ${m.noun}** and keep **1**.`,
+    title: `${size === 'jumbo' ? 'Big ' : ''}${m.title}`,
+    description: `Open it, see **${n} ${m.noun}** and keep **1**.`,
     rarity: size === 'jumbo' ? 'rare' : 'uncommon',
     typeLabel: T.pack,
     art: { hue: m.hue, motif: m.motif },
@@ -203,12 +154,12 @@ export function pillarCard(pillar: PillarId, level: number, opts: PillarCardOpts
     id: pillar,
     title: p.name,
     description: p.description,
-    typeLabel: `Pillar · Level ${level}`,
+    typeLabel: `${T.focus} pillar · Level ${level}`,
     art: { hue: PILLAR_HUE[pillar], motif: PILLAR_MOTIF[pillar] },
     icon: p.icon,
     accent: p.color,
     status: opts.projected != null ? `≈ ${Math.round(opts.projected * (opts.focused ? 2 : 1)).toLocaleString('en-US')} {renown}` : null,
-    footer: opts.splendor != null ? `Focus: ${opts.splendor} {splendor} · {renown} ×2` : undefined,
+    footer: opts.splendor != null ? `As ${T.focus}: ${opts.splendor} {splendor} · {renown} ×2` : undefined,
   };
 }
 
@@ -220,7 +171,7 @@ export function leaderCard(id: string): CardModel {
     title: def?.name ?? titleFromId(id),
     description: def?.bonus ?? '',
     flavor: def?.description,
-    typeLabel: def ? `${def.title} · ${def.civName}` : 'Leader',
+    typeLabel: def ? `${def.title} · ${def.civName}` : T.leader,
     art: def ? { hue: def.portrait.hue, motif: motifOr(def.portrait.motif, 'crown') } : { hue: 40, motif: 'crown' },
     artKind: 'leaders',
     icon: 'crown',
@@ -229,19 +180,9 @@ export function leaderCard(id: string): CardModel {
   };
 }
 
-export function shopItemCard(item: ShopItem, state?: GameState | null): CardModel {
-  let card: CardModel;
-  switch (item.kind) {
-    case 'doctrine': card = doctrineCard(item.id, item.edition); break;
-    case 'edict': card = edictCard(item.id); break;
-    case 'scroll': {
-      const pillar = SCROLLS[item.id]?.pillar as PillarId | undefined;
-      card = scrollCard(item.id, pillar && state ? state.run.pillarLevels[pillar] : undefined);
-      break;
-    }
-    case 'pack': card = packCard(item.pack, item.size); break;
-    case 'reform': card = reformCard(item.id); break;
-  }
+export function shopItemCard(item: ShopItem): CardModel {
+  const card = item.kind === 'doctrine' ? doctrineCard(item.id, item.edition)
+    : item.kind === 'edict' ? edictCard(item.id) : packCard(item.pack, item.size);
   return { ...card, price: item.price };
 }
 

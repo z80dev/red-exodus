@@ -1,4 +1,4 @@
-/* THE COUNCIL + pack opening. OWNER: UI-Rogue. */
+/* THE SHOP (internal: Council) + pack opening. OWNER: UI-Rogue. */
 .rco {
   --rco-card-w: clamp(78px, min(27vw, calc((100dvh - 530px) / 2.95)), 118px);
   --rco-doc-w: min(58px, calc((100vw - 90px) / 5));
@@ -76,8 +76,8 @@
 .rco-owned-label small { font-family: var(--font-ui); letter-spacing: 0.02em; text-transform: none; color: var(--text-faint); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; }
 .rco-owned .rdb-row { padding-top: 4px; }
 .rco-pillarbox { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.rco-pillarbox-label { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
 .rco-pillarbox .ro-pillar { height: 28px; padding: 0 7px; font-size: 12px; }
-.rco-reforms { display: inline-flex; gap: 4px; align-items: center; height: 28px; font-size: 12px; font-weight: 800; color: #9de0d6; padding: 0 9px; border-radius: 99px; border: 1px solid rgba(95,208,192,0.4); background: rgba(20,60,60,0.35); }
 
 /* info + actions */
 .rco-info {
@@ -137,7 +137,6 @@
   .rco-owned { grid-area: owned; flex-wrap: nowrap; padding: 3px 8px 5px; margin-bottom: calc(6px + var(--safe-bottom)); }
   .rco-pillarbox { grid-area: pillars; gap: 4px; }
   .rco-pillarbox .ro-pillar { height: 24px; padding: 0 5px; }
-  .rco-reforms { height: 24px; }
   .rco-info { grid-area: info; min-height: 0; overflow: auto; }
   .rco-foot { grid-area: foot; flex-direction: column; gap: 6px; align-self: end; padding-bottom: calc(6px + var(--safe-bottom)); }
   .rco-foot .k-btn { min-height: 38px; }

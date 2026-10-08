@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LEADERS } from '../../content';
 import { applyAction, createGame } from '../engine';
-import { autoplayNextAction, aiAcceptsPeace } from './index';
+import { autoplayNextAction } from './index';
 import type { Action } from '../types';
 
 describe('rival AI and autoplay', () => {
@@ -25,16 +25,6 @@ describe('rival AI and autoplay', () => {
     expect(state.turn).toBeGreaterThan(0);
   });
 
-  it('accepts peace when overwhelmed, but not outside an active war', () => {
-    const { state } = createGame({ seed: 'PEACE-REGRESSION', leaderId: Object.keys(LEADERS)[0], ascension: 0,
-      mapSize: 'small', rivals: 1, tutorial: false, daily: false });
-    expect(aiAcceptsPeace(state, 1, 0)).toBe(false);
-    state.players[1].relations[0] = 'war';
-    state.players[0].relations[1] = 'war';
-    state.turn = 20;
-    state.players[1].counters['war:0'] = 3;
-    expect(aiAcceptsPeace(state, 1, 0)).toBe(true);
-  });
   it('plans without mutating state or repeating blocked actions over multiple turns', () => {
     const { state } = createGame({ seed: 'SMOKE-1', leaderId: Object.keys(LEADERS)[0], ascension: 0,
       mapSize: 'standard', rivals: 3, tutorial: false, daily: false });

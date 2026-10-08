@@ -1,5 +1,5 @@
 // OWNER: SimMechanics. Mars-specific rules: dust storms, the orbiting Ark (Cryo pods → Orbital Drops /
-// Thaws), the Breakthrough research draft, and war-declaration vetoes. Signatures are the contract
+// Thaws) and the Breakthrough research draft. Signatures are the contract
 // (docs/ARCHITECTURE.md "Mars mechanics"); bodies are owned by SimMechanics.
 //
 // ChapterStats.extra keys maintained here (chapter + run totals, via addExtraStat; Crew/Directives read them):
@@ -19,12 +19,13 @@ import { collectEffects, runHook } from './effects';
 import { canFoundCity, cityAt, changePop, foundCity } from './cities';
 import { addGold, availableTechs, getPlayer } from './economy';
 import { removeUnit } from './units';
-import { PEACE_TREATY_TURNS } from './engine';
 import { CRISIS_CHAPTER, addExtraStat } from './roguelite';
 
 // ── tunables ──
 /** Cryo pods aboard at landfall (LeaderDef.cryo overrides) */
 export const START_CRYO = 3;
+/** colonists in each Capital at landfall (the main Ark lands with more people than a Pod) */
+export const CAPITAL_START_POP = 3;
 /** pods thawed and ready at the start of every new era */
 export const ERA_CRYO = 1;
 /** pop gained by a Thaw */
@@ -229,7 +230,7 @@ export function advanceStorms(state: GameState, emit: Emit): void {
       if (killed) {
         if (u.owner !== human && tile.owner === human) addExtraStat(state, 'stormKills', 1);
         if (u.owner === human) {
-          emit({ type: 'notify', text: `Your ${UNITS[u.type]?.name ?? 'unit'} was lost in the storm.`, icon: 'storm', tile: u.tile, tone: 'bad' });
+          emit({ type: 'notify', text: `Your ${UNITS[u.type]?.name ?? 'unit'} was lost in the Dust Storm.`, icon: 'storm', tile: u.tile, tone: 'bad' });
         }
         removeUnit(state, u.id, emit);
       }
@@ -294,26 +295,26 @@ export function dropPrice(state: GameState, pid: PlayerId): { cryo: number; gold
 
 export function canOrbitalDrop(state: GameState, pid: PlayerId, tile: TileIdx): string | null {
   const p = state.players.find((pl) => pl.id === pid);
-  if (!p || !p.alive || pid === BARBARIAN) return 'No Ark in orbit';
+  if (!p || !p.alive || pid === BARBARIAN) return 'No Capital found.';
   const t = state.map.tiles[tile];
-  if (!t) return 'Invalid tile';
-  if (!p.vis[tile]) return 'The Ark has no survey of that site';
+  if (!t) return 'Invalid tile.';
+  if (!p.vis[tile]) return 'You can only land a colony on a tile you have explored.';
   const err = canFoundCity(state, pid, tile);
   if (err) return err;
-  if (stormAt(state, tile)) return 'A dust storm blocks the landing zone';
+  if (stormAt(state, tile)) return 'A Dust Storm blocks this tile.';
   for (const id in state.units) {
     const u = state.units[id];
-    if (u.tile === tile && u.owner !== pid) return 'The landing zone is occupied';
+    if (u.tile === tile && u.owner !== pid) return 'Another unit is on this tile.';
   }
   let inRange = false;
   for (const id in state.cities) {
     const c = state.cities[id];
     if (c.owner === pid && hexDistance(state.map, c.tile, tile) <= DROP_RANGE) { inRange = true; break; }
   }
-  if (!inRange) return `Must land within ${DROP_RANGE} hexes of one of your colonies`;
+  if (!inRange) return `The tile must be within ${DROP_RANGE} hexes of one of your colonies.`;
   const price = dropPrice(state, pid);
-  if (p.cryo < price.cryo) return price.cryo === 1 ? 'No Cryo pods left' : `Need ${price.cryo} Cryo pods`;
-  if (p.gold < price.gold) return `Need ${price.gold} Credits`;
+  if (p.cryo < price.cryo) return price.cryo === 1 ? 'You have no Pods left.' : `You need ${price.cryo} Pods.`;
+  if (p.gold < price.gold) return `You need ${price.gold} Credits.`;
   return null;
 }
 
@@ -322,7 +323,7 @@ export function orbitalDrop(state: GameState, pid: PlayerId, tile: TileIdx, emit
   if (err) return err;
   const price = dropPrice(state, pid);
   if (price.cryo) changeCryo(state, pid, -price.cryo, emit);
-  if (price.gold) addGold(state, pid, -price.gold, 'Orbital Drop', emit);
+  if (price.gold) addGold(state, pid, -price.gold, 'Land Colony', emit);
   emit({ type: 'podLanded', player: pid, tile });
   foundCity(state, pid, tile, emit);
   if (getPlayer(state, pid).isHuman) addExtraStat(state, 'drops', 1);
@@ -331,10 +332,10 @@ export function orbitalDrop(state: GameState, pid: PlayerId, tile: TileIdx, emit
 
 export function canThaw(state: GameState, pid: PlayerId, cityId: CityId): string | null {
   const p = state.players.find((pl) => pl.id === pid);
-  if (!p || !p.alive) return 'No Ark in orbit';
+  if (!p || !p.alive) return 'No Capital found.';
   const c = state.cities[cityId];
-  if (!c || c.owner !== pid) return 'No such colony';
-  if (p.cryo < 1) return 'No Cryo pods left';
+  if (!c || c.owner !== pid) return 'Colony not found.';
+  if (p.cryo < 1) return 'You have no Pods left.';
   return null;
 }
 
@@ -358,14 +359,22 @@ function offerSize(state: GameState, pid: PlayerId): number {
   return Math.max(1, Math.round(Number.isFinite(args.value) ? args.value : RESEARCH_OFFER_SIZE));
 }
 
-/** draw without replacement, weighted toward the lowest available era; `avoid` techs only fill leftover slots */
+/**
+ * Draw without replacement. The first card is always a tech from the newest era you can research (so the climb is
+ * always on offer); the rest are weighted toward the lowest available era. `avoid` techs only fill leftover slots.
+ */
 function drawOffer(state: GameState, pid: PlayerId, avoid: readonly TechId[]): TechId[] {
   const avail = availableTechs(state, pid);
   const n = Math.min(offerSize(state, pid), avail.length);
+  if (!n) return [];
   const fresh = avail.filter((t) => !avoid.includes(t));
   const out: TechId[] = [];
+  const topEra = Math.max(...avail.map((t) => TECHS[t].era));
+  const newest = fresh.filter((t) => TECHS[t].era === topEra);
+  const newestPool = newest.length ? newest : avail.filter((t) => TECHS[t].era === topEra);
+  out.push(newestPool[randInt(state.rng, newestPool.length)]);
   const drawFrom = (pool: TechId[]) => {
-    const list = [...pool];
+    const list = pool.filter((t) => !out.includes(t));
     while (out.length < n && list.length) {
       const minEra = Math.min(...list.map((t) => TECHS[t].era));
       const i = weightedIndex(state.rng, list.map((t) => Math.pow(RESEARCH_ERA_FALLOFF, TECHS[t].era - minEra)));
@@ -374,7 +383,7 @@ function drawOffer(state: GameState, pid: PlayerId, avoid: readonly TechId[]): T
     }
   };
   drawFrom(fresh);
-  drawFrom(avail.filter((t) => !out.includes(t)));
+  drawFrom(avail);
   return avail.filter((t) => out.includes(t)); // canonical tech order for stable UI
 }
 
@@ -406,37 +415,18 @@ export function researchRerollCost(state: GameState, pid: PlayerId): number {
 
 export function rerollResearch(state: GameState, pid: PlayerId, emit: Emit): string | null {
   const p = state.players.find((pl) => pl.id === pid);
-  if (!p || !p.alive) return 'Player is not in the game';
-  if (!p.isHuman) return 'Only the Breakthrough draft can be rerolled';
+  if (!p || !p.alive) return 'Player is not in the game.';
+  if (!p.isHuman) return 'Only you can get new Research choices.';
   const avail = availableTechs(state, pid);
-  if (!avail.length) return 'Nothing left to research';
-  if (p.researchOffer.length && avail.every((t) => p.researchOffer.includes(t))) return 'No other research to draw';
+  if (!avail.length) return 'There is nothing left to research.';
+  if (p.researchOffer.length && avail.every((t) => p.researchOffer.includes(t))) return 'There are no other Research choices.';
   const cost = researchRerollCost(state, pid);
-  if (p.gold < cost) return `Need ${cost} Credits`;
-  if (cost) addGold(state, pid, -cost, 'Breakthrough reroll', emit);
+  if (p.gold < cost) return `You need ${cost} Credits.`;
+  if (cost) addGold(state, pid, -cost, 'New Research choices', emit);
   const rerolls = p.researchRerolls + 1;
   p.researchOffer = drawOffer(state, pid, p.researchOffer);
   p.researchRerolls = rerolls;
   emit({ type: 'researchOffered', player: pid, techs: [...p.researchOffer], reroll: true });
   addExtraStat(state, 'rerolls', 1);
-  return null;
-}
-
-// ── diplomacy ──
-/** null = allowed; validates the declaration and runs warDeclaration hooks of both sides */
-export function canDeclareWar(state: GameState, by: PlayerId, target: PlayerId): string | null {
-  const player = state.players.find((p) => p.id === by);
-  if (!player || !player.alive) return 'Player is not in the game';
-  if (target === by) return 'Cannot declare war on yourself';
-  if (target === BARBARIAN) return 'Already at war with the Ferals';
-  const other = state.players.find((p) => p.id === target);
-  if (!other || !other.alive) return 'No such nation';
-  if (player.relations[target] === 'war') return 'Already at war';
-  const since = player.counters[`peace:${target}`];
-  if (since != null && state.turn - since < PEACE_TREATY_TURNS) return `Peace treaty holds for ${PEACE_TREATY_TURNS - (state.turn - since)} more turns`;
-  const args: { by: PlayerId; target: PlayerId; allowed: boolean; reason?: string } = { by, target, allowed: true };
-  runHook(state, by, 'warDeclaration', NOOP, null, args);
-  runHook(state, target, 'warDeclaration', NOOP, null, args);
-  if (!args.allowed) return args.reason ?? 'War cannot be declared';
   return null;
 }

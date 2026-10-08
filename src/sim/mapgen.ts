@@ -319,7 +319,7 @@ export function generateMap(seed: string, size: MapSize, players: number): GameM
     const elevation = !land ? 'flat' : ridge > 0.87 && continental[idx] > seaLevel + 0.18 ? 'mountain'
       : ridge > 0.79 ? 'hills' : 'flat';
     const t: Tile = { idx, col, row, terrain, elevation, feature: null, riverEdges: 0, resource: null,
-      improvement: null, pillaged: false, road: false, naturalWonder: null, owner: null, cityId: null,
+      improvement: null, road: false, naturalWonder: null, owner: null, cityId: null,
       height: !land ? clamp(0.23 + (continental[idx] - seaLevel) * 0.2, 0.06, 0.27)
         : elevation === 'mountain' ? 0.84 + ridge * 0.15 : clamp(0.37 + (continental[idx] - seaLevel) * 0.2 + (elevation === 'hills' ? 0.15 : 0), 0.35, 0.78),
       camp: false, ruin: false };

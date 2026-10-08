@@ -22,17 +22,19 @@ describe('happiness', () => {
     const { state, cityId } = plainGame('ECO-HAPPY');
     const city = state.cities[cityId];
     city.pop = 5;
-    // strip luxuries so the baseline is exact, then connect two copies of one luxury
+    // strip luxuries and surveyed landmarks (scouts explore on their own) so the baseline is exact,
+    // then connect two copies of one luxury
     for (const t of state.map.tiles) if (t.owner === HUMAN) t.resource = null;
+    state.naturalWondersSeen[HUMAN] = [];
     const base = HAPPINESS_BASE + HAPPINESS_PER_CITY - Math.floor(5 / POP_PER_UNHAPPY)
       + city.buildings.reduce((s, b) => s + (BUILDINGS[b]?.happiness ?? 0), 0);
     expect(computeHappiness(state, HUMAN).value).toBe(base);
 
     const lux = Object.values(RESOURCES).find((r) => r.kind === 'luxury' && !r.revealTech)!;
     const [a, b] = cityTerritory(state, city).filter((i) => i !== city.tile);
-    for (const i of [a, b]) Object.assign(state.map.tiles[i], { resource: lux.id, improvement: lux.improvement, pillaged: false });
+    for (const i of [a, b]) Object.assign(state.map.tiles[i], { resource: lux.id, improvement: lux.improvement });
     expect(computeHappiness(state, HUMAN).value).toBe(base + (lux.happiness ?? LUXURY_HAPPINESS));
-    state.map.tiles[a].pillaged = true;
+    state.map.tiles[a].improvement = null;
     state.map.tiles[b].improvement = null;
     expect(computeHappiness(state, HUMAN).value).toBe(base);
   });
@@ -100,18 +102,18 @@ describe('research', () => {
 });
 
 describe('resources', () => {
-  it('a resource is connected only by its (unpillaged) improvement or a city center', () => {
+  it('a resource is connected only by its improvement or a city center', () => {
     const { state, cityId } = plainGame('ECO-RES');
     const city = state.cities[cityId];
     for (const t of state.map.tiles) if (t.owner === HUMAN) t.resource = null;
     const res = Object.values(RESOURCES).find((r) => r.kind === 'strategic')!;
     const tile = cityTerritory(state, city).find((i) => i !== city.tile)!;
     const t = state.map.tiles[tile];
-    Object.assign(t, { resource: res.id, improvement: null, pillaged: false });
+    Object.assign(t, { resource: res.id, improvement: null });
     expect(hasResource(state, HUMAN, res.id)).toBe(false);
     t.improvement = res.improvement;
     expect(hasResource(state, HUMAN, res.id)).toBe(true);
-    t.pillaged = true;
+    t.improvement = null;
     expect(hasResource(state, HUMAN, res.id)).toBe(false);
     state.map.tiles[city.tile].resource = res.id;
     expect(hasResource(state, HUMAN, res.id)).toBe(true);

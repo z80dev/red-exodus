@@ -24,8 +24,7 @@ function newState(): GameState {
   const seed = params.get('seed') ?? 'AEONS-MENU';
   const size = (params.get('size') ?? 'small') as MapSize;
   const { state } = createGame({ seed, leaderId: Object.keys(LEADERS)[0], ascension: 0, mapSize: size, rivals: 3, tutorial: false, daily: false });
-  applyAction(state, { type: 'ackCrisis' });
-  applyAction(state, { type: 'chooseChapterStart', focus: 'arts', omen: null });
+  applyAction(state, { type: 'chooseChapterStart', focus: 'arts' });
   return state;
 }
 
@@ -74,7 +73,7 @@ function showcase(state: GameState): void {
       if (hexDistance(map, t.idx, cap.tile) !== 2 || t.terrain === 'ocean' || t.elevation === 'mountain') continue;
       if (Object.values(state.units).some((u) => u.tile === t.idx)) continue;
       const id = state.nextId++;
-      state.units[id] = { id, owner: k % 3 === 2 ? 1 : HUMAN, type: types[k], tile: t.idx, hp: k % 2 ? 100 : 55, moves: 2, hasAttacked: false, xp: 0, level: 1, promotions: [], promotionChoices: k === 1 ? ['a', 'b'] : null, order: null, fortifyTurns: 0, age: 0 };
+      state.units[id] = { id, owner: k % 3 === 2 ? 1 : HUMAN, type: types[k], tile: t.idx, hp: k % 2 ? 100 : 55, moves: 2, hasAttacked: false, xp: 0, level: 1, promotions: [], order: null, fortifyTurns: 0, age: 0 };
       k++;
     }
   }
@@ -254,9 +253,9 @@ export default function RendererDemo() {
             if (!target) return;
             play([{ type: 'combat', attacker: { player: HUMAN, unitId: u.id, tile: u.tile }, defender: { player: target.owner, unitId: target.id, tile: target.tile }, ranged: true, dmgToAttacker: 0, dmgToDefender: 28, attackerKilled: false, defenderKilled: false }]);
           })}
-          {btn('Level', () => {
+          {btn('Promote', () => {
             const u = humanUnit();
-            if (u) play([{ type: 'unitLevelUp', unitId: u.id, player: HUMAN }]);
+            if (u) play([{ type: 'unitPromoted', unitId: u.id, promotion: 'drill_1' }]);
           })}
           {btn('Kill', () => {
             if (!state) return;
@@ -305,7 +304,7 @@ export default function RendererDemo() {
             setLog(`storms: ${events.map((e) => e.type).join(', ') || 'none'}`);
             play(events);
           })}
-          {btn('Drop', () => {
+          {btn('Land', () => {
             const c = humanCity();
             const human = state?.players[HUMAN];
             if (!c || !state || !human) return;
@@ -319,13 +318,13 @@ export default function RendererDemo() {
             setLog(res.ok ? `drop: ${res.events.map((e) => e.type).join(', ')}` : `drop failed: ${res.error}`);
             if (res.ok) play(res.events);
           })}
-          {btn('Thaw', () => {
+          {btn('Wake', () => {
             const c = humanCity();
             const human = state?.players[HUMAN];
             if (!c || !state || !human) return;
             human.cryo = Math.max(human.cryo, 1);
             const res = applyAction(state, { type: 'thawColonists', cityId: c.id });
-            setLog(res.ok ? 'thawed' : `thaw failed: ${res.error}`);
+            setLog(res.ok ? 'woken' : `wake failed: ${res.error}`);
             if (res.ok) play(res.events);
           })}
           {log && <div style={{ width: '100%', font: '500 11px var(--font-ui)', color: '#ffe', textShadow: '0 1px 2px #000' }}>{log}</div>}

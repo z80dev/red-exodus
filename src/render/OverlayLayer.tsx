@@ -67,7 +67,6 @@ const Flag = memo(function Flag({ f, store }: { f: FlagData; store: OverlayStore
             <i className={`ae-flag__hp--${hpCls}`} style={{ width: `${Math.max(4, f.hp)}%` }} />
           </span>
         )}
-        {f.promo && <span className="ae-flag__promo" />}
       </button>
     </div>
   );
